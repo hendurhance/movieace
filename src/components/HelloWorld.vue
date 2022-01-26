@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Test from './test.vue'
 import { ref } from 'vue'
 
 defineProps<{ msg: string }>()
@@ -31,9 +32,11 @@ const count = ref(0)
     Edit
     <code>components/HelloWorld.vue</code> to test hot module replacement.
   </p>
+  <test></test>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
+// @import "../assets/css/_variable.scss";
 a {
   color: #42b983;
 }
@@ -44,7 +47,7 @@ label {
 }
 
 code {
-  background-color: #eee;
+  background-color: $primary-bg-dark;
   padding: 2px 4px;
   border-radius: 4px;
   color: #304455;
