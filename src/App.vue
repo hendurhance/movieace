@@ -7,9 +7,11 @@ import HelloWorld from './components/HelloWorld.vue'
 <template>
   <img alt="Vue logo" src="./assets/logo.png" />
   <HelloWorld msg="Hello Vue 3 + TypeScript + Vite" />
+  <h1 class="test">Hello Classes</h1>
 </template>
 
-<style>
+<style lang="scss">
+@import '../src/assets/css/_variable.scss';
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -17,5 +19,10 @@ import HelloWorld from './components/HelloWorld.vue'
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+
+
+.test{
+  color: $secondary-text-yellow;
 }
 </style>
