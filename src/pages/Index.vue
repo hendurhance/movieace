@@ -32,6 +32,18 @@
                     <h1>New Releases</h1>
                     <p>Our most recently released movies & tv shows.</p>
                 </div>
+                <div class="new-releases-row">
+                    <div class="right-column">
+                        <div class="item-block">
+                            <MovieItem />
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="movie-list-item-small">
+                            <a href=""></a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </div>
