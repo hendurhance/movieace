@@ -33,17 +33,16 @@
                     <p>Our most recently released movies & tv shows.</p>
                 </div>
                 <div class="new-releases-row">
-                    <div class="right-column">
-                        <div class="item-block">
-                            <MovieItem />
-                        </div>
-                    </div>
                     <div class="column">
-                        <div class="movie-list-item-small">
-                            <a href=""></a>
-                        </div>
+                        <MovieItem :size="'small'" />
+                        <MovieItem :size="'small'" />
+                        <MovieItem :size="'small'" />
+                        <MovieItem :size="'small'" />
+                        <MovieItem :size="'small'" />
+                        <MovieItem :size="'small'" />
                     </div>
                 </div>
+                <SearchWrapper />
             </div>
         </section>
     </div>
@@ -54,6 +53,7 @@ import { defineComponent } from 'vue';
 import AppHeader from '../components/layout/AppHeader.vue'
 import MovieItem from '../components/layout/MovieItem.vue'
 import FeaturedMovie from '../components/layout/FeaturedMovie.vue';
+import SearchWrapper from '../containers/SearchWrapper.vue';
 import { highlightsButtons } from '../utils/button-layout.ts'
 
 export default defineComponent({
@@ -62,6 +62,7 @@ export default defineComponent({
         AppHeader,
         MovieItem,
         FeaturedMovie,
+        SearchWrapper,
     },
     setup() {
         return {
@@ -141,10 +142,10 @@ export default defineComponent({
     padding-bottom: 0px;
 }
 
-.push-up{
+.push-up {
     margin-top: -5rem;
 
-    .new-releases-title-wrapper{
+    .new-releases-title-wrapper {
         text-align: center;
 
         h1 {
@@ -159,6 +160,16 @@ export default defineComponent({
             font-weight: 400;
             color: #8ea9bd;
             margin-top: 1rem;
+        }
+    }
+
+    .new-releases-row {
+        margin-top: 4rem;
+
+        .column {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 2rem;
         }
     }
 }
