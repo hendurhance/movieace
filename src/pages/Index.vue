@@ -1,7 +1,8 @@
 <template>
     <div>
-        <AppHeader />
+        <BaseHeader />
         <section>
+            <!-- Highlights Section -->
             <div class="container">
                 <div class="highlights">
                     <div class="title-wrapper">
@@ -24,44 +25,49 @@
                     </div>
                 </div>
             </div>
+            <!-- Featured Movie Section -->
             <div class="full-width">
                 <FeaturedMovie />
             </div>
+            <!-- New Releases Section -->
             <div class="container push-up">
                 <div class="new-releases-title-wrapper">
                     <h1>New Releases</h1>
                     <p>Our most recently released movies & tv shows.</p>
                 </div>
                 <div class="new-releases-row">
-                    <div class="right-column">
-                        <div class="item-block">
-                            <MovieItem />
-                        </div>
-                    </div>
                     <div class="column">
-                        <div class="movie-list-item-small">
-                            <a href=""></a>
-                        </div>
+                        <MovieItem :size="'small'" />
+                        <MovieItem :size="'small'" />
+                        <MovieItem :size="'small'" />
+                        <MovieItem :size="'small'" />
+                        <MovieItem :size="'small'" />
+                        <MovieItem :size="'small'" />
                     </div>
                 </div>
+                <SearchWrapper />
             </div>
         </section>
+        <BaseFooter />
     </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import AppHeader from '../components/layout/AppHeader.vue'
+import BaseHeader from '../components/base/BaseHeader.vue'
 import MovieItem from '../components/layout/MovieItem.vue'
 import FeaturedMovie from '../components/layout/FeaturedMovie.vue';
+import SearchWrapper from '../containers/SearchWrapper.vue';
 import { highlightsButtons } from '../utils/button-layout.ts'
-
+import BaseFooter from '../components/base/BaseFooter.vue';
 export default defineComponent({
     name: 'Index',
     components: {
-        AppHeader,
+        BaseHeader,
         MovieItem,
         FeaturedMovie,
+        SearchWrapper,
+        BaseFooter
     },
     setup() {
         return {
@@ -141,10 +147,10 @@ export default defineComponent({
     padding-bottom: 0px;
 }
 
-.push-up{
+.push-up {
     margin-top: -5rem;
 
-    .new-releases-title-wrapper{
+    .new-releases-title-wrapper {
         text-align: center;
 
         h1 {
@@ -159,6 +165,16 @@ export default defineComponent({
             font-weight: 400;
             color: #8ea9bd;
             margin-top: 1rem;
+        }
+    }
+
+    .new-releases-row {
+        margin-top: 4rem;
+
+        .column {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 2rem;
         }
     }
 }

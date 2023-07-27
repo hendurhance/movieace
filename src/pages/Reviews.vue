@@ -1,18 +1,18 @@
 <template>
     <div>
-        <AppHeader />
+        <BaseHeader />
         <h1>Reviews</h1>
     </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import AppHeader from '../components/layout/AppHeader.vue'
+import BaseHeader from '../components/base/BaseHeader.vue';
 export default defineComponent({
     name: 'Reviews',
     components: {
-        AppHeader
-    }
+    BaseHeader
+}
 });
 </script>
 

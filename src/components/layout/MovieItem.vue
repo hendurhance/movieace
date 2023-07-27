@@ -1,8 +1,7 @@
-import { defineComponent } from 'vue';
 <template>
     <div class="movie-list-item">
         <a href="#">
-            <img src="https://image.tmdb.org/t/p/w500/6CoRTJTmijhBLJTUNoVSUNxZMEI.jpg" alt="Movie poster" />
+            <img src="https://image.tmdb.org/t/p/w500/6CoRTJTmijhBLJTUNoVSUNxZMEI.jpg" alt="Movie poster" :class="size" />
             <h5>Title</h5>
             <div class="rating-number">
                 <span>8.5</span>
@@ -24,17 +23,25 @@ import { defineComponent } from 'vue';
 <script lang="ts">
 import { defineComponent } from 'vue';
 import RatingStar from '../../containers/RatingStar.vue'
+import tag from '../svg/outline/tag.vue';
 
 export default defineComponent({
     name: 'MovieItem',
     components: {
-        RatingStar
+        RatingStar,
+        tag,
+    },
+    props: {
+        size: {
+            type: String,
+            default: 'large'
+        }
     }
 })
 </script>
 
 <style lang="scss" scoped>
-.movie-list-item {
+.movie-list-item{
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -61,9 +68,18 @@ export default defineComponent({
         }
 
         img {
-            width: 100%;
-            height: 100%;
             border-radius: 0.5rem;
+
+            &.large {
+                width: 100%;
+                height: 100%;
+            }
+
+            &.small {
+                width: 100%;
+                height: 220px;
+                object-fit: cover;
+            }
 
             &:hover {
                 transition: all 0.3s ease-in-out;
