@@ -27,7 +27,7 @@ export default defineComponent({
 
 <style scoped lang="scss">
 .search-wrapper {
-    margin: 5rem auto;
+    margin: 6rem auto 1rem auto;
     width: 500px;
     
 
@@ -52,7 +52,6 @@ export default defineComponent({
             font-size: 1.2rem;
             text-align: center;
             font-weight: 400;
-            color: #fff;
             background-color: #fff;
         }
 

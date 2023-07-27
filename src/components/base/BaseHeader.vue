@@ -23,7 +23,7 @@ import MenuIcon from '../svg/outline/menu.vue'
 import Logo from '../svg/logo/movieace.vue'
 import { routes } from '../../routes';
 export default defineComponent({
-    name: 'AppHeader',
+    name: 'BaseHeader',
     components: {
         MenuIcon,
         RouterLink,
