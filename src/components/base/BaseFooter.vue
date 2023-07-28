@@ -13,14 +13,15 @@
                         </ul>
                     </div>
                 </div>
-                <span>© 2021 MovieAce. Built with ❤️ by <a href="https://github.com/hendurhance" target="_blank" class="text-yellow-400">Endurance</a> & <a href="https://github.com/classyrazy" target="_blank" class="text-yellow-400">Razaq</a></span>
+                <span>© {{ year }} MovieAce. Built with ❤️ by <a href="https://github.com/hendurhance" target="_blank" class="text-yellow-400">Endurance</a> & <a href="https://github.com/classyrazy" target="_blank" class="text-yellow-400">Razaq</a></span>
+                <span>⚡️ Powered by <a href="https://www.themoviedb.org/" target="_blank" class="text-yellow-400">TMDb</a></span>
             </div>
         </div>
     </footer>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import Logo from '../svg/logo/movieace.vue'
 import { footerLinks } from '../../utils/footer-links.ts';
@@ -31,8 +32,10 @@ export default defineComponent({
         Logo
     },
     setup() {
+        const year = ref(new Date().getFullYear());
         return {
-            footerLinks
+            footerLinks,
+            year
         }
     }
 });
@@ -54,6 +57,11 @@ footer {
             align-items: flex-start;
             flex-wrap: wrap;
             text-align: center;
+
+            @media (max-width: 768px) {
+                flex-direction: column;
+                align-items: center;
+            }
 
             .footer-item {
                 width: 200px;
@@ -94,6 +102,7 @@ footer {
             color: #fff;
             font-size: 0.8rem;
             font-weight: 400;
+            margin-bottom: 0.5rem;
 
             a {
                 color: #fff;

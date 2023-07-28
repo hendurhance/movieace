@@ -4,11 +4,11 @@
             <img :src="fullPathImage" alt="Movie poster" :class="size" />
             <h5>{{title}}</h5>
             <div class="rating-number">
-                <span>{{ rating }}</span>
+                <span>{{ rating.toFixed(1) }}</span>
             </div>
         </a>
         <div class="info-block">
-            <RatingStar :count="3" />
+            <RatingStar :count="votingToRating(rating, 5)" :max="5" />
             <div class="category">
                 <tag />
                 <div class="categories">
@@ -23,7 +23,7 @@
 import { PropType, defineComponent } from 'vue';
 import RatingStar from '../../containers/RatingStar.vue'
 import tag from '../svg/outline/tag.vue';
-
+import votingToRating from '../../calculation/vote-to-rating';
 export default defineComponent({
     name: 'MovieItem',
     components: {
@@ -59,10 +59,10 @@ export default defineComponent({
     setup(props) {
         const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL
         const fullPathImage = `${IMAGE_BASEURL}${props.imgSize}/${props.image}`
-        
 
         return {
-            fullPathImage
+            fullPathImage,
+            votingToRating
         }
     }
 })
@@ -97,7 +97,7 @@ export default defineComponent({
 
         img {
             border-radius: 0.5rem;
-
+            margin-bottom: 1rem;
             &.large {
                 width: 100%;
                 height: 100%;

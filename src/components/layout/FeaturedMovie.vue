@@ -8,7 +8,7 @@
                     <span class="large-rating-number">7.3</span>
                     <h1>Silent Hill</h1>
                     <div class="info-wrapper">
-                        <RatingStar :count="4" />
+                        <RatingStar :count="4" :max="5" />
                         <div class="category">
                             <span>Thriller</span>
                         </div>
@@ -57,6 +57,14 @@ export default defineComponent({
         width: 100%;
         height: 100%;
         object-fit: cover;
+
+        @media screen and (max-width: 1150px) {
+            height: 100vh;
+        }
+
+        @media screen and (max-width: 768px) {
+            height: 100vh;
+        }
     }
 
     .featured-overlay {
@@ -81,9 +89,13 @@ export default defineComponent({
             }
 
             .featured-content {
-                width: 510px;
+                width: 500px;
                 margin: 6rem 0;
                 color: #fff;
+
+                @media screen and (max-width: 576px) {
+                    width: 100%;
+                }
 
                 .large-rating-number {
                     display: inline-block;
@@ -95,12 +107,34 @@ export default defineComponent({
                     font-size: 1.5rem;
                     line-height: 2rem;
                     font-weight: 700;
+
+                    &::before {
+                        content: "★";
+                        margin-right: 0.5rem;
+                    }
+
+                    @media screen and (max-width: 768px) {
+                        font-size: 1.25rem;
+                        line-height: 2.5rem;
+                    }
+
+                    @media screen and (max-width: 680px) {
+                       font-size: 1rem;
+                    }
                 }
 
                 h1 {
                     max-width: 90%;
                     margin: 1rem 0;
                     font-size: 5rem;
+
+                    @media screen and (max-width: 768px) {
+                        font-size: 4rem;
+                    }
+
+                    @media screen and (max-width: 680px) {
+                        font-size: 3rem;
+                    }
                 }
 
                 .info-wrapper {
@@ -109,6 +143,10 @@ export default defineComponent({
                     align-items: center;
                     justify-content: flex-start;
                     margin-bottom: 1rem;
+
+                    @media screen and (max-width: 768px) {
+                        margin-bottom: 3rem;
+                    }
 
                     .category {
                         margin-left: 1rem;
@@ -120,6 +158,11 @@ export default defineComponent({
                         font-size: 1rem;
                         line-height: 1.5rem;
                         font-weight: 700;
+
+                        @media screen and (max-width: 768px) {
+                            font-size: 0.875rem;
+                            line-height: 1.5rem;
+                        }
                     }
 
                     .date-created {
@@ -134,6 +177,11 @@ export default defineComponent({
                         span {
                             margin-left: 0.5rem;
                             color: #fff;
+
+                            @media screen and (max-width: 768px) {
+                                font-size: 0.875rem;
+                                line-height: 1.5rem;
+                            }
                         }
                     }
                 }
@@ -143,6 +191,15 @@ export default defineComponent({
                     color: #fff;
                     font-size: 1rem;
                     line-height: 2rem;
+
+                    @media screen and (max-width: 768px) {
+                        font-size: 0.875rem;
+                        line-height: 1.5rem;
+                    }
+
+                    @media screen and (max-width: 680px) {
+                        display: none;
+                    }
                 }
 
                 a {
@@ -153,6 +210,12 @@ export default defineComponent({
                     color: #fff;
                     cursor: pointer;
                     text-decoration: none;
+
+                    @media screen and (max-width: 768px) {
+                        font-size: 0.875rem;
+                        line-height: 1.5rem;
+                        margin-bottom: 3rem;
+                    }
                 }
             }
         }

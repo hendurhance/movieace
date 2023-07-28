@@ -239,6 +239,10 @@ section {
 	margin-right: auto;
 
 	@media (max-width: 911px) {
+		padding: 0 2rem
+	}
+
+	@media (max-width: 767px) {
 		padding: 0 1rem
 	}
 }

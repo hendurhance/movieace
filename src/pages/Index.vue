@@ -93,6 +93,10 @@ export default defineComponent({
     align-items: center;
     justify-content: space-between;
 
+    @media (max-width: 768px) {
+        flex-direction: column;
+    }
+
     .title-wrapper {
         text-align: left;
 
@@ -129,6 +133,10 @@ export default defineComponent({
             background-color: #0c2738;
             cursor: pointer;
 
+            @media (max-width: 768px) {
+                margin-left: .5rem;
+            }
+
             &.active {
                 background-color: #fff;
                 color: #3b4b57;
@@ -144,6 +152,18 @@ export default defineComponent({
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         grid-gap: 2rem;
+
+        @media (max-width: 880px) {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        @media (max-width: 768px) {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (max-width: 480px) {
+            grid-template-columns: repeat(1, 1fr);
+        }
     }
 
 }
@@ -158,7 +178,6 @@ export default defineComponent({
 
 .push-up {
     margin-top: -5rem;
-
     .new-releases-title-wrapper {
         text-align: center;
 
@@ -167,6 +186,21 @@ export default defineComponent({
             line-height: 1rem;
             color: #fff;
             font-weight: 700;
+
+            @media (max-width: 768px) {
+                font-size: 4rem;
+                line-height: 1;
+            }
+
+            @media (max-width: 480px) {
+                font-size: 3rem;
+                line-height: 1;
+            }
+
+            @media (max-width: 320px) {
+                font-size: 2rem;
+                line-height: 1;
+            }
         }
 
         p {
@@ -174,6 +208,10 @@ export default defineComponent({
             font-weight: 400;
             color: #8ea9bd;
             margin-top: 1rem;
+
+            @media (max-width: 768px) {
+                font-size: 1rem;
+            }
         }
     }
 
@@ -184,6 +222,14 @@ export default defineComponent({
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-gap: 2rem;
+
+            @media (max-width: 768px) {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            @media (max-width: 480px) {
+                grid-template-columns: repeat(1, 1fr);
+            }
         }
     }
 }
