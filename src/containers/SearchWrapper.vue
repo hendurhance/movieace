@@ -27,9 +27,9 @@ export default defineComponent({
 
 <style scoped lang="scss">
 .search-wrapper {
-    margin: 6rem auto 1rem auto;
-    width: 500px;
-    
+    margin: 6rem 0;
+    display: grid;
+    place-items: center;
 
     h3 {
         color: #f1b722;
@@ -37,11 +37,23 @@ export default defineComponent({
         font-weight: 400;
         margin-bottom: 1rem;
         text-align: center;
-        margin-left: calc(0% + 30px);
+
+        @media (max-width: 768px) {
+            font-size: 1.05rem;
+        }
+
+        @media (max-width: 576px) {
+            font-size: .825rem;
+        }
     }
 
     form {
         position: relative;
+        width: 100%;
+
+        @media (min-width: 780px) {
+            width: 75%;
+        }
 
         .search-input {
             width: 100%;
@@ -53,6 +65,11 @@ export default defineComponent({
             text-align: center;
             font-weight: 400;
             background-color: #fff;
+
+            @media (max-width: 768px) {
+                padding: 1rem .5rem;
+                font-size: 1rem;
+            }
         }
 
         .search-button {
@@ -63,6 +80,24 @@ export default defineComponent({
             background: none;
             border: none;
             cursor: pointer;
+
+            svg {
+                width: 2rem;
+                height: 2rem;
+                fill: #fff;
+                margin: auto;
+                transition: all .2s ease-in-out;
+
+                @media (max-width: 768px) {
+                    width: 1.5rem;
+                    height: 1.5rem;
+                }
+
+                @media (max-width: 576px) {
+                    width: 1rem;
+                    height: 1rem;
+                }
+            }
         }
     }
 }
