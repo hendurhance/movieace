@@ -1,10 +1,10 @@
 <template>
     <div class="movie-list-item">
         <a href="#">
-            <img src="https://image.tmdb.org/t/p/w500/6CoRTJTmijhBLJTUNoVSUNxZMEI.jpg" alt="Movie poster" :class="size" />
-            <h5>Title</h5>
+            <img :src="fullPathImage" alt="Movie poster" :class="size" />
+            <h5>{{title}}</h5>
             <div class="rating-number">
-                <span>8.5</span>
+                <span>{{ rating }}</span>
             </div>
         </a>
         <div class="info-block">
@@ -12,8 +12,7 @@
             <div class="category">
                 <tag />
                 <div class="categories">
-                    <span>Category</span>
-                    <span>Category</span>
+                    <span v-for="(category, idx) in categories" :key="idx">{{category}}</span>
                 </div>
             </div>
         </div>
@@ -21,7 +20,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { PropType, defineComponent } from 'vue';
 import RatingStar from '../../containers/RatingStar.vue'
 import tag from '../svg/outline/tag.vue';
 
@@ -35,6 +34,35 @@ export default defineComponent({
         size: {
             type: String,
             default: 'large'
+        },
+        image: {
+            type: String,
+            default: 'https://image.tmdb.org/t/p/w500/6CoRTJTmijhBLJTUNoVSUNxZMEI.jpg'
+        },
+        title: {
+            type: String,
+            default: 'Title'
+        },
+        rating: {
+            type: Number,
+            default: 8.5
+        },
+        categories: {
+            type: Array as PropType<string[]>,
+            default: ['Category', 'Category']
+        },
+        imgSize: {
+            type: String,
+            default: 'w500'
+        }
+    },
+    setup(props) {
+        const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL
+        const fullPathImage = `${IMAGE_BASEURL}${props.imgSize}/${props.image}`
+        
+
+        return {
+            fullPathImage
         }
     }
 })

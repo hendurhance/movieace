@@ -18,10 +18,8 @@
                 </div>
                 <div class="movie-grid">
                     <div class="movie-grid-panel">
-                        <MovieItem />
-                        <MovieItem />
-                        <MovieItem />
-                        <MovieItem />
+                        <MovieItem v-for="item in highlights" :key="item.id" :title="item.title" :image="item.poster_path"
+                            :rating="item.vote_average" />
                     </div>
                 </div>
             </div>
@@ -53,13 +51,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, onMounted, ref } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue'
 import MovieItem from '../components/layout/MovieItem.vue'
 import FeaturedMovie from '../components/layout/FeaturedMovie.vue';
 import SearchWrapper from '../containers/SearchWrapper.vue';
 import { highlightsButtons } from '../utils/button-layout.ts'
 import BaseFooter from '../components/base/BaseFooter.vue';
+import { useHighlights, Movie } from "../composables/useHighlights"
 export default defineComponent({
     name: 'Index',
     components: {
@@ -70,8 +69,18 @@ export default defineComponent({
         BaseFooter
     },
     setup() {
+        const { getHighlightsToday } = useHighlights()
+        const highlights = ref<Movie[]>([])
+
+        onMounted(async () => {
+            const { data } = await getHighlightsToday()
+            console.log(data)
+            highlights.value = data.value
+        })
+
         return {
             highlightsButtons,
+            highlights
         }
     }
 });
