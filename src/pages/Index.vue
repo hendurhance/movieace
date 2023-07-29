@@ -19,7 +19,7 @@
                 <div class="movie-grid">
                     <div class="movie-grid-panel">
                         <MovieItem v-for="item in highlights" :key="item.id" :title="item.title" :image="item.poster_path"
-                            :rating="item.vote_average" />
+                            :rating="item.vote_average" :categories="item.genre_ids" />
                     </div>
                 </div>
             </div>
@@ -30,8 +30,8 @@
             <!-- New Releases Section -->
             <div class="container push-up">
                 <div class="new-releases-title-wrapper">
-                    <h1>New Releases</h1>
-                    <p>Our most recently released movies & tv shows.</p>
+                    <h1>New Shows</h1>
+                    <p>Our most recently released tv shows for you to enjoy.</p>
                 </div>
                 <div class="new-releases-row">
                     <div class="column">
@@ -74,7 +74,6 @@ export default defineComponent({
 
         onMounted(async () => {
             const { data } = await getHighlightsToday()
-            console.log(data)
             highlights.value = data.value
         })
 
@@ -152,6 +151,7 @@ export default defineComponent({
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         grid-gap: 2rem;
+        align-items: start;
 
         @media (max-width: 880px) {
             grid-template-columns: repeat(3, 1fr);

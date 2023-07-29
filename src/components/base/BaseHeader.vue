@@ -37,7 +37,7 @@ export default defineComponent({
         }
 
         return {
-            routes: routes.filter(route => route.name !== 'NotFound'),
+            routes: routes.filter(route => route.meta?.showInHeader),
             toggleNavigation
         }
     }

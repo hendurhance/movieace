@@ -1,7 +1,7 @@
 <template>
     <div>
         <BaseHeader />
-        <h1>Reviews</h1>
+        <h1>Movies</h1>
     </div>
 </template>
 
@@ -9,7 +9,7 @@
 import { defineComponent } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue';
 export default defineComponent({
-    name: 'Reviews',
+    name: 'Movies',
     components: {
     BaseHeader
 }
