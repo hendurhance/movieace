@@ -12,7 +12,8 @@
             <div class="category">
                 <tag />
                 <div class="categories">
-                    <span v-for="(category, idx) in categories" :key="idx">{{category}}</span>
+                    <span v-for="(genre, idx) in genres" :key="idx">{{genre.name}}</span>
+                    <!-- <span v-for="(category, idx) in categories" :key="idx">{{category}}</span> -->
                 </div>
             </div>
         </div>
@@ -20,10 +21,12 @@
 </template>
 
 <script lang="ts">
-import { PropType, defineComponent } from 'vue';
+import { PropType, defineComponent, onMounted, ref } from 'vue';
 import RatingStar from '../../containers/RatingStar.vue'
 import tag from '../svg/outline/tag.vue';
 import votingToRating from '../../calculation/vote-to-rating';
+import { useGenresList } from '../../composables/useGenresList';
+import { Genre } from '../../composables/useGenre';
 export default defineComponent({
     name: 'MovieItem',
     components: {
@@ -48,8 +51,8 @@ export default defineComponent({
             default: 8.5
         },
         categories: {
-            type: Array as PropType<string[]>,
-            default: ['Category', 'Category']
+            type: Array as PropType<number[]>,
+            default: [12, 16]
         },
         imgSize: {
             type: String,
@@ -58,11 +61,18 @@ export default defineComponent({
     },
     setup(props) {
         const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL
-        const fullPathImage = `${IMAGE_BASEURL}${props.imgSize}/${props.image}`
+        const fullPathImage = `${IMAGE_BASEURL}${props.imgSize}${props.image}`
+        const genres = ref<Genre[]>([])
+
+        onMounted( async () => {
+            const { getGenresList } = useGenresList(props.categories.slice(0, 2))
+            genres.value = await getGenresList()
+        })
 
         return {
             fullPathImage,
-            votingToRating
+            votingToRating,
+            genres
         }
     }
 })
@@ -149,9 +159,14 @@ export default defineComponent({
                     font-weight: 400;
                     color: #8ea9bd;
                     margin-left: .2rem;
+
+                    &:not(:last-child)::after {
+                        content: ',';
+                        margin-right: .2rem;
+                    }
                 }
             }
         }
     }
 }
-</style>
+</style>../../composables/useGenresList
