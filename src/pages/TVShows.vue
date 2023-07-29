@@ -4,8 +4,8 @@
         <section>
             <div class="container">
                 <div class="masthead-wrapper">
-                    <h1>Discover Movies</h1>
-                    <p>Find your favorite movies and explore new ones</p>
+                    <h1>Discover TV Shows</h1>
+                    <p>Find your favorite tv shows and explore new ones</p>
                     <div class="mini-search">
                         <form>
                             <input type="text" placeholder="Search for a movie" />
@@ -53,7 +53,7 @@ import BaseHeader from '../components/base/BaseHeader.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
 import MovieItem from '../components/layout/MovieItem.vue';
 export default defineComponent({
-    name: 'Movies',
+    name: 'TVShows',
     components: {
     BaseHeader,
     BaseFooter,

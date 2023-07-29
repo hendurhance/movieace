@@ -82,6 +82,7 @@ header {
                 font-weight: 400;
                 text-decoration: none;
                 margin-left: 1.2rem;
+                text-transform: uppercase;
             }
         }
 
