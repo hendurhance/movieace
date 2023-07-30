@@ -4,16 +4,30 @@
         <p>{{ subtitle }}</p>
         <div class="mini-search" v-if="search">
             <form>
-                <input type="text" :placeholder="searchPlaceholder" />
+                <input 
+                type="text" 
+                :placeholder="searchPlaceholder" 
+                @input="handleInput($event as InputEvent)"
+                 v-model="searchValue" 
+                @focus="showClearButton = true"
+                />
+                <button
+                    v-if="showClearButton && searchValue"
+                    @click="clearInput"
+                    type="button"
+                    class="clear-button"
+                >
+                    &times;
+                </button>
             </form>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 export default defineComponent({
-    name: 'MastHead',
+    name: 'Hero',
     props: {
         title: {
             type: String,
@@ -33,11 +47,33 @@ export default defineComponent({
         }
     },
     setup(props) {
+
+            // State for the input value and showClearButton flag
+        const searchValue = ref('');
+        const showClearButton = ref(false);
+
+        // Update the input value when the user types
+        const handleInput = (event: InputEvent) => {
+        searchValue.value = (event.target as HTMLInputElement).value;
+        };
+
+        // Clear the input and hide the clear button
+        const clearInput = () => {
+            console.log(searchValue.value);
+            searchValue.value = '';
+            showClearButton.value = false;
+        };
+
+
         return {
             title: props.title,
             subtitle: props.subtitle,
             search: props.search,
-            searchPlaceholder: props.searchPlaceholder
+            searchPlaceholder: props.searchPlaceholder,
+            searchValue,
+            showClearButton,
+            handleInput,
+            clearInput,
         }
     }
 });
@@ -80,7 +116,10 @@ export default defineComponent({
         width: 100%;
         max-width: 600px;
 
-        input {
+        form {
+            position: relative;
+
+            input {
             width: 100%;
             padding: 1rem;
             border-radius: 0.5rem;
@@ -96,6 +135,20 @@ export default defineComponent({
                 
             }
             
+        }
+
+        .clear-button {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #999;
+            background-color: transparent;
+            border: none;
+            outline: none;
+        }
         }
     }
 }
