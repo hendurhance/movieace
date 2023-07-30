@@ -3,25 +3,13 @@
         <BaseHeader />
         <section>
             <div class="container">
-                <div class="masthead-wrapper">
-                    <h1>Discover Movies</h1>
-                    <p>Find your favorite movies and explore new ones</p>
-                    <div class="mini-search">
-                        <form>
-                            <input type="text" placeholder="Search for a movie" />
-                        </form>
-                    </div>
-                </div>
-                <div class="genre-grid">
-                    <span>All Movies</span>
-                    <span>Action</span>
-                    <span>Adventure</span>
-                    <span>Animation</span>
-                    <span>Comedy</span>
-                    <span>Crime</span>
-                    <span>Drama</span>
-                    <span>Family</span>
-                </div>
+                <MastHead 
+                    :title="'Discover Movies'" 
+                    :subtitle="'Find your favorite movies and explore new ones'" 
+                    :search="true" 
+                    :searchPlaceholder="'Search for a movie'" 
+                />
+                <GenreLists :genres="genres" />
             </div>
             <div class="container">
                 <div class="movie-meta-grid">
@@ -48,17 +36,37 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref, onMounted } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
 import MovieItem from '../components/layout/MovieItem.vue';
+import MastHead from '../containers/MastHead.vue';
+import GenreLists from '../components/layout/GenreLists.vue';
+import { useGenres, Genre } from '../composables/useGenre';
 export default defineComponent({
     name: 'Movies',
     components: {
-    BaseHeader,
-    BaseFooter,
-    MovieItem
-}
+        BaseHeader,
+        BaseFooter,
+        MovieItem,
+        MastHead,
+        GenreLists
+    },
+    setup() {
+        const genres = ref<Genre[]>([]);
+        const { getGenres } = useGenres('movie');
+
+        const fetchGenres = async () => {
+            const { data } = await getGenres();
+            genres.value = data.value;
+            console.log(genres.value); 
+        };
+
+        onMounted(fetchGenres); 
+        return {
+            genres
+        }
+    }
 });
 </script>
 
