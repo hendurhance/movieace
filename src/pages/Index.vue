@@ -121,6 +121,10 @@ export default defineComponent({
         justify-content: center;
         margin-top: 2rem;
 
+        @media (max-width: 300px) {
+            flex-direction: column;
+        }
+
         button {
             margin-left: 1rem;
             padding: 1rem 2rem;
@@ -134,6 +138,17 @@ export default defineComponent({
 
             @media (max-width: 768px) {
                 margin-left: .5rem;
+            }
+
+            @media (max-width: 400px) {
+                margin-left: .25rem;
+                font-size: .75rem;
+                padding: .85rem 1.5rem;
+            }
+
+            @media (max-width: 300px) {
+                margin-left: 0;
+                margin-top: .5rem;
             }
 
             &.active {

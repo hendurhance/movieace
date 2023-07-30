@@ -4,10 +4,10 @@
         <section>
             <div class="container">
                 <MastHead 
-                    :title="'Discover Movies'" 
-                    :subtitle="'Find your favorite movies and explore new ones'" 
+                    :title="'Discover TV Shows'"
+                    :subtitle="'Find your favorite tv shows and explore new ones'"
                     :search="true" 
-                    :searchPlaceholder="'Search for a movie'" 
+                    :searchPlaceholder="'Search for a tv show'"
                 />
                 <GenreLists :genres="genres" />
             </div>
@@ -36,7 +36,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue';
+import { defineComponent, onMounted, ref } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
 import MovieItem from '../components/layout/MovieItem.vue';
@@ -44,7 +44,7 @@ import MastHead from '../containers/MastHead.vue';
 import GenreLists from '../components/layout/GenreLists.vue';
 import { useGenres, Genre } from '../composables/useGenre';
 export default defineComponent({
-    name: 'Movies',
+    name: 'TVShows',
     components: {
         BaseHeader,
         BaseFooter,

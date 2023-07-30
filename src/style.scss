@@ -1,7 +1,13 @@
+
+*, *:before, *:after {
+	box-sizing: inherit;
+}
+
 html {
 	font-family: 'Rubik', serif;
 	-ms-text-size-adjust: 100%;
-	-webkit-text-size-adjust: 100%
+	-webkit-text-size-adjust: 100%;
+	box-sizing: border-box;
 }
 
 body {

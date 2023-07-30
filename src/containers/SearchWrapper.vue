@@ -70,13 +70,18 @@ export default defineComponent({
                 padding: 1rem .5rem;
                 font-size: 1rem;
             }
+
+            @media (max-width: 576px) {
+                padding: .5rem .25rem;
+                font-size: .825rem;
+            }
         }
 
         .search-button {
             position: absolute;
             top: 0;
             bottom: 0;
-            right: 0;
+            right: 1rem;
             background: none;
             border: none;
             cursor: pointer;

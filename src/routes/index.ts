@@ -16,6 +16,14 @@ const routes: Array<RouteRecordRaw> = [
         }
     },
     {
+        path: '/movies',
+        name: 'Movies',
+        component: () => import('../pages/Movies.vue'),
+        meta: {
+            showInHeader: true
+        }
+    },
+    {
         path: '/:pathMatch(.*)*',
         name: 'NotFound',
         component: () => import('../pages/NotFound.vue'),
@@ -24,17 +32,9 @@ const routes: Array<RouteRecordRaw> = [
         }
     },
     {
-        path: '/tv-series',
-        name: 'TVSeries',
-        component: () => import('../pages/TVSeries.vue'),
-        meta: {
-            showInHeader: true
-        }
-    },
-    {
-        path: '/movies',
-        name: 'Movies',
-        component: () => import('../pages/Movies.vue'),
+        path: '/tv-shows',
+        name: 'TVShows',
+        component: () => import('../pages/TVShows.vue'),
         meta: {
             showInHeader: true
         }
