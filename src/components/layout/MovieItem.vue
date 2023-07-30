@@ -13,7 +13,6 @@
                 <tag />
                 <div class="categories">
                     <span v-for="(genre, idx) in genres" :key="idx">{{genre.name}}</span>
-                    <!-- <span v-for="(category, idx) in categories" :key="idx">{{category}}</span> -->
                 </div>
             </div>
         </div>

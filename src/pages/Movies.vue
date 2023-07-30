@@ -3,7 +3,7 @@
         <BaseHeader />
         <section>
             <div class="container">
-                <MastHead 
+                <Hero 
                     :title="'Discover Movies'" 
                     :subtitle="'Find your favorite movies and explore new ones'" 
                     :search="true" 
@@ -40,7 +40,7 @@ import { defineComponent, ref, onMounted } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
 import MovieItem from '../components/layout/MovieItem.vue';
-import MastHead from '../containers/MastHead.vue';
+import Hero from '../containers/Hero.vue';
 import GenreLists from '../components/layout/GenreLists.vue';
 import { useGenres, Genre } from '../composables/useGenre';
 export default defineComponent({
@@ -49,7 +49,7 @@ export default defineComponent({
         BaseHeader,
         BaseFooter,
         MovieItem,
-        MastHead,
+        Hero,
         GenreLists
     },
     setup() {
