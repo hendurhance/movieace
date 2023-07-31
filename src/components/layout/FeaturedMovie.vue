@@ -36,7 +36,6 @@
 import { computed, defineComponent } from 'vue';
 import clock from '../../components/svg/outline/clock.vue';
 import RatingStar from '../../containers/RatingStar.vue';
-
 export default defineComponent({
     name: 'FeaturedMovie',
     components: {
@@ -61,7 +60,7 @@ export default defineComponent({
             required:true
         },
         categories:{
-            type:Array,
+            type: Array,
             required:true
         },
         imgSize: {
@@ -75,8 +74,10 @@ export default defineComponent({
             return `${IMAGE_BASEURL}${props.imgSize}/${props.image}`
         })
 
+        console.log(props.categories)
+
         return {
-            fullPathImage
+            fullPathImage,
         }
     }
 })

@@ -1,7 +1,7 @@
 <template>
     <div class="similar-movie-wrapper">
         <div class="similar-movie-header">
-            <h2>Similar Movie</h2>
+            <h2>Similar {{  type === 'movie' ? 'Movies' : 'TV Shows' }}</h2>
             <div class="similar-movie-header-right">
                 <button class="cast-button" @click="prevSlide">
                     <arrowLeft />
@@ -42,7 +42,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, PropType} from 'vue';
 import MovieItem from '../components/layout/MovieItem.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { SwiperOptions } from '../utils/swiper-options';
@@ -56,6 +56,12 @@ export default defineComponent({
         SwiperSlide,
         arrowLeft,
         arrowRight
+    },
+    props: {
+        type: {
+            type: String as PropType<'movie' | 'tv'>,
+            default: 'movie'
+        }
     },
     setup() {
         const prevSlide = () => {

@@ -11,7 +11,7 @@ export interface Movie {
     poster_path: string,
     media_type: string,
     genre_ids: number[],
-    popularity: number
+    popularity: number,
     release_date: string,
     video: boolean,
     vote_average: number,

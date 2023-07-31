@@ -1,7 +1,7 @@
 <template>
     <div class="cast-wrapper">
         <div class="cast-wrapper-header">
-            <h2>Cast of Godzilla vs. Kong</h2>
+            <h2>Cast of {{title}}</h2>
             <div class="cast-wrapper-header-right">
                 <button class="cast-button" @click="prevSlide">
                     <arrowLeft />
@@ -11,11 +11,8 @@
                 </button>
             </div>
         </div>
-        <swiper 
-            :slides-per-view="SwiperOptions.cast.slidesPerView" 
-            :space-between="SwiperOptions.cast.spaceBetween"
-            :breakpoints="SwiperOptions.cast.breakpoints"
-        >
+        <swiper :slides-per-view="SwiperOptions.cast.slidesPerView" :space-between="SwiperOptions.cast.spaceBetween"
+            :breakpoints="SwiperOptions.cast.breakpoints">
             <swiper-slide v-for="i in 10" :key="i">
                 <CastItem />
             </swiper-slide>
@@ -35,12 +32,18 @@ import CastItem from '../components/layout/CastItem.vue';
 export default defineComponent({
     name: 'CastWrapper',
     components: {
-    arrowLeft,
-    arrowRight,
-    Swiper,
-    SwiperSlide,
-    CastItem
-},
+        arrowLeft,
+        arrowRight,
+        Swiper,
+        SwiperSlide,
+        CastItem
+    },
+    props: {
+        title: {
+            type: String,
+            required: true
+        }
+    },
     setup() {
         const prevSlide = () => {
             console.log('prev slide');
@@ -63,7 +66,7 @@ export default defineComponent({
     background-color: #081b27;
 
     @media screen and (max-width: 750px) {
-        // margin-top: 35rem;
+        margin-top: 35rem;
     }
 
     .cast-wrapper-header {
