@@ -1,12 +1,12 @@
 <template>
     <div class="featured">
-        <img src="https://assets.website-files.com/59f5ae906a27c400013267f0/5c3d9d0742cd15748c5a3c19_pexels-photo-312491.jpeg"
-            alt="">
+        <img :src="fullPathImage"
+            :alt="`${name} banner`">
         <div class="featured-overlay">
             <div class="container w-container">
                 <div class="featured-content">
                     <span class="large-rating-number">7.3</span>
-                    <h1>Silent Hill</h1>
+                    <h1>{{ name }}</h1>
                     <div class="info-wrapper">
                         <RatingStar :count="4" :max="5" />
                         <div class="category">
@@ -18,10 +18,7 @@
                         </div>
                     </div>
                     <p class="featured-paragraph">
-                        The film takes place in the near future, with Earth in the grip of The Blight, an
-                        airborne disease that causes food crops to turn to grey-brown powder. It rolls and
-                        billows across the land, piling up around houses and cars like the dust-drifts in Andrei
-                        Tarkovsky’s Stalker, another film in which the characters slip between time’s cogs.
+                        {{details}}
                     </p>
                     <a href="#" class="button w-button">Watch now</a>
                 </div>
@@ -36,7 +33,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import clock from '../../components/svg/outline/clock.vue';
 import RatingStar from '../../containers/RatingStar.vue';
 
@@ -45,6 +42,42 @@ export default defineComponent({
     components: {
         clock,
         RatingStar
+    },
+    props:{
+        name:{
+            type:String,
+            required:true
+        },
+        details:{
+            type:String,
+            required:true
+        },
+        image:{
+            type:String,
+            required:true
+        },
+        rating:{
+            type:Number,
+            required:true
+        },
+        categories:{
+            type:Array,
+            required:true
+        },
+        imgSize: {
+            type: String,
+            default: 'original'
+        }
+    },
+    setup(props) {
+        const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL
+        const fullPathImage = computed(() => {
+            return `${IMAGE_BASEURL}${props.imgSize}/${props.image}`
+        })
+
+        return {
+            fullPathImage
+        }
     }
 })
 </script>
@@ -55,8 +88,9 @@ export default defineComponent({
 
     img {
         width: 100%;
-        height: 100%;
+        height: 100vh;
         object-fit: cover;
+        object-position: top;
 
         @media screen and (max-width: 1150px) {
             height: 100vh;

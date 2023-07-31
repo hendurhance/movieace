@@ -10,22 +10,22 @@
                         <p>Be sure not to miss todays highlight.</p>
                     </div>
                     <div class="button-tabs">
-                        <button v-for="button in highlightsButtons" :key="button.name"
-                            :class="{ 'active': button.current }">
-                            {{ button.name }}
+                        <button v-for="(button, idx) in highlightOptions" :key="idx" @click="handleUpdateHighlight(button)"
+                            :class="button.toLowerCase() === currentHighlightTitle? 'active': ''">
+                            {{ button }}
                         </button>
                     </div>
                 </div>
                 <div class="movie-grid">
                     <div class="movie-grid-panel">
-                        <MovieItem v-for="item in highlights" :key="item.id" :title="item.title" :image="item.poster_path"
+                        <MovieItem v-for="item in currentHightLightDetails.data" :key="item.id" :title="item.title" :image="item.poster_path"
                             :rating="item.vote_average" :categories="item.genre_ids" />
                     </div>
                 </div>
             </div>
             <!-- Featured Movie Section -->
             <div class="full-width">
-                <FeaturedMovie />
+                <FeaturedMovie :name="topHightlight?.title" :details="topHightlight?.overview" :image="topHightlight?.poster_path" :categories="topHightlight?.genre_ids" :rating="topHightlight?.vote_average" />
             </div>
             <!-- New Releases Section -->
             <div class="container push-up">
@@ -51,14 +51,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref } from 'vue';
+import { computed, defineComponent, onMounted, ref, watch } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue'
 import MovieItem from '../components/layout/MovieItem.vue'
 import FeaturedMovie from '../components/layout/FeaturedMovie.vue';
 import SearchWrapper from '../containers/SearchWrapper.vue';
-import { highlightsButtons } from '../utils/button-layout.ts'
 import BaseFooter from '../components/base/BaseFooter.vue';
-import { useHighlights, Movie } from "../composables/useHighlights"
+import { useHighlights ,highLightOptions,currentHighlightTitle, currentHightLightDetails} from "../composables/useHighlights"
 export default defineComponent({
     name: 'Index',
     components: {
@@ -69,17 +68,28 @@ export default defineComponent({
         BaseFooter
     },
     setup() {
-        const { getHighlightsToday } = useHighlights()
-        const highlights = ref<Movie[]>([])
-
+        const { fetchHightlights, handleUpdateHighlight } = useHighlights()
+        type highlightButtonType = "featured" | "popular" | "new"
+        const highlightOptions = Object.keys(highLightOptions) as highlightButtonType[]
+        const topHightlight = computed(() => {
+            return currentHightLightDetails.value.data[0]
+        })
         onMounted(async () => {
-            const { data } = await getHighlightsToday()
-            highlights.value = data.value
+             await fetchHightlights()
+        })
+        watch(currentHighlightTitle, async () => {
+            console.log(currentHighlightTitle.value)
+            if(currentHightLightDetails.value.data.length === 0) {
+                await fetchHightlights()
+            }
         })
 
         return {
-            highlightsButtons,
-            highlights
+            highlightOptions,
+            currentHighlightTitle,
+            handleUpdateHighlight,
+            currentHightLightDetails,
+            topHightlight
         }
     }
 });
@@ -135,6 +145,7 @@ export default defineComponent({
             color: #3b4b57;
             background-color: #0c2738;
             cursor: pointer;
+            text-transform: capitalize;
 
             @media (max-width: 768px) {
                 margin-left: .5rem;
@@ -167,6 +178,7 @@ export default defineComponent({
         grid-template-columns: repeat(4, 1fr);
         grid-gap: 2rem;
         align-items: start;
+        min-height: 300px;
 
         @media (max-width: 880px) {
             grid-template-columns: repeat(3, 1fr);
@@ -192,7 +204,7 @@ export default defineComponent({
 }
 
 .push-up {
-    margin-top: -5rem;
+    margin-top: -2rem;
     .new-releases-title-wrapper {
         text-align: center;
 

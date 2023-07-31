@@ -1,11 +1,12 @@
 <template>
     <div class="genre-grid">
+    
         <span v-for="(genre, index) in genres" :key="index">{{ genre.name }}</span>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { Genre } from '../../composables/useGenre';
 export default defineComponent({
     name: 'GenreLists',
@@ -15,10 +16,7 @@ export default defineComponent({
             required: true
         }
     },
-    setup(props) {
-        return {
-            genres: props.genres
-        }
+    setup() {
     }
 });
 
