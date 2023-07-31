@@ -54,7 +54,7 @@ export default defineComponent({
     },
     setup() {
         const genres = ref<Genre[]>([]);
-        const { getGenres } = useGenres('movie');
+        const { getGenres } = useGenres('tv');
 
         const fetchGenres = async () => {
             const { data } = await getGenres();

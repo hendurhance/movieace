@@ -9,7 +9,7 @@
                     :search="true" 
                     :searchPlaceholder="'Search for a movie'" 
                 />
-                <GenreLists :genres="genres" />
+                <GenreLists :genres="genresFetched" />
             </div>
             <div class="container">
                 <div class="movie-meta-grid">
@@ -53,18 +53,18 @@ export default defineComponent({
         GenreLists
     },
     setup() {
-        const genres = ref<Genre[]>([]);
+        const genresFetched = ref<Genre[]>([]);
         const { getGenres } = useGenres('movie');
 
         const fetchGenres = async () => {
             const { data } = await getGenres();
-            genres.value = data.value;
-            console.log(genres.value); 
+            genresFetched.value = data.value;
+            console.log(genresFetched.value); 
         };
 
         onMounted(fetchGenres); 
         return {
-            genres
+            genresFetched
         }
     }
 });
