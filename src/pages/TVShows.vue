@@ -60,7 +60,6 @@ export default defineComponent({
         const fetchGenres = async () => {
             const { data } = await getGenres();
             genres.value = data.value;
-            console.log(genres.value);
         };
         const discoveredShows = ref<TVShowType[]>([])
         const { fetchDiscoverShows } = useTvShows();
@@ -68,7 +67,6 @@ export default defineComponent({
             const { data } = await fetchDiscoverShows(mainUrl);
             totalPage.value = data.value?.total_pages ?? 0
             discoveredShows.value = data.value?.results ?? [];
-            console.log(totalPage, pageNumber)
         }
         const handleLoadMoreTvShows = async () => {
             if (pageNumber.value < totalPage.value) {
@@ -86,7 +84,6 @@ export default defineComponent({
             pageNumber.value = 1;
             const { data } = await fetchDiscoverShows(computedFetchUrl.value);
             totalPage.value = data.value?.total_pages ?? 0
-            console.log(data.value)
             discoveredShows.value = data.value?.results ?? [];
         }
         const searchTvShows = async (searchUrl: string) => {
@@ -95,7 +92,11 @@ export default defineComponent({
         }
 
         const handleSearchTvShows = debounce(async (searchValue: string) => {
-            if (searchValue === '') return
+            if (searchValue === '') {
+                pageNumber.value = 1;
+                await handleFetchDiscoverShows();
+                return
+            }
             let searchQueryBefore: string = '';
             if (searchQueryBefore?.trim() === searchValue) return
             searchQueryBefore = searchValue

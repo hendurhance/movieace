@@ -73,7 +73,6 @@ export default defineComponent({
             const { data } = await fetchDiscoverMovies(mainUrl);
             totalPage.value = data.value?.total_pages ?? 0
             discoveredMovies.value = data.value?.results ?? [];
-            console.log(totalPage, pageNumber)
         }
         const handleLoadMoreMovies = async () => {
             if (pageNumber.value < totalPage.value) {
@@ -91,21 +90,24 @@ export default defineComponent({
             pageNumber.value = 1;
             const { data } = await fetchDiscoverMovies(computedFetchUrl.value);
             totalPage.value = data.value?.total_pages ?? 0
-            console.log(data.value)
             discoveredMovies.value = data.value?.results ?? [];
         }
-        const searchTvShows = async (searchUrl: string) => {
+        const searchMovies = async (searchUrl: string) => {
             const { data } = await fetchDiscoverMovies(searchUrl);
             discoveredMovies.value = pageNumber.value === 1 ? data.value?.results ?? [] : [...discoveredMovies.value, ...data.value?.results ?? []];
         }
 
         const handleSearchMovies = debounce(async (searchValue: string) => {
-            if (searchValue === '') return
+            if (searchValue === '') {
+                pageNumber.value = 1;
+                await handleFetchDiscoverMovies();
+                return
+            }
             let searchQueryBefore: string = '';
             if (searchQueryBefore?.trim() === searchValue) return
             searchQueryBefore = searchValue
             const searchUrl = `https://api.themoviedb.org/3/search/movie?query=${searchValue}&language=en-US&page=${pageNumber.value}`
-            await searchTvShows(searchUrl)
+            await searchMovies(searchUrl)
         }, 500)
         onMounted(() => {
             fetchGenres();
