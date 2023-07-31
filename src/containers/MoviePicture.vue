@@ -1,7 +1,7 @@
 <template>
     <div class="movie-pictures-wrapper">
         <div class="movie-picture-header">
-            <h2>Movie Pictures</h2>
+            <h2>{{ title }}</h2>
         </div>
         <div class="movie-pictures">
             <img v-for="picture in pictures" :key="picture.id" :src="picture.image" alt="movie-picture" />
@@ -54,6 +54,10 @@ export default defineComponent({
                     image: 'https://image.tmdb.org/t/p/w185/vxDIPfY2UCxSzuoxliuqyt57IoQ.jpg'
                 },
             ]
+        },
+        title: {
+            type: String,
+            default: 'Movie Pictures'
         }
     },
 });

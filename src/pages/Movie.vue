@@ -78,11 +78,11 @@ import arrowLeft from '../components/svg/outline/arrow-left.vue';
 import arrowRight from '../components/svg/outline/arrow-right.vue';
 import Clock from '../components/svg/outline/clock.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
-import 'swiper/css';
 import { SwiperOptions } from '../utils/swiper-options';
 import SimilarMovie from '../containers/SimilarMovie.vue';
 import MoviePicture from '../containers/MoviePicture.vue';
 import CastWrapper from '../containers/CastWrapper.vue';
+import 'swiper/css';
 export default defineComponent({
     name: 'Movie',
     components: {

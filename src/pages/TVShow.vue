@@ -15,7 +15,7 @@
                                 <div class="info-wrapper">
                                     <RatingStar :count="votingToRating(7.4, 5)" :max="5" />
                                     <div class="category">
-                                        <tag />
+                                        <Tag />
                                         <div class="categories">
                                             <span>Action</span>
                                             <span>Adventure</span>
@@ -58,7 +58,7 @@
                     <div class="header-wrapper-header">
                         <h2>Seasons</h2>
                         <div class="season-wrapper-count">
-                            <span><strong>Season</strong>: 1</span> <!-- No. of Seasons-->
+                            <span><strong>Seasons</strong>: 1</span> <!-- No. of Seasons-->
                             <span><strong>Episodes</strong>: 6</span> <!-- No. of Episodes-->
                         </div>
                     </div>
@@ -100,6 +100,9 @@ import ArrowRight from '../components/svg/outline/arrow-right.vue';
 import CastWrapper from '../containers/CastWrapper.vue';
 import MoviePicture from '../containers/MoviePicture.vue';
 import SimilarMovie from '../containers/SimilarMovie.vue';
+import RatingStar from '../containers/RatingStar.vue';
+import Tag from '../components/svg/outline/tag.vue';
+import Clock from '../components/svg/outline/clock.vue';
 export default defineComponent({
     name: 'TVShow',
     components: {
@@ -109,7 +112,10 @@ export default defineComponent({
     ArrowRight,
     CastWrapper,
     MoviePicture,
-    SimilarMovie
+    SimilarMovie,
+    RatingStar,
+    Tag,
+    Clock
 },
     setup() {
         const movieBackgroundImage = ref('https://image.tmdb.org/t/p/w1280/f5ZMzzCvt2IzVDxr54gHPv9jlC9.jpg');

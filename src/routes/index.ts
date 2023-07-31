@@ -57,11 +57,16 @@ const routes: Array<RouteRecordRaw> = [
         'name': 'TVShow',
         'component': () => import('../pages/TVShow.vue')
     },
-    // {
-    //     'path': '/actors/:id',
-    //     'name': 'Actor',
-    //     'component': () => import('../pages/Actor.vue')
-    // },
+    {
+        'path': '/actor/:id',
+        'name': 'Actor',
+        'component': () => import('../pages/Actor.vue')
+    },
+    {
+        'path': '/search',
+        'name': 'Search',
+        'component': () => import('../pages/Search.vue')
+    },
 ];
 
 const router = createRouter({
