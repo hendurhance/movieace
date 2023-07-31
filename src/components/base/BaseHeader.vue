@@ -102,6 +102,7 @@ header {
             padding: 1.2rem 0;
             box-shadow: 0 0 40px 0 rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease-in-out;
+            z-index: 99;
 
             a {
                 margin: 0;

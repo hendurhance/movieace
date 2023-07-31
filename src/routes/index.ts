@@ -47,21 +47,16 @@ const routes: Array<RouteRecordRaw> = [
             showInHeader: true
         }
     },
-    // {
-    //     'path': '/providers',
-    //     'name': 'Providers',
-    //     'component': () => import('../pages/Providers.vue')
-    // },
     {
         'path': '/movie/:id',
         'name': 'Movie',
         'component': () => import('../pages/Movie.vue'),
     },
-    // {
-    //     'path': '/tv-shows/:id',
-    //     'name': 'TVShow',
-    //     'component': () => import('../pages/TVShow.vue')
-    // },
+    {
+        'path': '/tv-show/:id',
+        'name': 'TVShow',
+        'component': () => import('../pages/TVShow.vue')
+    },
     // {
     //     'path': '/actors/:id',
     //     'name': 'Actor',
