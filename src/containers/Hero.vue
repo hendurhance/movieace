@@ -7,7 +7,7 @@
                 <input 
                 type="text" 
                 :placeholder="searchPlaceholder" 
-                @input="handleInput($event as InputEvent)"
+                @input="$emit('search', searchValue.trim())"
                  v-model="searchValue" 
                 @focus="showClearButton = true"
                 />
@@ -52,10 +52,11 @@ export default defineComponent({
         const searchValue = ref('');
         const showClearButton = ref(false);
 
-        // Update the input value when the user types
-        const handleInput = (event: InputEvent) => {
-        searchValue.value = (event.target as HTMLInputElement).value;
-        };
+        // // Update the input value when the user types
+        // const handleInput = (event: InputEvent) => {
+        // searchValue.value = (event.target as HTMLInputElement).value;
+
+        // };
 
         // Clear the input and hide the clear button
         const clearInput = () => {
@@ -72,7 +73,7 @@ export default defineComponent({
             searchPlaceholder: props.searchPlaceholder,
             searchValue,
             showClearButton,
-            handleInput,
+            // handleInput,
             clearInput,
         }
     }

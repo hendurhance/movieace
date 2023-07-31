@@ -1,11 +1,10 @@
 <template>
     <div class="featured">
-        <img :src="fullPathImage"
-            :alt="`${name} banner`">
+        <img :src="fullPathImage" :alt="`${name} banner`">
         <div class="featured-overlay">
             <div class="container w-container">
                 <div class="featured-content">
-                    <span class="large-rating-number">7.3</span>
+                    <span class="large-rating-number">{{ rating }}</span>
                     <h1>{{ name }}</h1>
                     <div class="info-wrapper">
                         <RatingStar :count="4" :max="5" />
@@ -14,11 +13,11 @@
                         </div>
                         <div class="date-created">
                             <clock />
-                            <span>July 24th, 2023</span>
+                            <span>{{fullDate}}</span>
                         </div>
                     </div>
                     <p class="featured-paragraph">
-                        {{details}}
+                        {{ details }}
                     </p>
                     <a href="#" class="button w-button">Watch now</a>
                 </div>
@@ -33,7 +32,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from 'vue';
+import { PropType, computed, defineComponent, onMounted, ref } from 'vue';
 import clock from '../../components/svg/outline/clock.vue';
 import RatingStar from '../../containers/RatingStar.vue';
 
@@ -43,30 +42,34 @@ export default defineComponent({
         clock,
         RatingStar
     },
-    props:{
-        name:{
-            type:String,
-            required:true
+    props: {
+        name: {
+            type: String,
+            required: true
         },
-        details:{
-            type:String,
-            required:true
+        details: {
+            type: String,
+            required: true
         },
-        image:{
-            type:String,
-            required:true
+        image: {
+            type: String,
+            required: true
         },
-        rating:{
-            type:Number,
-            required:true
+        rating: {
+            type: Number,
+            required: true
         },
-        categories:{
-            type:Array,
-            required:true
+        categories: {
+            type: Array as PropType<number[]>,
+            required: true
         },
         imgSize: {
             type: String,
             default: 'original'
+        },
+        date: {
+            type: String,
+            required: true
         }
     },
     setup(props) {
@@ -74,9 +77,16 @@ export default defineComponent({
         const fullPathImage = computed(() => {
             return `${IMAGE_BASEURL}${props.imgSize}/${props.image}`
         })
-
+        const fullDate = computed(() => {
+            return new Date(props.date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            })
+        })
         return {
-            fullPathImage
+            fullPathImage,
+            fullDate
         }
     }
 })
@@ -153,7 +163,7 @@ export default defineComponent({
                     }
 
                     @media screen and (max-width: 680px) {
-                       font-size: 1rem;
+                        font-size: 1rem;
                     }
                 }
 
