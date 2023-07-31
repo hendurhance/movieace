@@ -6,7 +6,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from 'vue';
+import {  defineComponent } from 'vue';
 import { Genre } from '../../composables/useGenre';
 export default defineComponent({
     name: 'GenreLists',

@@ -51,7 +51,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, ref, watch } from 'vue';
+import { computed, defineComponent, onMounted, watch } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue'
 import MovieItem from '../components/layout/MovieItem.vue'
 import FeaturedMovie from '../components/layout/FeaturedMovie.vue';
