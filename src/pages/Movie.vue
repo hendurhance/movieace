@@ -53,7 +53,7 @@
                 </div>
             </div>
             <div class="container">
-                <CastWrapper :title="'Godzilla vs. Kong'" />
+                <CastWrapper :title="'Cast of Godzilla vs. Kong'" />
             </div>
             <div class="container">
                 <MoviePicture />

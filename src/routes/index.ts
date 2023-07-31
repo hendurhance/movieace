@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 declare module 'vue-router' {
     interface RouteMeta {
-        showInHeader?: boolean
+        showInHeader?: boolean,
+        title?: string
     }
 }
 
@@ -12,7 +13,8 @@ const routes: Array<RouteRecordRaw> = [
         name: 'Home',
         component: () => import('../pages/Index.vue'),
         meta: {
-            showInHeader: true
+            showInHeader: true,
+            title: 'Home'
         }
     },
     {
@@ -20,7 +22,8 @@ const routes: Array<RouteRecordRaw> = [
         name: 'Movies',
         component: () => import('../pages/Movies.vue'),
         meta: {
-            showInHeader: true
+            showInHeader: true,
+            title: 'Movies'
         }
     },
     {
@@ -28,7 +31,8 @@ const routes: Array<RouteRecordRaw> = [
         name: 'NotFound',
         component: () => import('../pages/NotFound.vue'),
         meta: {
-            showInHeader: false
+            showInHeader: false,
+            title: 'Not Found'
         }
     },
     {
@@ -36,7 +40,8 @@ const routes: Array<RouteRecordRaw> = [
         name: 'TVShows',
         component: () => import('../pages/TVShows.vue'),
         meta: {
-            showInHeader: true
+            showInHeader: true,
+            title: 'TV Shows'
         }
     },
     {
@@ -44,28 +49,45 @@ const routes: Array<RouteRecordRaw> = [
         'name': 'Actors',
         'component': () => import('../pages/Actors.vue'),
         meta: {
-            showInHeader: true
+            showInHeader: true,
+            title: 'Actors'
         }
     },
     {
         'path': '/movie/:id',
         'name': 'Movie',
         'component': () => import('../pages/Movie.vue'),
+        meta: {
+            showInHeader: false,
+            title: 'Movie'
+        }
     },
     {
         'path': '/tv-show/:id',
         'name': 'TVShow',
-        'component': () => import('../pages/TVShow.vue')
+        'component': () => import('../pages/TVShow.vue'),
+        meta: {
+            showInHeader: false,
+            title: 'TV Show'
+        }
     },
     {
         'path': '/actor/:id',
         'name': 'Actor',
-        'component': () => import('../pages/Actor.vue')
+        'component': () => import('../pages/Actor.vue'),
+        meta: {
+            showInHeader: false,
+            title: 'Actor'
+        }
     },
     {
         'path': '/search',
         'name': 'Search',
-        'component': () => import('../pages/Search.vue')
+        'component': () => import('../pages/Search.vue'),
+        meta: {
+            showInHeader: false,
+            title: 'Search'
+        }
     },
 ];
 

@@ -1,8 +1,8 @@
 <template>
-    <div class="cast-wrapper">
-        <div class="cast-wrapper-header">
-            <h2>{{title}}</h2>
-            <div class="cast-wrapper-header-right">
+    <div class="search-result-wrapper">
+        <div class="search-result-header">
+            <h2>{{  type === 'movie' ? 'Movies' : 'TV Shows' }} Results</h2>
+            <div class="search-result-header-right">
                 <button class="cast-button" @click="prevSlide">
                     <arrowLeft />
                 </button>
@@ -11,74 +11,89 @@
                 </button>
             </div>
         </div>
-        <swiper :slides-per-view="SwiperOptions.cast.slidesPerView" :space-between="SwiperOptions.cast.spaceBetween"
-            :breakpoints="SwiperOptions.cast.breakpoints">
-            <swiper-slide v-for="i in 10" :key="i">
-                <CastItem />
-            </swiper-slide>
-        </swiper>
+        <Swiper :slidesPerView="SwiperOptions.similar.slidesPerView" :spaceBetween="SwiperOptions.similar.spaceBetween"
+            :breakpoints="SwiperOptions.similar.breakpoints">
+            <Swiper-Slide>
+                <MovieItem />
+            </Swiper-Slide>
+            <Swiper-Slide>
+                <MovieItem />
+            </Swiper-Slide>
+            <Swiper-Slide>
+                <MovieItem />
+            </Swiper-Slide>
+            <Swiper-Slide>
+                <MovieItem />
+            </Swiper-Slide>
+            <Swiper-Slide>
+                <MovieItem />
+            </Swiper-Slide>
+            <Swiper-Slide>
+                <MovieItem />
+            </Swiper-Slide>
+            <Swiper-Slide>
+                <MovieItem />
+            </Swiper-Slide>
+            <Swiper-Slide>
+                <MovieItem />
+            </Swiper-Slide>
+        </Swiper>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, PropType} from 'vue';
+import MovieItem from '../components/layout/MovieItem.vue';
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import { SwiperOptions } from '../utils/swiper-options';
 import arrowLeft from '../components/svg/outline/arrow-left.vue';
 import arrowRight from '../components/svg/outline/arrow-right.vue';
-import { Swiper, SwiperSlide } from 'swiper/vue';
-import 'swiper/css';
-import { SwiperOptions } from '../utils/swiper-options';
-import CastItem from '../components/layout/CastItem.vue';
-
 export default defineComponent({
-    name: 'CastWrapper',
+    name: 'SearchResults',
     components: {
-        arrowLeft,
-        arrowRight,
+        MovieItem,
         Swiper,
         SwiperSlide,
-        CastItem
+        arrowLeft,
+        arrowRight
     },
     props: {
-        title: {
-            type: String,
-            required: true
+        type: {
+            type: String as PropType<'movie' | 'tv'>,
+            default: 'movie'
         }
     },
     setup() {
         const prevSlide = () => {
             console.log('prev slide');
         };
+
         const nextSlide = () => {
             console.log('next slide');
         };
+
         return {
-            nextSlide,
             prevSlide,
+            nextSlide,
             SwiperOptions
-        };
+        }
     }
 });
 </script>
 
-<style lang="scss" scoped>
-.cast-wrapper {
+<style scoped lang="scss">
+.search-result-wrapper {
     padding: 4rem 0;
-    background-color: #081b27;
 
-    @media screen and (max-width: 750px) {
-        margin-top: 35rem;
-    }
-
-    .cast-wrapper-header {
+    .search-result-header {
+        color: #fff;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 2rem;
 
         h2 {
             font-size: 2.5rem;
             font-weight: 700;
-            color: #fff;
 
             @media screen and (max-width: 1185px) {
                 font-size: 2rem;
@@ -93,7 +108,7 @@ export default defineComponent({
             }
         }
 
-        .cast-wrapper-header-right {
+        .search-result-header-right {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -115,11 +130,15 @@ export default defineComponent({
                 justify-content: center;
             }
         }
-
-        .swiper-button-prev {
-            margin-right: 1rem;
-        }
     }
 
+    .search-result-grid {
+        @media (min-width: 1185px) {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+    }
 }
 </style>
