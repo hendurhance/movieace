@@ -18,14 +18,14 @@
                 </div>
                 <div class="movie-grid">
                     <div class="movie-grid-panel">
-                        <MovieItem v-for="item in currentHightLightDetails.data" :key="item.id" :title="item.title" :image="item.poster_path"
+                        <MovieItem v-for="item in currentHighLightDetails.data" :key="item.id" :title="item.title" :image="item.poster_path"
                             :rating="item.vote_average" :categories="item.genre_ids" />
                     </div>
                 </div>
             </div>
             <!-- Featured Movie Section -->
             <div class="full-width">
-                <FeaturedMovie :name="topHightlight?.title" :details="topHightlight?.overview" :image="topHightlight?.poster_path" :categories="topHightlight?.genre_ids" :rating="topHightlight?.vote_average" />
+                <FeaturedMovie :name="topHighlight?.title" :details="topHighlight?.overview" :image="topHighlight?.poster_path" :categories="topHighlight?.genre_ids" :rating="topHighlight?.vote_average" />
             </div>
             <!-- New Releases Section -->
             <div class="container push-up">
@@ -57,7 +57,7 @@ import MovieItem from '../components/layout/MovieItem.vue'
 import FeaturedMovie from '../components/layout/FeaturedMovie.vue';
 import SearchWrapper from '../containers/SearchWrapper.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
-import { useHighlights ,highLightOptions,currentHighlightTitle, currentHightLightDetails} from "../composables/useHighlights"
+import { useHighlights ,highLightOptions,currentHighlightTitle, currentHighLightDetails} from "../composables/useHighlights"
 export default defineComponent({
     name: 'Index',
     components: {
@@ -68,19 +68,19 @@ export default defineComponent({
         BaseFooter
     },
     setup() {
-        const { fetchHightlights, handleUpdateHighlight } = useHighlights()
+        const { fetchHighlights, handleUpdateHighlight } = useHighlights()
         type highlightButtonType = "featured" | "popular" | "new"
         const highlightOptions = Object.keys(highLightOptions) as highlightButtonType[]
-        const topHightlight = computed(() => {
-            return currentHightLightDetails.value.data[0]
+        const topHighlight = computed(() => {
+            return currentHighLightDetails.value.data[0]
         })
         onMounted(async () => {
-             await fetchHightlights()
+             await fetchHighlights()
         })
         watch(currentHighlightTitle, async () => {
             console.log(currentHighlightTitle.value)
-            if(currentHightLightDetails.value.data.length === 0) {
-                await fetchHightlights()
+            if(currentHighLightDetails.value.data.length === 0) {
+                await fetchHighlights()
             }
         })
 
@@ -88,8 +88,8 @@ export default defineComponent({
             highlightOptions,
             currentHighlightTitle,
             handleUpdateHighlight,
-            currentHightLightDetails,
-            topHightlight
+            currentHighLightDetails,
+            topHighlight
         }
     }
 });

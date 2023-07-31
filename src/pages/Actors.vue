@@ -28,6 +28,7 @@
                 </div>
             </div>
         </section>
+        <BaseFooter />
     </div>
 </template>
 
@@ -36,12 +37,14 @@ import { defineComponent } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue';
 import Hero from '../containers/Hero.vue';
 import ActorItem from '../components/layout/ActorItem.vue';
+import BaseFooter from '../components/base/BaseFooter.vue';
 export default defineComponent({
     name: 'Actors',
     components: {
     BaseHeader,
     Hero,
-    ActorItem
+    ActorItem,
+    BaseFooter
 }
 });
 </script>

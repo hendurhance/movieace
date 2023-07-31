@@ -168,4 +168,4 @@ export default defineComponent({
         }
     }
 }
-</style>../../composables/useGenresList
+</style>

@@ -52,11 +52,11 @@ const routes: Array<RouteRecordRaw> = [
     //     'name': 'Providers',
     //     'component': () => import('../pages/Providers.vue')
     // },
-    // {
-    //     'path': '/movies/:id',
-    //     'name': 'Movie',
-    //     'component': () => import('../pages/Movie.vue')
-    // },
+    {
+        'path': '/movie/:id',
+        'name': 'Movie',
+        'component': () => import('../pages/Movie.vue'),
+    },
     // {
     //     'path': '/tv-shows/:id',
     //     'name': 'TVShow',
