@@ -32,7 +32,7 @@
 </template>
 
 <script lang="ts">
-import { PropType, computed, defineComponent, onMounted, ref } from 'vue';
+import { PropType, computed, defineComponent } from 'vue';
 import clock from '../../components/svg/outline/clock.vue';
 import RatingStar from '../../containers/RatingStar.vue';
 
