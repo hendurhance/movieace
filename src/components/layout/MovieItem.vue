@@ -116,6 +116,7 @@ export default defineComponent({
                 width: 100%;
                 height: 220px;
                 object-fit: cover;
+                object-position: top 50%;
             }
 
             &:hover {
