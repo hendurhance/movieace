@@ -92,7 +92,7 @@ export default defineComponent({
             currentHighlightTitle,
             handleUpdateHighlight,
             currentHighLightDetails,
-            topHighlight
+            topHighlight,
             newShows
         }
     }
