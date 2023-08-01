@@ -35,7 +35,6 @@
 import { PropType, computed, defineComponent } from 'vue';
 import clock from '../../components/svg/outline/clock.vue';
 import RatingStar from '../../containers/RatingStar.vue';
-
 export default defineComponent({
     name: 'FeaturedMovie',
     components: {
@@ -62,6 +61,7 @@ export default defineComponent({
         categories: {
             type: Array as PropType<number[]>,
             required: true
+
         },
         imgSize: {
             type: String,
@@ -77,13 +77,17 @@ export default defineComponent({
         const fullPathImage = computed(() => {
             return `${IMAGE_BASEURL}${props.imgSize}/${props.image}`
         })
-        const fullDate = computed(() => {
+
+        console.log(props.categories)
+        
+         const fullDate = computed(() => {
             return new Date(props.date).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
             })
         })
+       
         return {
             fullPathImage,
             fullDate

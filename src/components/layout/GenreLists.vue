@@ -36,7 +36,7 @@ export default defineComponent({
         cursor: pointer;
         transition: all 0.2s ease-in-out;
         &:hover {
-            background-color: #f1b722;
+            background-color: #9a6e00;
             color: #fff;
         }
     }

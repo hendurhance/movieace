@@ -11,7 +11,7 @@ export interface Movie {
     poster_path: string,
     media_type: string,
     genre_ids: number[],
-    popularity: number
+    popularity: number,
     release_date: string,
     video: boolean,
     vote_average: number,
@@ -42,18 +42,18 @@ export const highLightOptions = reactive<
         data: []
     }
 })
-export const currentHightLightDetails = computed(() => {
+export const currentHighLightDetails = computed(() => {
     return highLightOptions[currentHighlightTitle.value]
 })
 
 export const useHighlights = () => {
-    const fetchHightlights = async () => {
+    const fetchHighlights = async () => {
         let loading = ref(false)
         let error = ref("")
         let data = ref<Movie[]>([])
         try {
             loading.value = true
-            const req = useAxios().get(currentHightLightDetails.value.url)
+            const req = useAxios().get(currentHighLightDetails.value.url)
             const res = (await req).data
             if (res.results) {
                 highLightOptions[currentHighlightTitle.value].data = res.results
@@ -97,7 +97,7 @@ export const useHighlights = () => {
     // }
     return {
         // getHighlightsToday,
-        fetchHightlights,
+        fetchHighlights,
         handleUpdateHighlight
     }
 }

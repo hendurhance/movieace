@@ -17,6 +17,7 @@
                 </div>
             </div>
         </section>
+        <BaseFooter />
     </div>
 </template>
 
@@ -26,6 +27,7 @@ import { computed, defineComponent, onMounted, ref } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue';
 import Hero from '../containers/Hero.vue';
 import ActorItem from '../components/layout/ActorItem.vue';
+import BaseFooter from '../components/base/BaseFooter.vue';
 import { useActor, Actor } from '../composables/useActor';
 import debounce from 'lodash.debounce';
 export default defineComponent({
@@ -35,6 +37,7 @@ export default defineComponent({
         Hero,
         ActorItem,
         search,
+        BaseFooter
     },
     setup(){
         const pageNumber = ref<number>(1);

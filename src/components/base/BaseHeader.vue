@@ -6,7 +6,7 @@
             </a>
             <nav id="navigation">
                 <RouterLink v-for="route in routes" :key="route.name" :to="route.path">
-                    {{ route.name }}
+                    {{ route.meta?.title }}
                 </RouterLink>
             </nav>
             <div class="menu-button">
@@ -82,7 +82,6 @@ header {
                 font-weight: 400;
                 text-decoration: none;
                 margin-left: 1.2rem;
-                text-transform: uppercase;
             }
         }
 
@@ -102,6 +101,7 @@ header {
             padding: 1.2rem 0;
             box-shadow: 0 0 40px 0 rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease-in-out;
+            z-index: 99;
 
             a {
                 margin: 0;
