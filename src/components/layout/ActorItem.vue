@@ -32,7 +32,7 @@ export default defineComponent({
         },
         imgSize: {
             type: String,
-            default: 'w500'
+            default: 'w300'
         },
         popularity: {
             type: Number,

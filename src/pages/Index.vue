@@ -25,7 +25,7 @@
             </div>
             <!-- Featured Movie Section -->
             <div class="full-width">
-                <FeaturedMovie :name="topHighlight?.title" :details="topHighlight?.overview" :image="topHighlight?.poster_path" :categories="topHighlight?.genre_ids" :rating="topHighlight?.vote_average" />
+                <FeaturedMovie :name="topHightlight?.title" :details="topHightlight?.overview" :image="topHightlight?.poster_path" :categories="topHightlight?.genre_ids" :rating="topHightlight?.vote_average" :date="topHightlight?.release_date"/>
             </div>
             <!-- New Releases Section -->
             <div class="container push-up">
@@ -35,12 +35,8 @@
                 </div>
                 <div class="new-releases-row">
                     <div class="column">
-                        <MovieItem :size="'small'" />
-                        <MovieItem :size="'small'" />
-                        <MovieItem :size="'small'" />
-                        <MovieItem :size="'small'" />
-                        <MovieItem :size="'small'" />
-                        <MovieItem :size="'small'" />
+                        <MovieItem v-for="item in newShows" :key="item.id" :size="'small'" :title="item.name" :image="item.poster_path"
+                            :rating="item.vote_average" :categories="item.genre_ids" />
                     </div>
                 </div>
                 <SearchWrapper />
@@ -58,6 +54,7 @@ import FeaturedMovie from '../components/layout/FeaturedMovie.vue';
 import SearchWrapper from '../containers/SearchWrapper.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
 import { useHighlights ,highLightOptions,currentHighlightTitle, currentHighLightDetails} from "../composables/useHighlights"
+import { useTvShows,newShows } from '../composables/useTvShows';
 export default defineComponent({
     name: 'Index',
     components: {
@@ -69,14 +66,20 @@ export default defineComponent({
     },
     setup() {
         const { fetchHighlights, handleUpdateHighlight } = useHighlights()
+        const { fetchNewShows } = useTvShows()
         type highlightButtonType = "featured" | "popular" | "new"
         const highlightOptions = Object.keys(highLightOptions) as highlightButtonType[]
         const topHighlight = computed(() => {
-            return currentHighLightDetails.value.data[0]
+            return highLightOptions['featured'].data[0]
         })
+
         onMounted(async () => {
-             await fetchHighlights()
-        })
+            await Promise.all([
+                fetchHighlights(),
+                fetchNewShows()
+            ])
+         })
+
         watch(currentHighlightTitle, async () => {
             console.log(currentHighlightTitle.value)
             if(currentHighLightDetails.value.data.length === 0) {
@@ -90,6 +93,7 @@ export default defineComponent({
             handleUpdateHighlight,
             currentHighLightDetails,
             topHighlight
+            newShows
         }
     }
 });

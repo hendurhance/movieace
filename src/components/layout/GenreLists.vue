@@ -1,6 +1,6 @@
 <template>
     <div class="genre-grid">
-        <span v-for="(genre, index) in genres" :key="index">{{ genre.name }}</span>
+        <span v-for="(genre, index) in genres" :key="index" @click="$emit('genreClick', genre)">{{ genre.name }}</span>
     </div>
 </template>
 
