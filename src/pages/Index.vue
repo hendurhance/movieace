@@ -25,7 +25,7 @@
             </div>
             <!-- Featured Movie Section -->
             <div class="full-width">
-                <FeaturedMovie :name="topHightlight?.title" :details="topHightlight?.overview" :image="topHightlight?.poster_path" :categories="topHightlight?.genre_ids" :rating="topHightlight?.vote_average" :date="topHightlight?.release_date"/>
+                <FeaturedMovie :name="topHighlight?.title" :details="topHighlight?.overview" :image="topHighlight?.poster_path" :categories="topHighlight?.genre_ids" :rating="topHighlight?.vote_average" :date="topHighlight?.release_date"/>
             </div>
             <!-- New Releases Section -->
             <div class="container push-up">
