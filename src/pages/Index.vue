@@ -18,14 +18,14 @@
                 </div>
                 <div class="movie-grid">
                     <div class="movie-grid-panel">
-                        <MovieItem v-for="item in currentHighLightDetails.data" :key="item.id" :title="item.title" :image="item.poster_path"
+                        <MovieItem v-for="item in currentHighLightDetails.data" :key="item.id" :title="item.title" :image="item.poster_path" :movie-id="item.id"
                             :rating="item.vote_average" :categories="item.genre_ids" />
                     </div>
                 </div>
             </div>
             <!-- Featured Movie Section -->
             <div class="full-width">
-                <FeaturedMovie :name="topHighlight?.title" :details="topHighlight?.overview" :image="topHighlight?.poster_path" :categories="topHighlight?.genre_ids" :rating="topHighlight?.vote_average" :date="topHighlight?.release_date"/>
+                <FeaturedMovie :movie-id="topHighlight?.id" :name="topHighlight?.title" :details="topHighlight?.overview" :image="topHighlight?.poster_path" :categories="topHighlight?.genre_ids" :rating="topHighlight?.vote_average" :date="topHighlight?.release_date"/>
             </div>
             <!-- New Releases Section -->
             <div class="container push-up">
@@ -35,7 +35,7 @@
                 </div>
                 <div class="new-releases-row">
                     <div class="column">
-                        <MovieItem v-for="item in newShows" :key="item.id" :size="'small'" :title="item.name" :image="item.poster_path"
+                        <MovieItem v-for="item in newShows" :key="item.id" :size="'small'" :title="item.name" :image="item.poster_path" :movie-id="item.id"
                             :rating="item.vote_average" :categories="item.genre_ids" />
                     </div>
                 </div>
@@ -55,6 +55,7 @@ import SearchWrapper from '../containers/SearchWrapper.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
 import { useHighlights ,highLightOptions,currentHighlightTitle, currentHighLightDetails} from "../composables/useHighlights"
 import { useTvShows,newShows } from '../composables/useTvShows';
+import { handleMovieClick } from '../composables/useMovies';
 export default defineComponent({
     name: 'Index',
     components: {
@@ -93,7 +94,8 @@ export default defineComponent({
             handleUpdateHighlight,
             currentHighLightDetails,
             topHighlight,
-            newShows
+            newShows,
+            handleMovieClick
         }
     }
 });

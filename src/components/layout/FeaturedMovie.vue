@@ -19,7 +19,7 @@
                     <p class="featured-paragraph">
                         {{ details }}
                     </p>
-                    <a href="#" class="button w-button">Watch now</a>
+                    <router-link :to="`/movie/${movieId}`" class="button w-button">Watch now</router-link>
                 </div>
             </div>
         </div>
@@ -42,6 +42,10 @@ export default defineComponent({
         RatingStar
     },
     props: {
+        movieId: {
+            type: Number,
+            required: true
+        },
         name: {
             type: String,
             required: true

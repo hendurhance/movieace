@@ -1,12 +1,12 @@
 <template>
     <div class="movie-list-item">
-        <a href="#">
+        <router-link :to="`/movie/${movieId}`">
             <img :src="fullPathImage" alt="Movie poster" :class="size" />
             <h5>{{title}}</h5>
             <div class="rating-number">
                 <span>{{ rating.toFixed(1) }}</span>
             </div>
-        </a>
+        </router-link>
         <div class="info-block">
             <RatingStar :count="votingToRating(rating, 5)" :max="5" />
             <div class="category">
@@ -33,6 +33,10 @@ export default defineComponent({
         tag,
     },
     props: {
+        movieId: {
+            type: Number,
+            required: true
+        },
         size: {
             type: String,
             default: 'large'
@@ -116,7 +120,7 @@ export default defineComponent({
                 width: 100%;
                 height: 220px;
                 object-fit: cover;
-                object-position: top 50%;
+                object-position: top;
             }
 
             &:hover {
