@@ -11,23 +11,25 @@
                 </button>
             </div>
         </div>
-        <swiper :slides-per-view="SwiperOptions.cast.slidesPerView" :space-between="SwiperOptions.cast.spaceBetween"
-            :breakpoints="SwiperOptions.cast.breakpoints">
-            <swiper-slide v-for="i in 10" :key="i">
-                <CastItem />
+        <swiper :slides-per-view="SwiperOptions.cast.slidesPerView" :space-between="SwiperOptions.cast.spaceBetween" ref="swiper"
+            :breakpoints="SwiperOptions.cast.breakpoints" navigation>
+            <swiper-slide v-for="i in casts" :key="i.id">
+                <CastItem :cast="i" />
             </swiper-slide>
         </swiper>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { PropType, defineComponent, ref } from 'vue';
 import arrowLeft from '../components/svg/outline/arrow-left.vue';
 import arrowRight from '../components/svg/outline/arrow-right.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import 'swiper/css';
 import { SwiperOptions } from '../utils/swiper-options';
 import CastItem from '../components/layout/CastItem.vue';
+import {Cast} from "../composables/useMovies" 
+
 
 export default defineComponent({
     name: 'CastWrapper',
@@ -41,12 +43,17 @@ export default defineComponent({
     props: {
         title: {
             type: String,
-            required: true
+            default: ''
+        },
+        casts:{
+            type: Array as PropType<Cast[]>,
+            default: () => []
         }
     },
     setup() {
         const prevSlide = () => {
-            console.log('prev slide');
+            console.log('prev slide')
+
         };
         const nextSlide = () => {
             console.log('next slide');

@@ -1,6 +1,6 @@
 <template>
     <div class="cast-item">
-        <img :src="cast.profile_path" alt="">
+        <img :src="useWebImage(cast.profile_path)" :alt="`${cast.name} image`">
         <span>{{ cast.name }}</span>
         <span>{{ cast.character }}</span>
     </div>
@@ -9,7 +9,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { SwiperSlide } from 'swiper/vue';
-
+import { useWebImage } from '../../utils/useWebImage';
 interface Cast {
     id: number;
     name: string;
@@ -35,7 +35,8 @@ export default defineComponent({
     },
     setup(props) {
         return {
-            cast: props.cast
+            cast: props.cast,
+            useWebImage
         }
     }
 })

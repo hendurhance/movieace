@@ -47,10 +47,10 @@
                 </div>
             </div>
             <div class="container">
-                <CastWrapper :title="'Cast of Godzilla vs. Kong'" />
+                <CastWrapper :title="movie?.title" :casts="movieCredit?.cast" />
             </div>
             <div class="container">
-                <MoviePicture />
+                <MoviePicture :pictures="movieImages?.posters" />
             </div>
             <div class="container">
                 <SimilarMovie />
@@ -61,7 +61,7 @@
 </template>
 
 <script lang="ts">
-import { Ref, computed, defineComponent, ref } from "vue";
+import { Ref, computed, defineComponent, onMounted, ref } from "vue";
 import BaseHeader from "../components/base/BaseHeader.vue";
 import BaseFooter from "../components/base/BaseFooter.vue";
 import RatingStar from "../containers/RatingStar.vue";
@@ -76,7 +76,7 @@ import { SwiperOptions } from "../utils/swiper-options";
 import SimilarMovie from "../containers/SimilarMovie.vue";
 import MoviePicture from "../containers/MoviePicture.vue";
 import CastWrapper from "../containers/CastWrapper.vue";
-import { useMovies, MovieDetails } from "../composables/useMovies";
+import { useMovies, MovieDetails, MovieCredit,MovieImages,MovieResponse } from "../composables/useMovies";
 import "swiper/css";
 import { useRoute } from "vue-router";
 export default defineComponent({
@@ -100,12 +100,30 @@ export default defineComponent({
         const route = useRoute();
         console.log(route.params.id);
         const movieId = ref(route.params.id) as Ref<string>;
-        const { fetchMovie } = useMovies();
+        const { fetchMovie,fetchMovieCredits, fetchMovieImages,fetchSimilarMovies } = useMovies();
         const movie = ref<MovieDetails>();
+        const movieCredit = ref<MovieCredit>()
+        const movieImages = ref<MovieImages>()
+        const similarMovies = ref<MovieResponse>()
         const handleFetchMovie = async () => {
             const { data } = await fetchMovie(movieId.value);
             movie.value = data.value;
             console.log(movie.value);
+        };
+        const handleFetchMovieCredits = async () => {
+            const { data } = await fetchMovieCredits(movieId.value);
+            movieCredit.value = data.value;
+            console.log(movieCredit.value);
+        };
+        const handleFetchMovieImages = async () => {
+            const { data } = await fetchMovieImages(movieId.value);
+            movieImages.value = data.value;
+            console.log(movieImages.value);
+        };
+        const handleFetchSimilarMovies = async () => {
+            const { data } = await fet(movieId.value);
+            movieImages.value = data.value;
+            console.log(movieImages.value);
         };
         const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL;
 
@@ -127,8 +145,16 @@ export default defineComponent({
             if (!movie.value?.spoken_languages) return "";
             return movie.value?.spoken_languages.map((i) => i.name).join(", ");
         });
-        // const com
+
         handleFetchMovie();
+        onMounted(() => {
+            Promise.all([
+                handleFetchMovieCredits(),
+                handleFetchMovieImages(),
+                handleFetchSimilarMovies()
+            ])
+        })
+
         const movieBackgroundImage = ref(
             "https://image.tmdb.org/t/p/w1280/9yBVqNruk6Ykrwc32qrK2TIE5xw.jpg"
         );
@@ -155,7 +181,10 @@ export default defineComponent({
             movie,
             computedMovieDuration,
             computedCountry,
-            computedLanguage
+            computedLanguage,
+            movieCredit,
+            movieImages,
+            similarMovies
         };
     },
 });

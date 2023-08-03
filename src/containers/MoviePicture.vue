@@ -4,22 +4,21 @@
             <h2>{{ title }}</h2>
         </div>
         <div class="movie-pictures">
-            <img v-for="picture in pictures" :key="picture.id" :src="picture.image" alt="movie-picture" />
+            <img v-for="(picture, idx) in pictures" :key="idx" :src="useWebImage(picture.file_path)" alt="movie-picture" />
         </div>
     </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-interface Pictures {
-    id: number;
-    image: string;
-}
+import { Image } from '../composables/useMovies';
+import { useWebImage } from '../utils/useWebImage';
+
 export default defineComponent({
     name: 'MoviePicture',
     props: {
         pictures: {
-            type: Array as () => Pictures[],
+            type: Array as () => Image[],
             default: () => [
                 {
                     id: 1,
@@ -58,8 +57,13 @@ export default defineComponent({
         title: {
             type: String,
             default: 'Movie Pictures'
-        }
+        },
     },
+    setup() {
+        return {
+            useWebImage
+        }
+    }
 });
 </script>
 
