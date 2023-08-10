@@ -1,12 +1,12 @@
 <template>
     <div class="movie-list-item">
-        <router-link :to="`/movie/${movieId}`">
+        <a :href="type == 'movie'? `/movie/${movieId}`: `/tv-show/${movieId}`">
             <img :src="fullPathImage" alt="Movie poster" :class="size" />
             <h5>{{title}}</h5>
             <div class="rating-number">
                 <span>{{ rating.toFixed(1) }}</span>
             </div>
-        </router-link>
+        </a>
         <div class="info-block">
             <RatingStar :count="votingToRating(rating, 5)" :max="5" />
             <div class="category">
@@ -26,6 +26,7 @@ import tag from '../svg/outline/tag.vue';
 import votingToRating from '../../calculation/vote-to-rating';
 import { useGenresList } from '../../composables/useGenresList';
 import { Genre } from '../../composables/useGenre';
+import { useRouter } from 'vue-router';
 export default defineComponent({
     name: 'MovieItem',
     components: {
@@ -33,6 +34,10 @@ export default defineComponent({
         tag,
     },
     props: {
+        type: {
+            type: String as PropType<'movie' | 'tv'>,
+            default: 'movie'
+        },
         movieId: {
             type: Number,
             required: true
@@ -63,6 +68,7 @@ export default defineComponent({
         }
     },
     setup(props) {
+        const router = useRouter()
         const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL
         const fullPathImage = `${IMAGE_BASEURL}${props.imgSize}${props.image}`
         const genres = ref<Genre[]>([])
@@ -71,11 +77,15 @@ export default defineComponent({
             const { getGenresList } = useGenresList(props.categories.slice(0, 2))
             genres.value = await getGenresList()
         })
+        const handleMovieRouting = () => {
+            router.push(`/movie/${props.movieId}`)
+        }
 
         return {
             fullPathImage,
             votingToRating,
-            genres
+            genres,
+            handleMovieRouting
         }
     }
 })

@@ -13,29 +13,9 @@
         </div>
         <Swiper :slidesPerView="SwiperOptions.similar.slidesPerView" :spaceBetween="SwiperOptions.similar.spaceBetween"
             :breakpoints="SwiperOptions.similar.breakpoints">
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
+            <Swiper-Slide v-for="item in movieItem" :key="item.id">
+                <MovieItem :title="type == 'movie'? item.title: item.name" :image="item.poster_path" :movie-id="item.id"
+                            :rating="item.vote_average" :categories="item.genre_ids"  />
             </Swiper-Slide>
         </Swiper>
     </div>
@@ -48,6 +28,8 @@ import { Swiper, SwiperSlide } from 'swiper/vue';
 import { SwiperOptions } from '../utils/swiper-options';
 import arrowLeft from '../components/svg/outline/arrow-left.vue';
 import arrowRight from '../components/svg/outline/arrow-right.vue';
+import { Movie } from '../composables/useHighlights';
+import { TVShowType } from '../composables/useTvShows';
 export default defineComponent({
     name: 'SimilarMovie',
     components: {
@@ -61,6 +43,10 @@ export default defineComponent({
         type: {
             type: String as PropType<'movie' | 'tv'>,
             default: 'movie'
+        },
+        movieItem: {
+            type: Array as PropType<Movie[] | TVShowType[]>,
+            default: () => []
         }
     },
     setup() {

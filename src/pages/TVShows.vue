@@ -10,7 +10,7 @@
             <div class="container">
                 <div class="movie-meta-grid">
                     <div class="movie-item-grid">
-                        <MovieItem v-for="item in discoveredShows" :key="item.id" :size="'small'" :title="item.name"
+                        <MovieItem v-for="item in discoveredShows" :key="item.id" :size="'small'" :title="item.name" :movie-id="item.id" type="tv"
                             :image="item.poster_path" :rating="item.vote_average" :categories="item.genre_ids" />
                     </div>
                     <div class="pagination" v-if="totalPage > 1">

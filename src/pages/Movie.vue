@@ -22,7 +22,7 @@
                                     </div>
                                     <div class="date-created">
                                         <Clock />
-                                        <span>July 24th, 2023</span>
+                                        <span>{{fullDate}}</span>
                                     </div>
                                 </div>
                                 <p>
@@ -34,7 +34,7 @@
                                     <span><strong>Country</strong>: {{ computedCountry }}
                                     </span>
                                     <span><strong>Language</strong>: {{computedLanguage}}</span>
-                                    <span class="budget"><strong>Budget</strong>: $200,000,000</span>
+                                    <span class="budget" v-if="computedBudget"><strong>Budget</strong>: {{computedBudget}}</span>
                                     <span class="imdb"><strong>Visit on IMDB</strong>:
                                         <a :href="`https://imdb.com/title/${movie?.imdb_id}`" target="_blank">{{movie?.title}}</a></span>
                                 </div>
@@ -49,11 +49,11 @@
             <div class="container">
                 <CastWrapper :title="movie?.title" :casts="movieCredit?.cast" />
             </div>
-            <div class="container">
+            <div class="container" v-if="movieImages?.posters.length !== 0">
                 <MoviePicture :pictures="movieImages?.posters" />
             </div>
-            <div class="container">
-                <SimilarMovie />
+            <div class="container" v-if="similarMovies.length > 0">
+                <SimilarMovie :movie-item="similarMovies" />
             </div>
         </section>
         <BaseFooter />
@@ -76,7 +76,8 @@ import { SwiperOptions } from "../utils/swiper-options";
 import SimilarMovie from "../containers/SimilarMovie.vue";
 import MoviePicture from "../containers/MoviePicture.vue";
 import CastWrapper from "../containers/CastWrapper.vue";
-import { useMovies, MovieDetails, MovieCredit,MovieImages,MovieResponse } from "../composables/useMovies";
+import { Movie } from "../composables/useHighlights";
+import { useMovies, MovieDetails, MovieCredit,MovieImages } from "../composables/useMovies";
 import "swiper/css";
 import { useRoute } from "vue-router";
 export default defineComponent({
@@ -98,13 +99,12 @@ export default defineComponent({
     },
     setup() {
         const route = useRoute();
-        console.log(route.params.id);
         const movieId = ref(route.params.id) as Ref<string>;
         const { fetchMovie,fetchMovieCredits, fetchMovieImages,fetchSimilarMovies } = useMovies();
         const movie = ref<MovieDetails>();
         const movieCredit = ref<MovieCredit>()
         const movieImages = ref<MovieImages>()
-        const similarMovies = ref<MovieResponse>()
+        const similarMovies = ref<Movie[]>([])
         const handleFetchMovie = async () => {
             const { data } = await fetchMovie(movieId.value);
             movie.value = data.value;
@@ -121,9 +121,10 @@ export default defineComponent({
             console.log(movieImages.value);
         };
         const handleFetchSimilarMovies = async () => {
-            const { data } = await fet(movieId.value);
-            movieImages.value = data.value;
-            console.log(movieImages.value);
+            const { data } = await fetchSimilarMovies(movieId.value);
+            if(!data.value) return;
+            similarMovies.value = data.value?.results;
+            console.log(similarMovies.value);
         };
         const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL;
 
@@ -144,6 +145,19 @@ export default defineComponent({
         const computedLanguage = computed(() => {
             if (!movie.value?.spoken_languages) return "";
             return movie.value?.spoken_languages.map((i) => i.name).join(", ");
+        });
+        const fullDate = computed(() => {
+            if (!movie.value?.release_date) return "";
+
+            return new Date(movie.value?.release_date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            })
+        });
+        const computedBudget = computed(() => {
+            if (!movie.value?.budget) return "";
+            return `$${movie.value?.budget.toLocaleString()}`;
         });
 
         handleFetchMovie();
@@ -184,7 +198,9 @@ export default defineComponent({
             computedLanguage,
             movieCredit,
             movieImages,
-            similarMovies
+            similarMovies,
+            fullDate,
+            computedBudget
         };
     },
 });

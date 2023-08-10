@@ -2,24 +2,22 @@
     <div>
         <BaseHeader />
         <section>
-            <div class="movie-hero" :style="{ backgroundImage: `url(${movieBackgroundImage})` }">
+            <div class="movie-hero" :style="{ backgroundImage: `url(${computedTvShowImages.backdrop})` }">
                 <div class="movie-hero-overlay">
                     <div class="container">
                         <div class="movie-header-grid">
                             <div class="movie-poster">
                                 <div class="rating-number">7.4</div>
-                                <img src="https://image.tmdb.org/t/p/w500/f5ZMzzCvt2IzVDxr54gHPv9jlC9.jpg" alt="">
+                                <img :src="computedTvShowImages.poster" :alt="tvShow?.name">
                             </div>
                             <div class="movie-header-content">
-                                <h1>Secret Invasion</h1>
+                                <h1>{{ tvShow?.name }}</h1>
                                 <div class="info-wrapper">
                                     <RatingStar :count="votingToRating(7.4, 5)" :max="5" />
                                     <div class="category">
                                         <Tag />
                                         <div class="categories">
-                                            <span>Action</span>
-                                            <span>Adventure</span>
-                                            <span>Science Fiction</span>
+                                            <span v-for="i in tvShow?.genres" :key="i.id">{{ i.name }}</span>
                                         </div>
                                     </div>
                                     <div class="date-created">
@@ -28,16 +26,13 @@
                                     </div>
                                 </div>
                                 <p>
-                                    In a time when monsters walk the Earth, humanity’s fight for its future sets Godzilla
-                                    and Kong on a collision
-                                    course that will see the two most powerful forces of nature on the planet collide in a
-                                    spectacular battle for the ages.
+                                    {{tvShow?.overview}}
 
                                 </p>
                                 <div class="info-item">
                                     <span><strong>Duration</strong>: 1h 53m</span>
                                     <span><strong>Director</strong>: Adam Wingard</span>
-                                    <span><strong>Country</strong>: United States of America</span>
+                                    <span><strong>Country</strong>: {{ computedCountry }}</span>
                                     <span><strong>Language</strong>: English</span>
                                     <span class="budget"><strong>Budget</strong>: $200,000,000</span>
                                     <span class="imdb"><strong>Visit on IMDB</strong>: <a
@@ -74,24 +69,25 @@
                 </div>
             </div>
             <div class="container">
-                <CastWrapper :title="'Secret Invasion'"/>
+                <CastWrapper :title="tvShow?.name" :casts="tvShowCredit?.cast" />
             </div>
-            <div class="container">
-                <MoviePicture />
+            <div class="container" v-if="tvShowImages?.posters">
+                <MoviePicture :pictures="tvShowImages?.posters" />
             </div>
-            <div class="container">
-                <SimilarMovie />
+            <div class="container" v-if="similarTvShow.length > 0">
+                <SimilarMovie :movie-item="similarTvShow" type="tv" />
             </div>
         </section>
         <BaseFooter />
         <teleport to="body">
-         <EpisodeDialog :episodes="episodes" :showDialog="showDialog" @update:showDialog="showDialog = $event" v-if="showDialog" />
+            <EpisodeDialog :episodes="episodes" :showDialog="showDialog" @update:showDialog="showDialog = $event"
+                v-if="showDialog" />
         </teleport>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { Ref, computed, defineComponent, onMounted, ref } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
 import EpisodeDialog from '../components/layout/EpisodeDialog.vue';
@@ -103,22 +99,53 @@ import SimilarMovie from '../containers/SimilarMovie.vue';
 import RatingStar from '../containers/RatingStar.vue';
 import Tag from '../components/svg/outline/tag.vue';
 import Clock from '../components/svg/outline/clock.vue';
+import { useRoute } from 'vue-router';
+import { TVShowDetails, useTvShows } from '../composables/useTvShows';
+import { MovieCredit, MovieImages } from '../composables/useMovies';
+import { TVShowType } from '../composables/useTvShows';
 export default defineComponent({
     name: 'TVShow',
     components: {
-    BaseHeader,
-    BaseFooter,
-    EpisodeDialog,
-    ArrowRight,
-    CastWrapper,
-    MoviePicture,
-    SimilarMovie,
-    RatingStar,
-    Tag,
-    Clock
-},
+        BaseHeader,
+        BaseFooter,
+        EpisodeDialog,
+        ArrowRight,
+        CastWrapper,
+        MoviePicture,
+        SimilarMovie,
+        RatingStar,
+        Tag,
+        Clock
+    },
     setup() {
-        const movieBackgroundImage = ref('https://image.tmdb.org/t/p/w1280/f5ZMzzCvt2IzVDxr54gHPv9jlC9.jpg');
+        const route = useRoute();
+        const tvShowId = ref(route.params.id) as Ref<string>;
+        const tvShow = ref<TVShowDetails>();
+        const tvShowCredit = ref<MovieCredit>()
+        const tvShowImages = ref<MovieImages>()
+        const similarTvShow = ref<TVShowType[]>([])
+        const { fetchTvShow, fetchTvShowImages, fetchSimilarTvShows,fetchTvShowCredit  } = useTvShows()
+        const handleFetchTvShow = async () => {
+            const { data } = await fetchTvShow(tvShowId.value);
+            tvShow.value = data.value;
+            console.log(tvShow.value);
+        };
+        const handleFetchTvShowCredits = async () => {
+            const { data } = await fetchTvShowCredit(tvShowId.value);
+            tvShowCredit.value = data.value;
+            console.log(tvShowCredit.value);
+        };
+        const handleFetchTvShowImages = async () => {
+            const { data } = await fetchTvShowImages(tvShowId.value);
+            tvShowImages.value = data.value;
+            console.log(tvShowImages.value);
+        };
+        const handleFetchSimilarMovies = async () => {
+            const { data } = await fetchSimilarTvShows(tvShowId.value);
+            if(!data.value) return;
+            similarTvShow.value = data.value?.results;
+            console.log(similarTvShow.value);
+        };
 
         const showDialog = ref(false);
         const episodes = [
@@ -128,42 +155,42 @@ export default defineComponent({
             { id: 4, name: 'Episode 4' },
             { id: 5, name: 'Episode 5' },
             { id: 6, name: 'Episode 6' },
-            { id: 7, name: 'Episode 7'},
-            { id: 8, name: 'Episode 8'},
-            { id: 9, name: 'Episode 9'},
-            { id: 10, name: 'Episode 10'},
-            { id: 11, name: 'Episode 11'},
-            { id: 12, name: 'Episode 12'},
-            { id: 13, name: 'Episode 13'},
-            { id: 14, name: 'Episode 14'},
-            { id: 15, name: 'Episode 15'},
-            { id: 16, name: 'Episode 16'},
-            { id: 17, name: 'Episode 17'},
-            { id: 18, name: 'Episode 18'},
-            { id: 19, name: 'Episode 19'},
-            { id: 20, name: 'Episode 20'},
-            { id: 21, name: 'Episode 21'},
-            { id: 22, name: 'Episode 22'},
-            { id: 23, name: 'Episode 23'},
-            { id: 24, name: 'Episode 24'},
-            { id: 25, name: 'Episode 25'},
-            { id: 26, name: 'Episode 26'},
-            { id: 27, name: 'Episode 27'},
-            { id: 28, name: 'Episode 28'},
-            { id: 29, name: 'Episode 29'},
-            { id: 30, name: 'Episode 30'},
-            { id: 31, name: 'Episode 31'},
-            { id: 32, name: 'Episode 32'},
-            { id: 33, name: 'Episode 33'},
-            { id: 34, name: 'Episode 34'},
-            { id: 35, name: 'Episode 35'},
-            { id: 36, name: 'Episode 36'},
-            { id: 37, name: 'Episode 37'},
-            { id: 38, name: 'Episode 38'},
-            { id: 39, name: 'Episode 39'},
-            { id: 40, name: 'Episode 40'},
-            { id: 41, name: 'Episode 41'},
-            { id: 42, name: 'Episode 42'},
+            { id: 7, name: 'Episode 7' },
+            { id: 8, name: 'Episode 8' },
+            { id: 9, name: 'Episode 9' },
+            { id: 10, name: 'Episode 10' },
+            { id: 11, name: 'Episode 11' },
+            { id: 12, name: 'Episode 12' },
+            { id: 13, name: 'Episode 13' },
+            { id: 14, name: 'Episode 14' },
+            { id: 15, name: 'Episode 15' },
+            { id: 16, name: 'Episode 16' },
+            { id: 17, name: 'Episode 17' },
+            { id: 18, name: 'Episode 18' },
+            { id: 19, name: 'Episode 19' },
+            { id: 20, name: 'Episode 20' },
+            { id: 21, name: 'Episode 21' },
+            { id: 22, name: 'Episode 22' },
+            { id: 23, name: 'Episode 23' },
+            { id: 24, name: 'Episode 24' },
+            { id: 25, name: 'Episode 25' },
+            { id: 26, name: 'Episode 26' },
+            { id: 27, name: 'Episode 27' },
+            { id: 28, name: 'Episode 28' },
+            { id: 29, name: 'Episode 29' },
+            { id: 30, name: 'Episode 30' },
+            { id: 31, name: 'Episode 31' },
+            { id: 32, name: 'Episode 32' },
+            { id: 33, name: 'Episode 33' },
+            { id: 34, name: 'Episode 34' },
+            { id: 35, name: 'Episode 35' },
+            { id: 36, name: 'Episode 36' },
+            { id: 37, name: 'Episode 37' },
+            { id: 38, name: 'Episode 38' },
+            { id: 39, name: 'Episode 39' },
+            { id: 40, name: 'Episode 40' },
+            { id: 41, name: 'Episode 41' },
+            { id: 42, name: 'Episode 42' },
         ];
 
         const showTrailer = () => {
@@ -177,15 +204,54 @@ export default defineComponent({
         const openDialog = () => {
             showDialog.value = true;
         }
+        const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL;
 
+        const computedTvShowImages = computed(() => {
+            return {
+                backdrop: `${IMAGE_BASEURL}w500/${tvShow.value?.backdrop_path}` ?? "",
+                poster: `${IMAGE_BASEURL}w300/${tvShow.value?.poster_path}` ?? "",
+            };
+        });
+        const computedCountry = computed(() => {
+            if (!tvShow.value?.production_countries) return "";
+            return tvShow.value?.production_countries.splice(0, 2).map((i) => i.name).join(", ");
+        });
+        const computedLanguage = computed(() => {
+            if (!tvShow.value?.spoken_languages) return "";
+            return tvShow.value?.spoken_languages.map((i) => i.name).join(", ");
+        });
+        const fullDate = computed(() => {
+            if (!tvShow.value?.first_air_date) return "";
+
+            return new Date(tvShow.value?.first_air_date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            })
+        });
+        handleFetchTvShow();
+        onMounted(() => {
+            Promise.all([
+                handleFetchTvShowCredits(),
+                handleFetchTvShowImages(),
+                handleFetchSimilarMovies(),
+            ])
+        })
         return {
-            movieBackgroundImage,
             showTrailer,
             votingToRating,
             streamNow,
             openDialog,
             showDialog,
-            episodes
+            episodes,
+            tvShow,
+            computedTvShowImages,
+            computedCountry,
+            computedLanguage,
+            fullDate,
+            tvShowCredit,
+            tvShowImages,
+            similarTvShow
         }
     }
 });
@@ -290,7 +356,7 @@ export default defineComponent({
 }
 
 // Overwrite the bug on the <CastWrapper /> component
-.cast-wrapper{
+.cast-wrapper {
     margin-top: 0;
 }
 </style>

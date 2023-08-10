@@ -1,6 +1,7 @@
 import { computed, reactive, ref } from "vue"
 import useAxios from "./useAxios"
 export interface Movie {
+value: import("/Users/mac/Desktop/workspace/micelaneous/movieace/src/composables/useMovies").MovieResponse | undefined
     adult: boolean,
     backdrop_path: string,
     id: number,
