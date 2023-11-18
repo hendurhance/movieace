@@ -1,12 +1,12 @@
 <template>
     <div class="movie-list-item">
-        <a :href="type == 'movie'? `/movie/${movieId}`: `/tv-show/${movieId}`">
+        <router-link :to="type == 'movie'? `/movie/${movieId}`: `/tv-show/${movieId}`">
             <img :src="fullPathImage" alt="Movie poster" :class="size" />
             <h5>{{title}}</h5>
             <div class="rating-number">
                 <span>{{ rating.toFixed(1) }}</span>
             </div>
-        </a>
+        </router-link>
         <div class="info-block">
             <RatingStar :count="votingToRating(rating, 5)" :max="5" />
             <div class="category">
@@ -20,13 +20,13 @@
 </template>
 
 <script lang="ts">
-import { PropType, defineComponent, onMounted, ref } from 'vue';
+import { PropType, defineComponent, onMounted, ref, watch } from 'vue';
 import RatingStar from '../../containers/RatingStar.vue'
 import tag from '../svg/outline/tag.vue';
 import votingToRating from '../../calculation/vote-to-rating';
 import { useGenresList } from '../../composables/useGenresList';
 import { Genre } from '../../composables/useGenre';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 export default defineComponent({
     name: 'MovieItem',
     components: {
@@ -69,6 +69,7 @@ export default defineComponent({
     },
     setup(props) {
         const router = useRouter()
+        const route = useRoute()
         const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL
         const fullPathImage = `${IMAGE_BASEURL}${props.imgSize}${props.image}`
         const genres = ref<Genre[]>([])

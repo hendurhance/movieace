@@ -26,7 +26,7 @@
                                     </div>
                                 </div>
                                 <p>
-                                    {{tvShow?.overview}}
+                                    {{ tvShow?.overview }}
 
                                 </p>
                                 <div class="info-item">
@@ -99,7 +99,7 @@ import SimilarMovie from '../containers/SimilarMovie.vue';
 import RatingStar from '../containers/RatingStar.vue';
 import Tag from '../components/svg/outline/tag.vue';
 import Clock from '../components/svg/outline/clock.vue';
-import { useRoute } from 'vue-router';
+import { onBeforeRouteUpdate, useRoute } from 'vue-router';
 import { TVShowDetails, useTvShows } from '../composables/useTvShows';
 import { MovieCredit, MovieImages } from '../composables/useMovies';
 import { TVShowType } from '../composables/useTvShows';
@@ -124,7 +124,7 @@ export default defineComponent({
         const tvShowCredit = ref<MovieCredit>()
         const tvShowImages = ref<MovieImages>()
         const similarTvShow = ref<TVShowType[]>([])
-        const { fetchTvShow, fetchTvShowImages, fetchSimilarTvShows,fetchTvShowCredit  } = useTvShows()
+        const { fetchTvShow, fetchTvShowImages, fetchSimilarTvShows, fetchTvShowCredit } = useTvShows()
         const handleFetchTvShow = async () => {
             const { data } = await fetchTvShow(tvShowId.value);
             tvShow.value = data.value;
@@ -140,9 +140,9 @@ export default defineComponent({
             tvShowImages.value = data.value;
             console.log(tvShowImages.value);
         };
-        const handleFetchSimilarMovies = async () => {
+        const handleFetchSimilarTvShows = async () => {
             const { data } = await fetchSimilarTvShows(tvShowId.value);
-            if(!data.value) return;
+            if (!data.value) return;
             similarTvShow.value = data.value?.results;
             console.log(similarTvShow.value);
         };
@@ -192,9 +192,19 @@ export default defineComponent({
             { id: 41, name: 'Episode 41' },
             { id: 42, name: 'Episode 42' },
         ];
+        onBeforeRouteUpdate(async (to, from) => {
 
+            if (to.params.id !== from.params.id) {
+                tvShowId.value = to.params.id as string;
+                await handleFetchTvShow();
+                await handleFetchTvShowCredits();
+                await handleFetchTvShowImages();
+                await handleFetchSimilarTvShows();
+            }
+
+        })
         const showTrailer = () => {
-            console.log('show provider');
+            console.log("show trailer", tvShow.value);
         }
 
         const streamNow = () => {
@@ -234,7 +244,7 @@ export default defineComponent({
             Promise.all([
                 handleFetchTvShowCredits(),
                 handleFetchTvShowImages(),
-                handleFetchSimilarMovies(),
+                handleFetchSimilarTvShows(),
             ])
         })
         return {

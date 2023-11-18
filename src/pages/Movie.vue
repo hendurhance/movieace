@@ -22,7 +22,7 @@
                                     </div>
                                     <div class="date-created">
                                         <Clock />
-                                        <span>{{fullDate}}</span>
+                                        <span>{{ fullDate }}</span>
                                     </div>
                                 </div>
                                 <p>
@@ -33,10 +33,12 @@
                                     <span><strong>Director</strong>: Adam Wingard</span>
                                     <span><strong>Country</strong>: {{ computedCountry }}
                                     </span>
-                                    <span><strong>Language</strong>: {{computedLanguage}}</span>
-                                    <span class="budget" v-if="computedBudget"><strong>Budget</strong>: {{computedBudget}}</span>
+                                    <span><strong>Language</strong>: {{ computedLanguage }}</span>
+                                    <span class="budget" v-if="computedBudget"><strong>Budget</strong>:
+                                        {{ computedBudget }}</span>
                                     <span class="imdb"><strong>Visit on IMDB</strong>:
-                                        <a :href="`https://imdb.com/title/${movie?.imdb_id}`" target="_blank">{{movie?.title}}</a></span>
+                                        <a :href="`https://imdb.com/title/${movie?.imdb_id}`"
+                                            target="_blank">{{ movie?.title }}</a></span>
                                 </div>
                                 <div class="watch-now-wrapper">
                                     <button @click="showTrailer">Watch Trailer</button>
@@ -61,7 +63,7 @@
 </template>
 
 <script lang="ts">
-import { Ref, computed, defineComponent, onMounted, ref } from "vue";
+import { Ref, computed, defineComponent, onMounted, ref, watch } from "vue";
 import BaseHeader from "../components/base/BaseHeader.vue";
 import BaseFooter from "../components/base/BaseFooter.vue";
 import RatingStar from "../containers/RatingStar.vue";
@@ -77,9 +79,9 @@ import SimilarMovie from "../containers/SimilarMovie.vue";
 import MoviePicture from "../containers/MoviePicture.vue";
 import CastWrapper from "../containers/CastWrapper.vue";
 import { Movie } from "../composables/useHighlights";
-import { useMovies, MovieDetails, MovieCredit,MovieImages } from "../composables/useMovies";
+import { useMovies, MovieDetails, MovieCredit, MovieImages } from "../composables/useMovies";
 import "swiper/css";
-import { useRoute } from "vue-router";
+import { onBeforeRouteUpdate, useRoute } from "vue-router";
 export default defineComponent({
     name: "Movie",
     components: {
@@ -100,7 +102,7 @@ export default defineComponent({
     setup() {
         const route = useRoute();
         const movieId = ref(route.params.id) as Ref<string>;
-        const { fetchMovie,fetchMovieCredits, fetchMovieImages,fetchSimilarMovies } = useMovies();
+        const { fetchMovie, fetchMovieCredits, fetchMovieImages, fetchSimilarMovies } = useMovies();
         const movie = ref<MovieDetails>();
         const movieCredit = ref<MovieCredit>()
         const movieImages = ref<MovieImages>()
@@ -122,7 +124,7 @@ export default defineComponent({
         };
         const handleFetchSimilarMovies = async () => {
             const { data } = await fetchSimilarMovies(movieId.value);
-            if(!data.value) return;
+            if (!data.value) return;
             similarMovies.value = data.value?.results;
             console.log(similarMovies.value);
         };
@@ -140,7 +142,7 @@ export default defineComponent({
         });
         const computedCountry = computed(() => {
             if (!movie.value?.production_countries) return "";
-            return movie.value?.production_countries.splice(0,2).map((i) => i.name).join(", ");
+            return movie.value?.production_countries.splice(0, 2).map((i) => i.name).join(", ");
         });
         const computedLanguage = computed(() => {
             if (!movie.value?.spoken_languages) return "";
@@ -160,9 +162,9 @@ export default defineComponent({
             return `$${movie.value?.budget.toLocaleString()}`;
         });
 
-        handleFetchMovie();
         onMounted(() => {
             Promise.all([
+                handleFetchMovie(),
                 handleFetchMovieCredits(),
                 handleFetchMovieImages(),
                 handleFetchSimilarMovies()
@@ -172,9 +174,33 @@ export default defineComponent({
         const movieBackgroundImage = ref(
             "https://image.tmdb.org/t/p/w1280/9yBVqNruk6Ykrwc32qrK2TIE5xw.jpg"
         );
+        // watch(() => movieId, () => {
+        //     console.log("movie id", movieId.value);
+        //  handleFetchMovie();
+        //     Promise.all([
+        //         handleFetchMovieCredits(),
+        //         handleFetchMovieImages(),
+        //         handleFetchSimilarMovies()
+        //     ])
+        // })
+        onBeforeRouteUpdate(async (to, from) => {
+
+            if (to.params.id !== from.params.id) {
+                console.log("movie id", to.params.id);
+                movieId.value = to.params.id as string;
+                window.scrollTo(0, 0);
+                await handleFetchMovie();
+                await Promise.all([
+                    handleFetchMovieCredits(),
+                    handleFetchMovieImages(),
+                    handleFetchSimilarMovies()
+                ])
+            }
+
+        })
 
         const showTrailer = () => {
-            console.log("show provider");
+            console.log("show trailer", movie.value);
         };
         const prevSlide = () => {
             console.log("prev slide");
