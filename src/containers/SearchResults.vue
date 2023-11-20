@@ -11,7 +11,7 @@
                 </button>
             </div>
         </div>
-        <Swiper :slidesPerView="SwiperOptions.similar.slidesPerView" :spaceBetween="SwiperOptions.similar.spaceBetween"
+        <!-- <Swiper :slidesPerView="SwiperOptions.similar.slidesPerView" :spaceBetween="SwiperOptions.similar.spaceBetween"
             :breakpoints="SwiperOptions.similar.breakpoints">
             <Swiper-Slide>
                 <MovieItem />
@@ -37,7 +37,7 @@
             <Swiper-Slide>
                 <MovieItem />
             </Swiper-Slide>
-        </Swiper>
+        </Swiper> -->
     </div>
 </template>
 

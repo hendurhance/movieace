@@ -21,7 +21,7 @@
 </template>
 
 <script lang="ts">
-import { PropType, defineComponent, ref } from 'vue';
+import { PropType, defineComponent } from 'vue';
 import arrowLeft from '../components/svg/outline/arrow-left.vue';
 import arrowRight from '../components/svg/outline/arrow-right.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';

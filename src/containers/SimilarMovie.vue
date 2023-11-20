@@ -14,7 +14,7 @@
         <Swiper :slidesPerView="SwiperOptions.similar.slidesPerView" :spaceBetween="SwiperOptions.similar.spaceBetween"
             :breakpoints="SwiperOptions.similar.breakpoints">
             <Swiper-Slide v-for="item in movieItem" :key="item.id">
-                <MovieItem :title="type == 'movie'? item.title: item.name" :image="item.poster_path" :movie-id="item.id"
+                <MovieItem :title="getMovieOrTVTitle(item)" :image="item.poster_path" :movie-id="item.id"
                             :rating="item.vote_average" :categories="item.genre_ids"  />
             </Swiper-Slide>
         </Swiper>
@@ -49,7 +49,7 @@ export default defineComponent({
             default: () => []
         }
     },
-    setup() {
+    setup(props) {
         const prevSlide = () => {
             console.log('prev slide');
         };
@@ -57,11 +57,14 @@ export default defineComponent({
         const nextSlide = () => {
             console.log('next slide');
         };
-
+        const getMovieOrTVTitle = (item: any) => {
+            return props.type === 'movie' ? item.original_title : item.name;
+        };
         return {
             prevSlide,
             nextSlide,
-            SwiperOptions
+            SwiperOptions,
+            getMovieOrTVTitle
         }
     }
 });

@@ -13,9 +13,9 @@
         </div>
         <Swiper :slides-per-view="SwiperOptions.knownFor.slidesPerView" :space-between="SwiperOptions.knownFor.spaceBetween"
             :breakpoints="SwiperOptions.knownFor.breakpoints">
-            <swiper-slide v-for="i in 10" :key="i">
-                <MovieItem />
-            </swiper-slide>
+            <!-- <swiper-slide v-for="i in 10" :key="i">
+                <MovieItem  />
+            </swiper-slide> -->
         </Swiper>
     </div>
 </template>

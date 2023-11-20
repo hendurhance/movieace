@@ -32,9 +32,9 @@
                     </div>
                 </div>
             </div>
-            <div class="container">
+            <!-- <div class="container">
                 <KnownFor />
-            </div>
+            </div> -->
             <div class="container">
                 <MoviePicture :title="'Actor Pictures'" />
             </div>

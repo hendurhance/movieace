@@ -63,7 +63,7 @@
 </template>
 
 <script lang="ts">
-import { Ref, computed, defineComponent, onMounted, ref, watch } from "vue";
+import { Ref, computed, defineComponent, onMounted, ref } from "vue";
 import BaseHeader from "../components/base/BaseHeader.vue";
 import BaseFooter from "../components/base/BaseFooter.vue";
 import RatingStar from "../containers/RatingStar.vue";

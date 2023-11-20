@@ -20,13 +20,13 @@
 </template>
 
 <script lang="ts">
-import { PropType, defineComponent, onMounted, ref, watch } from 'vue';
+import { PropType, defineComponent, onMounted, ref } from 'vue';
 import RatingStar from '../../containers/RatingStar.vue'
 import tag from '../svg/outline/tag.vue';
 import votingToRating from '../../calculation/vote-to-rating';
 import { useGenresList } from '../../composables/useGenresList';
 import { Genre } from '../../composables/useGenre';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 export default defineComponent({
     name: 'MovieItem',
     components: {
@@ -39,7 +39,7 @@ export default defineComponent({
             default: 'movie'
         },
         movieId: {
-            type: Number,
+            type: [Number, String],
             required: true
         },
         size: {
@@ -69,7 +69,6 @@ export default defineComponent({
     },
     setup(props) {
         const router = useRouter()
-        const route = useRoute()
         const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL
         const fullPathImage = `${IMAGE_BASEURL}${props.imgSize}${props.image}`
         const genres = ref<Genre[]>([])
