@@ -83,7 +83,6 @@ import { useMovies, MovieDetails, MovieCredit, MovieImages } from "../composable
 import "swiper/css";
 import { onBeforeRouteUpdate, useRoute } from "vue-router";
 import empty_movie_state from '../assets/img/empty-movie-state.png';
-import { useWebImage } from "../utils/useWebImage";
 export default defineComponent({
     name: "Movie",
     components: {
