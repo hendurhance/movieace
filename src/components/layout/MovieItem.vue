@@ -23,10 +23,13 @@
 import { PropType, defineComponent, onMounted, ref } from 'vue';
 import RatingStar from '../../containers/RatingStar.vue'
 import tag from '../svg/outline/tag.vue';
+import empty_actor_state from '../../assets/img/empty-actor-state.png';
+import empty_movie_state from '../../assets/img/empty-movie-state.png';
 import votingToRating from '../../calculation/vote-to-rating';
 import { useGenresList } from '../../composables/useGenresList';
 import { Genre } from '../../composables/useGenre';
 import { useRouter } from 'vue-router';
+import { useWebImage } from '../../utils/useWebImage';
 export default defineComponent({
     name: 'MovieItem',
     components: {
@@ -48,7 +51,7 @@ export default defineComponent({
         },
         image: {
             type: String,
-            default: 'https://image.tmdb.org/t/p/w500/6CoRTJTmijhBLJTUNoVSUNxZMEI.jpg'
+            default: empty_movie_state
         },
         title: {
             type: String,
@@ -69,8 +72,7 @@ export default defineComponent({
     },
     setup(props) {
         const router = useRouter()
-        const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL
-        const fullPathImage = `${IMAGE_BASEURL}${props.imgSize}${props.image}`
+        const fullPathImage = props.image === null ? empty_movie_state : useWebImage(props.image, "large")
         const genres = ref<Genre[]>([])
 
         onMounted( async () => {

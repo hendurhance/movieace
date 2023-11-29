@@ -34,7 +34,6 @@
                                     <span><strong>Director</strong>: Adam Wingard</span>
                                     <span><strong>Country</strong>: {{ computedCountry }}</span>
                                     <span><strong>Language</strong>: English</span>
-                                    <span class="budget"><strong>Budget</strong>: $200,000,000</span>
                                     <span class="imdb"><strong>Visit on IMDB</strong>: <a
                                             href="https://www.imdb.com/title/tt5034838/" target="_blank">Godzilla vs.
                                             Kong</a></span>
@@ -99,6 +98,7 @@ import SimilarMovie from '../containers/SimilarMovie.vue';
 import RatingStar from '../containers/RatingStar.vue';
 import Tag from '../components/svg/outline/tag.vue';
 import Clock from '../components/svg/outline/clock.vue';
+import empty_movie_state from '../assets/img/empty-movie-state.png';
 import { onBeforeRouteUpdate, useRoute } from 'vue-router';
 import { TVShowDetails, useTvShows } from '../composables/useTvShows';
 import { MovieCredit, MovieImages } from '../composables/useMovies';
@@ -218,8 +218,8 @@ export default defineComponent({
 
         const computedTvShowImages = computed(() => {
             return {
-                backdrop: `${IMAGE_BASEURL}w500/${tvShow.value?.backdrop_path}` ?? "",
-                poster: `${IMAGE_BASEURL}w300/${tvShow.value?.poster_path}` ?? "",
+                backdrop: tvShow.value?.backdrop_path === null ? empty_movie_state : `${IMAGE_BASEURL}w1280${tvShow.value?.backdrop_path}`,
+                poster: tvShow.value?.poster_path === null ? empty_movie_state : `${IMAGE_BASEURL}w780${tvShow.value?.poster_path}`
             };
         });
         const computedCountry = computed(() => {
@@ -261,7 +261,7 @@ export default defineComponent({
             fullDate,
             tvShowCredit,
             tvShowImages,
-            similarTvShow
+            similarTvShow,
         }
     }
 });

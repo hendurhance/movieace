@@ -10,6 +10,8 @@
         display: grid;
         grid-template-columns: repeat(5, 1fr);
         grid-gap: 2rem;
+        align-items: start;
+        min-height: 300px;
 
         @media (max-width: 1196px) {
             grid-template-columns: repeat(4, 1fr);
