@@ -23,7 +23,7 @@
 import { PropType, defineComponent, onMounted, ref } from 'vue';
 import RatingStar from '../../containers/RatingStar.vue'
 import tag from '../svg/outline/tag.vue';
-import empty_actor_state from '../../assets/img/empty-actor-state.png';
+// import empty_actor_state from '../../assets/img/empty-actor-state.png';
 import empty_movie_state from '../../assets/img/empty-movie-state.png';
 import votingToRating from '../../calculation/vote-to-rating';
 import { useGenresList } from '../../composables/useGenresList';
