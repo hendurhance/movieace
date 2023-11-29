@@ -29,7 +29,7 @@ import votingToRating from '../../calculation/vote-to-rating';
 import { useGenresList } from '../../composables/useGenresList';
 import { Genre } from '../../composables/useGenre';
 import { useRouter } from 'vue-router';
-import { useWebImage } from '../../utils/useWebImage';
+// import { useWebImage } from '../../utils/useWebImage';
 export default defineComponent({
     name: 'MovieItem',
     components: {
@@ -72,7 +72,9 @@ export default defineComponent({
     },
     setup(props) {
         const router = useRouter()
-        const fullPathImage = props.image === null ? empty_movie_state : useWebImage(props.image, "large")
+        const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL;
+
+        const fullPathImage = props.image === null ? empty_movie_state : `${IMAGE_BASEURL}${props.imgSize}${props.image}`
         const genres = ref<Genre[]>([])
 
         onMounted( async () => {
