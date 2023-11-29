@@ -1,6 +1,6 @@
 <template>
     <div class="cast-item">
-        <img :src="useWebImage(cast.profile_path)" :alt="`${cast.name} image`">
+        <img :src="fullImagePath" :alt="`${cast.name} image`">
         <span>{{ cast.name }}</span>
         <span>{{ cast.character }}</span>
     </div>
@@ -10,6 +10,7 @@
 import { defineComponent } from 'vue'
 import { SwiperSlide } from 'swiper/vue';
 import { useWebImage } from '../../utils/useWebImage';
+import empty_actor_state from '../../assets/img/empty-actor-state.png';
 interface Cast {
     id: number;
     name: string;
@@ -29,14 +30,15 @@ export default defineComponent({
                 id: 0,
                 name: 'John Cena',
                 character: 'Chris Van Horne',
-                profile_path: 'https://image.tmdb.org/t/p/w185/6EZaBiQHx3Xlz3j0D6ttDxHXaxr.jpg'
+                profile_path: empty_actor_state
             })
         }
     },
     setup(props) {
+        const fullImagePath = props.cast.profile_path === null ? empty_actor_state : useWebImage(props.cast.profile_path, "large")
         return {
             cast: props.cast,
-            useWebImage
+            fullImagePath
         }
     }
 })

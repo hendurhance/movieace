@@ -82,6 +82,7 @@ import { Movie } from "../composables/useHighlights";
 import { useMovies, MovieDetails, MovieCredit, MovieImages } from "../composables/useMovies";
 import "swiper/css";
 import { onBeforeRouteUpdate, useRoute } from "vue-router";
+import empty_movie_state from '../assets/img/empty-movie-state.png';
 export default defineComponent({
     name: "Movie",
     components: {
@@ -132,8 +133,8 @@ export default defineComponent({
 
         const computedMovieImages = computed(() => {
             return {
-                backdrop: `${IMAGE_BASEURL}w500/${movie.value?.backdrop_path}` ?? "",
-                poster: `${IMAGE_BASEURL}w300/${movie.value?.poster_path}` ?? "",
+                backdrop: movie.value?.backdrop_path === null ? empty_movie_state : `${IMAGE_BASEURL}w1280${movie.value?.backdrop_path}`,
+                poster: movie.value?.poster_path === null ? empty_movie_state : `${IMAGE_BASEURL}w780${movie.value?.poster_path}`
             };
         });
         const computedMovieDuration = computed(() => {
@@ -170,10 +171,6 @@ export default defineComponent({
                 handleFetchSimilarMovies()
             ])
         })
-
-        const movieBackgroundImage = ref(
-            "https://image.tmdb.org/t/p/w1280/9yBVqNruk6Ykrwc32qrK2TIE5xw.jpg"
-        );
         // watch(() => movieId, () => {
         //     console.log("movie id", movieId.value);
         //  handleFetchMovie();
@@ -211,7 +208,6 @@ export default defineComponent({
         };
 
         return {
-            movieBackgroundImage,
             votingToRating,
             showTrailer,
             SwiperOptions,

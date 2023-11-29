@@ -10,11 +10,11 @@
             <div class="container">
                 <div class="movie-meta-grid">
                     <div class="movie-item-grid">
-                        <MovieItem v-for="item in discoveredShows" :key="item.id" :size="'small'" :title="item.name" :movie-id="item.id" type="tv"
+                        <MovieItem v-for="item in discoveredShows" :key="item.id" :size="'large'" :title="item.name" :movie-id="item.id" type="tv"
                             :image="item.poster_path" :rating="item.vote_average" :categories="item.genre_ids" />
                     </div>
                     <div class="pagination" v-if="totalPage > 1">
-                        <button @click="handleLoadMoreTvShows" tyep="button">Load More</button>
+                        <button @click="handleLoadMoreTvShows" type="button">Load More</button>
                     </div>
                 </div>
             </div>

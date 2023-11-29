@@ -4,7 +4,7 @@
         <p>{{ subtitle }}</p>
         <div class="mini-search" v-if="search">
             <form>
-                <input 
+                <input
                 type="text" 
                 :placeholder="searchPlaceholder" 
                 @input="$emit('search', searchValue.trim())"

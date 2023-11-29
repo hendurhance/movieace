@@ -16,6 +16,8 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import popularity_svg from '../svg/solid/popularity.vue';
+import empty_actor_state from '../../assets/img/empty-actor-state.png';
+import { useWebImage } from '../../utils/useWebImage';
 export default defineComponent({
     name: 'ActorItem',
     components: {
@@ -28,7 +30,7 @@ export default defineComponent({
         },
         image: {
             type: String,
-            default: 'https://image.tmdb.org/t/p/w500/6NsMbJXRlDZuDzatN2akFdGuTvx.jpg'
+            default: empty_actor_state
         },
         imgSize: {
             type: String,
@@ -40,8 +42,7 @@ export default defineComponent({
         }
     },
     setup(props) {
-        const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL
-        const fullPathImage = `${IMAGE_BASEURL}${props.imgSize}${props.image}`
+        const fullPathImage = props.image === null ? empty_actor_state : useWebImage(props.image, "large")
 
         return {
             name: props.name,
