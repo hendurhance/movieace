@@ -12,7 +12,7 @@
             </div>
         </div>
         <swiper :slides-per-view="SwiperOptions.cast.slidesPerView" :space-between="SwiperOptions.cast.spaceBetween" ref="swiper"
-            :breakpoints="SwiperOptions.cast.breakpoints" navigation>
+            :breakpoints="SwiperOptions.cast.breakpoints">
             <swiper-slide v-for="i in casts" :key="i.id">
                 <CastItem :cast="i" />
             </swiper-slide>
@@ -26,11 +26,9 @@ import arrowLeft from '../components/svg/outline/arrow-left.vue';
 import arrowRight from '../components/svg/outline/arrow-right.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import 'swiper/css';
-import { SwiperOptions } from '../utils/swiper-options';
+import { SwiperOptions, SwiperNavigation } from '../utils/swiper-options';
 import CastItem from '../components/layout/CastItem.vue';
 import {Cast} from "../composables/useMovies" 
-
-
 export default defineComponent({
     name: 'CastWrapper',
     components: {
@@ -43,7 +41,7 @@ export default defineComponent({
     props: {
         title: {
             type: String,
-            default: ''
+            default: 'Movie Title'
         },
         casts:{
             type: Array as PropType<Cast[]>,
@@ -61,7 +59,8 @@ export default defineComponent({
         return {
             nextSlide,
             prevSlide,
-            SwiperOptions
+            SwiperOptions,
+            SwiperNavigation,
         };
     }
 });
