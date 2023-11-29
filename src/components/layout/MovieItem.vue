@@ -87,6 +87,7 @@ export default defineComponent({
             fullPathImage,
             votingToRating,
             genres,
+            useWebImage,
             handleMovieRouting
         }
     }
