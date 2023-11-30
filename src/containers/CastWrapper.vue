@@ -1,18 +1,18 @@
 <template>
     <div class="cast-wrapper">
         <div class="cast-wrapper-header">
-            <h2>{{title}}</h2>
+            <h2>{{ title }} Cast</h2>
             <div class="cast-wrapper-header-right">
-                <button class="cast-button" @click="prevSlide">
+                <button class="cast-button" @click="moveSlide('prev')">
                     <arrowLeft />
                 </button>
-                <button class="cast-button" @click="nextSlide">
+                <button class="cast-button" @click="moveSlide('next')">
                     <arrowRight />
                 </button>
             </div>
         </div>
-        <swiper :slides-per-view="SwiperOptions.cast.slidesPerView" :space-between="SwiperOptions.cast.spaceBetween" ref="swiper"
-            :breakpoints="SwiperOptions.cast.breakpoints">
+        <swiper :slides-per-view="SwiperOptions.cast.slidesPerView" :space-between="SwiperOptions.cast.spaceBetween"
+            ref="swiper" :breakpoints="SwiperOptions.cast.breakpoints">
             <swiper-slide v-for="i in casts" :key="i.id">
                 <CastItem :cast="i" />
             </swiper-slide>
@@ -26,9 +26,11 @@ import arrowLeft from '../components/svg/outline/arrow-left.vue';
 import arrowRight from '../components/svg/outline/arrow-right.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import 'swiper/css';
-import { SwiperOptions, SwiperNavigation } from '../utils/swiper-options';
+import { SwiperOptions } from '../utils/swiper-options';
 import CastItem from '../components/layout/CastItem.vue';
-import {Cast} from "../composables/useMovies" 
+import { Cast } from "../composables/useMovies"
+import { moveSlide } from '../utils/useMoveSlide';
+
 export default defineComponent({
     name: 'CastWrapper',
     components: {
@@ -41,26 +43,17 @@ export default defineComponent({
     props: {
         title: {
             type: String,
-            default: 'Movie Title'
+            default: 'Default Title'
         },
-        casts:{
+        casts: {
             type: Array as PropType<Cast[]>,
             default: () => []
         }
     },
     setup() {
-        const prevSlide = () => {
-            console.log('prev slide')
-
-        };
-        const nextSlide = () => {
-            console.log('next slide');
-        };
         return {
-            nextSlide,
-            prevSlide,
-            SwiperOptions,
-            SwiperNavigation,
+            moveSlide,
+            SwiperOptions
         };
     }
 });
