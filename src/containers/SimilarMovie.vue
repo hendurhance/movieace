@@ -1,28 +1,28 @@
 <template>
     <div class="similar-movie-wrapper">
         <div class="similar-movie-header">
-            <h2>Similar {{  type === 'movie' ? 'Movies' : 'TV Shows' }}</h2>
+            <h2>Similar {{ type === 'movie' ? 'Movies' : 'TV Shows' }}</h2>
             <div class="similar-movie-header-right">
-                <button class="cast-button" @click="prevSlide">
+                <button class="cast-button" @click="moveSlide('prev')">
                     <arrowLeft />
                 </button>
-                <button class="cast-button" @click="nextSlide">
+                <button class="cast-button" @click="moveSlide('next')">
                     <arrowRight />
                 </button>
             </div>
         </div>
         <Swiper :slidesPerView="SwiperOptions.similar.slidesPerView" :spaceBetween="SwiperOptions.similar.spaceBetween"
-            :breakpoints="SwiperOptions.similar.breakpoints">
-            <Swiper-Slide v-for="item in movieItem" :key="item.id">
+            :breakpoints="SwiperOptions.similar.breakpoints" class="similar-movie">
+            <Swiper-Slide v-for="item in movieItem" :key="item.id" ref="similar-slide">
                 <MovieItem :title="getMovieOrTVTitle(item)" :image="item.poster_path" :movie-id="item.id"
-                            :rating="item.vote_average" :categories="item.genre_ids"  />
+                    :rating="item.vote_average" :categories="item.genre_ids" />
             </Swiper-Slide>
         </Swiper>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType} from 'vue';
+import { defineComponent, PropType, ref } from 'vue';
 import MovieItem from '../components/layout/MovieItem.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { SwiperOptions } from '../utils/swiper-options';
@@ -50,19 +50,30 @@ export default defineComponent({
         }
     },
     setup(props) {
-        const prevSlide = () => {
-            console.log('prev slide');
-        };
+        const currentIndex = ref(0);
+        const moveSlide = (direction: 'prev' | 'next') => {
+            const similarMovie = document.querySelector('.similar-movie') as HTMLElement;
+            const swiperWrapper = similarMovie.querySelector('.swiper-wrapper') as HTMLElement;
+            if (swiperWrapper) {
+                const slideWidth = swiperWrapper.clientWidth;
+                currentIndex.value = direction === 'next' ? currentIndex.value + 1 : currentIndex.value - 1;
+                currentIndex.value = Math.min(Math.max(currentIndex.value, 0), swiperWrapper.children.length - 1);
 
-        const nextSlide = () => {
-            console.log('next slide');
+                const maxVisibleSlides = window.innerWidth <= 767 ? 1 : window.innerWidth <= 768 ? 1.5 : window.innerWidth <= 1185 ? 2 : 2.75;
+                if (currentIndex.value > Math.floor(swiperWrapper.children.length / maxVisibleSlides)) {
+                    return;
+                } else {
+                    const newPosition = (-currentIndex.value * slideWidth) / 2;
+                    swiperWrapper.style.transform = `translate3d(${newPosition}px, 0, 0)`;
+                    swiperWrapper.style.transition = 'transform 0.3s ease-in-out';
+                }
+            }
         };
         const getMovieOrTVTitle = (item: any) => {
             return props.type === 'movie' ? item.original_title : item.name;
         };
         return {
-            prevSlide,
-            nextSlide,
+            moveSlide,
             SwiperOptions,
             getMovieOrTVTitle
         }
