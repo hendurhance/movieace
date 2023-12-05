@@ -1,8 +1,8 @@
 <template>
     <div class="container search-wrapper">
         <h3>Looking for something else? Search our database:</h3>
-        <form action="">
-            <input type="text" name="search" id="search" placeholder="Try 'Lord of the Rings'" class="search-input">
+        <form @submit.prevent="handleSearch">
+            <input type="text" name="search" id="search" placeholder="Try 'Lord of the Rings'" class="search-input" v-model="searchValue">
             <button type="submit" class="search-button">
                 <search />
             </button>
@@ -10,18 +10,19 @@
     </div>
 </template>
 
-<script lang="ts">
-import { defineAsyncComponent, defineComponent } from 'vue';
+<script setup lang="ts">
+import { defineAsyncComponent, defineComponent, ref } from 'vue';
 
 const search = defineAsyncComponent(() => import('../components/svg/outline/search.vue'));
 
-export default defineComponent({
-    name: 'SearchWrapper',
-    components: {
-        search,
-    },
-})
+const emit = defineEmits(['search']);
 
+const searchValue = ref('');
+
+const handleSearch = () => {
+    if(searchValue.value.trim() === '') return;
+    emit('search', searchValue);
+}
 
 </script>
 
