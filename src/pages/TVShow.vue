@@ -128,23 +128,19 @@ export default defineComponent({
         const handleFetchTvShow = async () => {
             const { data } = await fetchTvShow(tvShowId.value);
             tvShow.value = data.value;
-            console.log(tvShow.value);
         };
         const handleFetchTvShowCredits = async () => {
             const { data } = await fetchTvShowCredit(tvShowId.value);
             tvShowCredit.value = data.value;
-            console.log(tvShowCredit.value);
         };
         const handleFetchTvShowImages = async () => {
             const { data } = await fetchTvShowImages(tvShowId.value);
             tvShowImages.value = data.value;
-            console.log(tvShowImages.value);
         };
         const handleFetchSimilarTvShows = async () => {
             const { data } = await fetchSimilarTvShows(tvShowId.value);
             if (!data.value) return;
             similarTvShow.value = data.value?.results;
-            console.log(similarTvShow.value);
         };
 
         const showDialog = ref(false);
@@ -196,10 +192,18 @@ export default defineComponent({
 
             if (to.params.id !== from.params.id) {
                 tvShowId.value = to.params.id as string;
-                await handleFetchTvShow();
-                await handleFetchTvShowCredits();
-                await handleFetchTvShowImages();
-                await handleFetchSimilarTvShows();
+                // await handleFetchTvShow();
+                // await handleFetchTvShowCredits();
+                // await handleFetchTvShowImages();
+                // await handleFetchSimilarTvShows();
+                Promise.all([
+                    handleFetchTvShow(),
+                    handleFetchTvShowCredits(),
+                    handleFetchTvShowImages(),
+                    handleFetchSimilarTvShows(),
+                ])
+                window.scrollTo(0, 0);
+
             }
 
         })
@@ -241,6 +245,7 @@ export default defineComponent({
         });
         handleFetchTvShow();
         onMounted(() => {
+            window.scrollTo(0, 0);
             Promise.all([
                 handleFetchTvShowCredits(),
                 handleFetchTvShowImages(),

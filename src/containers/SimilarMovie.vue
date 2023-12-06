@@ -15,7 +15,7 @@
             :breakpoints="SwiperOptions.similar.breakpoints" class="similar-movie">
             <Swiper-Slide v-for="item in movieItem" :key="item.id" ref="similar-slide">
                 <MovieItem :title="getMovieOrTVTitle(item)" :image="item.poster_path" :movie-id="item.id"
-                    :rating="item.vote_average" :categories="item.genre_ids" />
+                    :rating="item.vote_average" :categories="item.genre_ids" :type="type" />
             </Swiper-Slide>
         </Swiper>
     </div>

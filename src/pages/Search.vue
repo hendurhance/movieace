@@ -9,10 +9,10 @@
             </div>
 
             <div class="container">
-                <SearchResults :type="'movie'" :data="discoveredMovies" />
+                <SearchResults :media-type="'movie'" :data="discoveredMovies" />
             </div>
             <div class="container">
-                <SearchResults :type="'tv'" :data="discoveredTv" />
+                <SearchResults :media-type="'tv'" :data="discoveredTv" />
             </div>
             <div class="container">
                 <CastWrapper :title="'Actor Results'" :casts="discoveredPeople" />

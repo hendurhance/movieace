@@ -1,7 +1,7 @@
 <template>
     <div class="search-result-wrapper">
         <div class="search-result-header">
-            <h2>{{  type === 'movie' ? 'Movies' : 'TV Shows' }} Results</h2>
+            <h2>{{  mediaType === 'movie' ? 'Movies' : 'TV Shows' }} Results</h2> 
             <div class="search-result-header-right">
                 <button class="cast-button" @click="prevSlide">
                     <arrowLeft />
@@ -15,7 +15,7 @@
         :breakpoints="SwiperOptions.similar.breakpoints" class="similar-movie">
         <Swiper-Slide v-for="item in data" :key="item.id" ref="similar-slide">
             <MovieItem :title="getMovieOrTVTitle(item)" :image="item.poster_path" :movie-id="item.id"
-                :rating="item.vote_average" :categories="item.genre_ids" />
+                :rating="item.vote_average" :categories="item.genre_ids" :type="mediaType" />
         </Swiper-Slide>
     </Swiper>
     </div>
@@ -40,7 +40,7 @@ export default defineComponent({
         arrowRight
     },
     props: {
-        type: {
+        mediaType: {
             type: String as PropType<'movie' | 'tv'>,
             default: 'movie'
         },
@@ -58,7 +58,7 @@ export default defineComponent({
             console.log('next slide');
         };
         const getMovieOrTVTitle = (item: any) => {
-            return props.type === 'movie' ? item.original_title : item.name;
+            return props.mediaType === 'movie' ? item.original_title : item.name;
         };
 
         return {

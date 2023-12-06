@@ -160,6 +160,7 @@ export default defineComponent({
         });
 
         onMounted(() => {
+            window.scrollTo(0, 0);
             Promise.all([
                 handleFetchMovie(),
                 handleFetchMovieCredits(),
