@@ -9,8 +9,8 @@
                             <img :src="useWebImage(actorDetails.profile_path)" alt="actor poster" />
                             <div class="actor-info">
                                 <h1>{{actorDetails?.name}}</h1>
-                                <div class="actor-socials">
-                                    <a v-for="social in socials" :href="social.link" :key="social.name">{{ social.title }}</a>
+                                <div class="actor-imdb">
+                                    <a >View on IMDB</a>
                                 </div>
                             </div>
                         </div>
@@ -32,9 +32,9 @@
                     </div>
                 </div>
             </div>
-            <!-- <div class="container">
+            <div class="container">
                 <KnownFor />
-            </div> -->
+            </div>
             <div class="container">
                 <MoviePicture :title="'Actor Pictures'" :pictures="actorImages?.profiles" />
             </div>
@@ -186,27 +186,37 @@ export default defineComponent({
                 margin-bottom: 0.5rem;
             }
 
-            .actor-socials {
+            .actor-imdb {
                 display: flex;
                 align-items: center;
 
                 a {
                     display: inline-block;
-                    width: 2rem;
                     height: 2rem;
-                    border-radius: 50%;
                     background-color: #f1b722;
                     color: #000000;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     margin-right: 0.5rem;
-                    
-                    // i want it to juggled around when hovered
-                    transition: transform 0.3s ease-out;
+                    padding: 1rem;
+                    border-radius: 5px;
+                    cursor: pointer;
+
+                    @keyframes juggled {
+                        0% {
+                            transform: translateX(0);
+                        }
+                        50% {
+                            transform: translateX(0.5rem);
+                        }
+                        100% {
+                            transform: translateX(0);
+                        }
+                    }
 
                     &:hover {
-                        transform: scale(1.1);
+                        animation: juggled 0.3s ease-in-out;
                     }
                 }
             }

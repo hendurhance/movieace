@@ -1,9 +1,9 @@
 <template>
     <header>
         <div class="container">
-            <a href="#">
+            <router-link to="/">
                 <Logo :fill="'#fff'"></Logo>
-            </a>
+            </router-link>
             <nav id="navigation">
                 <RouterLink v-for="route in routes" :key="route.name" :to="route.path">
                     {{ route.meta?.title }}
