@@ -87,7 +87,7 @@ export default defineComponent({
         })
         const router = useRouter()
         const handleSearchGlobal = (searchTerm: string) => {
-            router.push({ name: 'Search', query: { query: searchTerm } })
+            router.push({ name: 'Search', query: { search: searchTerm } })
         }
         watch(currentHighlightTitle, async () => {
             console.log(currentHighlightTitle.value)

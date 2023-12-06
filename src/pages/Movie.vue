@@ -111,23 +111,19 @@ export default defineComponent({
         const handleFetchMovie = async () => {
             const { data } = await fetchMovie(movieId.value);
             movie.value = data.value;
-            console.log(movie.value);
         };
         const handleFetchMovieCredits = async () => {
             const { data } = await fetchMovieCredits(movieId.value);
             movieCredit.value = data.value;
-            console.log(movieCredit.value);
         };
         const handleFetchMovieImages = async () => {
             const { data } = await fetchMovieImages(movieId.value);
             movieImages.value = data.value;
-            console.log(movieImages.value);
         };
         const handleFetchSimilarMovies = async () => {
             const { data } = await fetchSimilarMovies(movieId.value);
             if (!data.value) return;
             similarMovies.value = data.value?.results;
-            console.log(similarMovies.value);
         };
         const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL;
 
@@ -183,7 +179,6 @@ export default defineComponent({
         onBeforeRouteUpdate(async (to, from) => {
 
             if (to.params.id !== from.params.id) {
-                console.log("movie id", to.params.id);
                 movieId.value = to.params.id as string;
                 window.scrollTo(0, 0);
                 await handleFetchMovie();

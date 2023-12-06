@@ -9,7 +9,7 @@
             <div class="container">
                 <div class="actor-meta-grid">
                     <div class="actor-item-grid">
-                        <ActorItem v-for="item in discoveredActors" :key="item.id" :name="item.name" :image="item.profile_path" :popularity="item.popularity" />
+                        <ActorItem v-for="item in discoveredActors" :key="item.id" :name="item.name" :image="item.profile_path" :popularity="item.popularity" :actorId="item.id" />
                     </div>
                     <!-- <div class="pagination" v-if="totalPage > 1">
                         <button @click="handleLoadMoreActors" tyep="button">Load More</button>

@@ -60,7 +60,6 @@ export default defineComponent({
 
         // Clear the input and hide the clear button
         const clearInput = () => {
-            console.log(searchValue.value);
             searchValue.value = '';
             showClearButton.value = false;
         };
@@ -68,7 +67,6 @@ export default defineComponent({
         onMounted(() => {
             const searchQuery = route.query.search as string;
             searchValue.value = searchQuery;
-            console.log(searchQuery);
         });
 
 

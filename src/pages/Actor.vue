@@ -5,10 +5,10 @@
             <div class="actor-hero">
                 <div class="container">
                     <div class="actor-hero-grid">
-                        <div class="actor-poster">
-                            <img src="https://image.tmdb.org/t/p/h632/euDPyqLnuwaWMHajcU3oZ9uZezR.jpg" alt="actor poster" />
+                        <div class="actor-poster" v-if="actorDetails">
+                            <img :src="useWebImage(actorDetails.profile_path)" alt="actor poster" />
                             <div class="actor-info">
-                                <h1>Margot Robbie</h1>
+                                <h1>{{actorDetails?.name}}</h1>
                                 <div class="actor-socials">
                                     <a v-for="social in socials" :href="social.link" :key="social.name">{{ social.title }}</a>
                                 </div>
@@ -17,16 +17,16 @@
                         <div class="actor-details">
                             <h3>Biography</h3>
                             <p class="bio" :class="{ expanded: showFullBio }">
-                                {{ showFullBio ? paragraph : paragraph.slice(0, 400) + '...' }}
+                                {{ showFullBio ? actorDetails?.biography : actorDetails?.biography.slice(0, 400) + '...' }}
                                 <span class="read-more" @click="toggleFullBio">
                                     {{ showFullBio ? 'Read Less' : 'Read More' }}
                                 </span>
                             </p>
                             <div class="actor-info-group">
-                                <span><strong>Known For:</strong> Acting</span>
-                                <span><strong>Gender:</strong> Female</span>
-                                <span><strong>Birthday:</strong> 1990-07-02</span>
-                                <span><strong>Place of Birth:</strong> Acting</span>
+                                <span><strong>Known For:</strong> {{actorDetails?.known_for_department}}</span>
+                                <span><strong>Gender:</strong> {{ actorDetails?.gender == 1? 'Female': 'Male' }}</span>
+                                <span v-if="actorDetails?.birthday"><strong>Birthday:</strong> {{actorDetails?.birthday}}</span>
+                                <span v-if="actorDetails?.place_of_birth"><strong>Place of Birth:</strong> {{actorDetails?.place_of_birth}}</span>
                             </div>
                         </div>
                     </div>
@@ -36,7 +36,7 @@
                 <KnownFor />
             </div> -->
             <div class="container">
-                <MoviePicture :title="'Actor Pictures'" />
+                <MoviePicture :title="'Actor Pictures'" :pictures="actorImages?.profiles" />
             </div>
         </section>
         <BaseFooter />
@@ -44,12 +44,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { Ref, defineComponent, onMounted, ref } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 import KnownFor from '../containers/KnownFor.vue';
 import MoviePicture from '../containers/MoviePicture.vue';
+import { ActorDetails, ActorImages, useActor } from '../composables/useActor';
+import { useWebImage } from '../utils/useWebImage';
+
 
 interface Social {
     name: string;
@@ -67,6 +70,8 @@ export default defineComponent({
     MoviePicture
 },
     setup() {
+        const route = useRoute();
+        const actorId = ref(route.params.id) as Ref<string>;
         const socials = [
             {
                 name: 'facebook',
@@ -108,18 +113,34 @@ export default defineComponent({
             and Promising Young Woman (2020), as well as the television series Dollface (2019–2022) and
             the miniseries Maid (2021).
         `)
-
+        
         const showFullBio = ref(false);
-
+        const actorDetails = ref<ActorDetails>();
+        const { fetchActorDetails, fetchActorImages} = useActor();
+        const actorImages = ref<ActorImages>();
+        const handleFetchActor = async () => {
+            const { data } = await fetchActorDetails(Number(actorId.value));
+            actorDetails.value = data.value;
+        };
+        const handleFetchActorImages = async () => {
+            const { data } = await fetchActorImages(Number(actorId.value));
+            actorImages.value = data.value;
+        };
         const toggleFullBio = () => {
             showFullBio.value = !showFullBio.value;
         };
+        onMounted(() => {
+           Promise.all([handleFetchActor(), handleFetchActorImages()]);
+        });
 
         return {
             socials: socials.filter(social => social.link !== null),
             paragraph,
             showFullBio,
-            toggleFullBio
+            toggleFullBio,
+            actorDetails,
+            actorImages,
+            useWebImage
         }
     }
 });

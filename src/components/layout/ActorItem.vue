@@ -1,6 +1,6 @@
 <template>
     <div class="actor-list-item">
-        <a href="#">
+        <router-link :to="`/actor/${actorId}`">
             <div class="actor-popularity">
                 <popularity_svg />
                 <span>{{popularity.toFixed(0)}}</span>
@@ -9,7 +9,7 @@
             <div class="actor-overlay">
                 <h3>{{name}}</h3>
             </div>
-        </a>
+        </router-link>
     </div>
 </template>
 
@@ -39,6 +39,10 @@ export default defineComponent({
         popularity: {
             type: Number,
             default: 201.48
+        },
+        actorId: {
+            type: Number,
+            default: 1245
         }
     },
     setup(props) {
