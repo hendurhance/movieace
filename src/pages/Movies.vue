@@ -19,7 +19,7 @@
                             :image="item.poster_path" :rating="item.vote_average" :categories="item.genre_ids" />
                     </div>
                     <div class="pagination" v-if="totalPage > 1">
-                        <button @click="handleLoadMoreMovies" tyep="button">Load More</button>
+                        <button @click="handleLoadMoreMovies" type="button">Load More</button>
                     </div>
                 </div>
             </div>

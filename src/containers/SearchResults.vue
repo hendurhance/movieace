@@ -11,33 +11,13 @@
                 </button>
             </div>
         </div>
-        <!-- <Swiper :slidesPerView="SwiperOptions.similar.slidesPerView" :spaceBetween="SwiperOptions.similar.spaceBetween"
-            :breakpoints="SwiperOptions.similar.breakpoints">
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-            <Swiper-Slide>
-                <MovieItem />
-            </Swiper-Slide>
-        </Swiper> -->
+        <Swiper :slidesPerView="SwiperOptions.similar.slidesPerView" :spaceBetween="SwiperOptions.similar.spaceBetween"
+        :breakpoints="SwiperOptions.similar.breakpoints" class="similar-movie">
+        <Swiper-Slide v-for="item in data" :key="item.id" ref="similar-slide">
+            <MovieItem :title="getMovieOrTVTitle(item)" :image="item.poster_path" :movie-id="item.id"
+                :rating="item.vote_average" :categories="item.genre_ids" />
+        </Swiper-Slide>
+    </Swiper>
     </div>
 </template>
 
@@ -48,6 +28,8 @@ import { Swiper, SwiperSlide } from 'swiper/vue';
 import { SwiperOptions } from '../utils/swiper-options';
 import arrowLeft from '../components/svg/outline/arrow-left.vue';
 import arrowRight from '../components/svg/outline/arrow-right.vue';
+import { TVShowType } from '../composables/useTvShows';
+import { Movie } from '../composables/useHighlights';
 export default defineComponent({
     name: 'SearchResults',
     components: {
@@ -61,9 +43,13 @@ export default defineComponent({
         type: {
             type: String as PropType<'movie' | 'tv'>,
             default: 'movie'
+        },
+        data: {
+            type: Array as PropType<Movie[] | TVShowType[]>,
+            default: () => []
         }
     },
-    setup() {
+    setup(props) {
         const prevSlide = () => {
             console.log('prev slide');
         };
@@ -71,11 +57,15 @@ export default defineComponent({
         const nextSlide = () => {
             console.log('next slide');
         };
+        const getMovieOrTVTitle = (item: any) => {
+            return props.type === 'movie' ? item.original_title : item.name;
+        };
 
         return {
             prevSlide,
             nextSlide,
-            SwiperOptions
+            SwiperOptions,
+            getMovieOrTVTitle
         }
     }
 });

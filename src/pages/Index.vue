@@ -11,21 +11,24 @@
                     </div>
                     <div class="button-tabs">
                         <button v-for="(button, idx) in highlightOptions" :key="idx" @click="handleUpdateHighlight(button)"
-                            :class="button.toLowerCase() === currentHighlightTitle? 'active': ''">
+                            :class="button.toLowerCase() === currentHighlightTitle ? 'active' : ''">
                             {{ button }}
                         </button>
                     </div>
                 </div>
                 <div class="movie-grid">
                     <div class="movie-grid-panel">
-                        <MovieItem v-for="item in currentHighLightDetails.data" :key="item.id" :title="item.title" :image="item.poster_path" :movie-id="item.id"
-                            :rating="item.vote_average" :categories="item.genre_ids" />
+                        <MovieItem v-for="item in currentHighLightDetails.data" :key="item.id" :title="item.title"
+                            :image="item.poster_path" :movie-id="item.id" :rating="item.vote_average"
+                            :categories="item.genre_ids" />
                     </div>
                 </div>
             </div>
             <!-- Featured Movie Section -->
             <div class="full-width">
-                <FeaturedMovie :movie-id="topHighlight?.id" :name="topHighlight?.title" :details="topHighlight?.overview" :image="topHighlight?.poster_path" :categories="topHighlight?.genre_ids" :rating="topHighlight?.vote_average" :date="topHighlight?.release_date"/>
+                <FeaturedMovie :movie-id="topHighlight?.id" :name="topHighlight?.title" :details="topHighlight?.overview"
+                    :image="topHighlight?.poster_path" :categories="topHighlight?.genre_ids"
+                    :rating="topHighlight?.vote_average" :date="topHighlight?.release_date" />
             </div>
             <!-- New Releases Section -->
             <div class="container push-up">
@@ -35,11 +38,12 @@
                 </div>
                 <div class="new-releases-row">
                     <div class="column">
-                        <MovieItem v-for="item in newShows" :key="item.id" :size="'small'" :title="item.name" :image="item.poster_path" :movie-id="item.id"
-                            :rating="item.vote_average" :categories="item.genre_ids" />
+                        <MovieItem v-for="item in newShows" :key="item.id" :size="'small'" :title="item.name"
+                            :image="item.poster_path" :movie-id="item.id" :rating="item.vote_average"
+                            :categories="item.genre_ids" />
                     </div>
                 </div>
-                <SearchWrapper />
+                <SearchWrapper @search="handleSearchGlobal" />
             </div>
         </section>
         <BaseFooter />
@@ -53,9 +57,10 @@ import MovieItem from '../components/layout/MovieItem.vue'
 import FeaturedMovie from '../components/layout/FeaturedMovie.vue';
 import SearchWrapper from '../containers/SearchWrapper.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
-import { useHighlights ,highLightOptions,currentHighlightTitle, currentHighLightDetails} from "../composables/useHighlights"
-import { useTvShows,newShows } from '../composables/useTvShows';
+import { useHighlights, highLightOptions, currentHighlightTitle, currentHighLightDetails } from "../composables/useHighlights"
+import { useTvShows, newShows } from '../composables/useTvShows';
 import { handleMovieClick } from '../composables/useMovies';
+import { useRouter } from 'vue-router';
 export default defineComponent({
     name: 'Index',
     components: {
@@ -79,11 +84,14 @@ export default defineComponent({
                 fetchHighlights(),
                 fetchNewShows()
             ])
-         })
-
+        })
+        const router = useRouter()
+        const handleSearchGlobal = (searchTerm: string) => {
+            router.push({ name: 'Search', query: { query: searchTerm } })
+        }
         watch(currentHighlightTitle, async () => {
             console.log(currentHighlightTitle.value)
-            if(currentHighLightDetails.value.data.length === 0) {
+            if (currentHighLightDetails.value.data.length === 0) {
                 await fetchHighlights()
             }
         })
@@ -95,7 +103,8 @@ export default defineComponent({
             currentHighLightDetails,
             topHighlight,
             newShows,
-            handleMovieClick
+            handleMovieClick,
+            handleSearchGlobal
         }
     }
 });
@@ -211,6 +220,7 @@ export default defineComponent({
 
 .push-up {
     margin-top: -2rem;
+
     .new-releases-title-wrapper {
         text-align: center;
 
@@ -265,5 +275,4 @@ export default defineComponent({
             }
         }
     }
-}
-</style>
+}</style>

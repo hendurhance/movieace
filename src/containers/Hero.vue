@@ -3,11 +3,10 @@
         <h1>{{ title }}</h1>
         <p>{{ subtitle }}</p>
         <div class="mini-search" v-if="search">
-            <form>
+            <form @submit.prevent="$emit('search', searchValue.trim())">
                 <input
                 type="text" 
-                :placeholder="searchPlaceholder" 
-                @input="$emit('search', searchValue.trim())"
+                :placeholder="searchPlaceholder"
                  v-model="searchValue" 
                 @focus="showClearButton = true"
                 />
@@ -25,7 +24,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 export default defineComponent({
     name: 'Hero',
     props: {
@@ -64,6 +64,12 @@ export default defineComponent({
             searchValue.value = '';
             showClearButton.value = false;
         };
+        const route = useRoute();
+        onMounted(() => {
+            const searchQuery = route.query.search as string;
+            searchValue.value = searchQuery;
+            console.log(searchQuery);
+        });
 
 
         return {

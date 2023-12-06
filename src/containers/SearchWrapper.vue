@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent, defineComponent, ref } from 'vue';
+import { defineAsyncComponent, ref } from 'vue';
 
 const search = defineAsyncComponent(() => import('../components/svg/outline/search.vue'));
 
@@ -21,7 +21,7 @@ const searchValue = ref('');
 
 const handleSearch = () => {
     if(searchValue.value.trim() === '') return;
-    emit('search', searchValue);
+    emit('search', searchValue.value);
 }
 
 </script>
