@@ -9,8 +9,8 @@
                             <img :src="useWebImage(actorDetails.profile_path)" alt="actor poster" />
                             <div class="actor-info">
                                 <h1>{{actorDetails?.name}}</h1>
-                                <div class="actor-socials">
-                                    <a v-for="social in socials" :href="social.link" :key="social.name">{{ social.title }}</a>
+                                <div class="actor-imdb">
+                                    <a :href="imdbLink" target="_blank">View on IMDB</a>
                                 </div>
                             </div>
                         </div>
@@ -32,9 +32,9 @@
                     </div>
                 </div>
             </div>
-            <!-- <div class="container">
+            <div class="container">
                 <KnownFor />
-            </div> -->
+            </div>
             <div class="container">
                 <MoviePicture :title="'Actor Pictures'" :pictures="actorImages?.profiles" />
             </div>
@@ -54,12 +54,6 @@ import { ActorDetails, ActorImages, useActor } from '../composables/useActor';
 import { useWebImage } from '../utils/useWebImage';
 
 
-interface Social {
-    name: string;
-    link: string;
-    title: string;
-}
-
 export default defineComponent({
     name: 'Actor',
     components: {
@@ -72,19 +66,6 @@ export default defineComponent({
     setup() {
         const route = useRoute();
         const actorId = ref(route.params.id) as Ref<string>;
-        const socials = [
-            {
-                name: 'facebook',
-                link: 'https://www.facebook.com/MargotRobbie/',
-                title: 'FB',
-            },
-            {
-                name: 'instagram',
-                link: 'https://www.instagram.com/margotrobbieofficial',
-                title: 'IG'
-            }
-        ] as Social[];
-
         const paragraph = ref(`
             Margot Elise Robbie (born July 2, 1990) is an Australian actress and producer. Known for her
             work in both blockbuster and independent films, she has received several accolades,
@@ -114,6 +95,7 @@ export default defineComponent({
             the miniseries Maid (2021).
         `)
         
+        const imdbLink = ref('');
         const showFullBio = ref(false);
         const actorDetails = ref<ActorDetails>();
         const { fetchActorDetails, fetchActorImages} = useActor();
@@ -121,6 +103,8 @@ export default defineComponent({
         const handleFetchActor = async () => {
             const { data } = await fetchActorDetails(Number(actorId.value));
             actorDetails.value = data.value;
+
+            imdbLink.value = `https://www.imdb.com/name/${actorDetails.value?.imdb_id}`;
         };
         const handleFetchActorImages = async () => {
             const { data } = await fetchActorImages(Number(actorId.value));
@@ -129,18 +113,19 @@ export default defineComponent({
         const toggleFullBio = () => {
             showFullBio.value = !showFullBio.value;
         };
+        
         onMounted(() => {
            Promise.all([handleFetchActor(), handleFetchActorImages()]);
         });
 
         return {
-            socials: socials.filter(social => social.link !== null),
             paragraph,
             showFullBio,
             toggleFullBio,
             actorDetails,
             actorImages,
-            useWebImage
+            useWebImage,
+            imdbLink
         }
     }
 });
@@ -186,27 +171,37 @@ export default defineComponent({
                 margin-bottom: 0.5rem;
             }
 
-            .actor-socials {
+            .actor-imdb {
                 display: flex;
                 align-items: center;
 
                 a {
                     display: inline-block;
-                    width: 2rem;
                     height: 2rem;
-                    border-radius: 50%;
                     background-color: #f1b722;
                     color: #000000;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     margin-right: 0.5rem;
-                    
-                    // i want it to juggled around when hovered
-                    transition: transform 0.3s ease-out;
+                    padding: 1rem;
+                    border-radius: 5px;
+                    cursor: pointer;
+
+                    @keyframes juggled {
+                        0% {
+                            transform: translateX(0);
+                        }
+                        50% {
+                            transform: translateX(0.5rem);
+                        }
+                        100% {
+                            transform: translateX(0);
+                        }
+                    }
 
                     &:hover {
-                        transform: scale(1.1);
+                        animation: juggled 0.3s ease-in-out;
                     }
                 }
             }
@@ -224,13 +219,13 @@ export default defineComponent({
         }
 
         .bio {
-            max-height: 10rem;
+            max-height: max-content;
             overflow: hidden;
             transition: max-height 0.3s ease-out;
             letter-spacing: 0.5px;
 
             &.expanded {
-                max-height: 1000px;
+                max-height: 100%;
             }
 
             .read-more {
