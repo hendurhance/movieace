@@ -5,7 +5,7 @@
     <div class="episode-dialog-content">
       <div class="episode-dialog-inner">
         <div class="episode-dialog-header">
-          <h2>Season 1</h2>
+          <h2>Season {{seasonNumber}}</h2>
           <button class="episode-dialog-close" @click="closeDialog">
             &times;
           </button>
@@ -30,18 +30,23 @@
   
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
+import { Episode } from '../../composables/useTvShows';
 
 export default defineComponent({
   name: 'EpisodeDialog',
   props: {
     episodes: {
-      type: Array as PropType<any[]>,
+      type: Array as PropType<Episode[]>,
       required: true,
     },
     showDialog: {
       type: Boolean,
       required: true,
     },
+    seasonNumber: {
+      type: Number,
+      required: true,
+    }
   },
   setup(_props, { emit }) {
     const closeDialog = () => {
