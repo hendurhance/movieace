@@ -212,10 +212,6 @@ export default defineComponent({
                 day: 'numeric',
             })
         });
-        const handleShowEpisodes = (event) => {
-            showDialog.value = event
-            console.log("show dialog", showDialog.value);
-        }
         handleFetchTvShow();
         onMounted(() => {
             window.scrollTo(0, 0);
@@ -241,7 +237,6 @@ export default defineComponent({
             tvShowImages,
             similarTvShow,
             computedTvShowSeasons,
-            handleShowEpisodes,
             currentSeasonNumber
         }
     }
