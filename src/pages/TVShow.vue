@@ -79,8 +79,8 @@
         </section>
         <BaseFooter />
         <teleport to="body">
-            <EpisodeDialog :episodes="episodes?.episodes" :showDialog="showDialog" @update:showDialog="showDialog = $event" :season-number="currentSeasonNumber"
-                v-if="showDialog" />
+            <EpisodeDialog :episodes="episodes?.episodes || []" :showDialog="showDialog" @update:showDialog="showDialog = $event" :season-number="currentSeasonNumber" :poster="episodes.poster_path"
+                v-if="showDialog && episodes" />
         </teleport>
     </div>
 </template>
@@ -99,7 +99,7 @@ import RatingStar from '../containers/RatingStar.vue';
 import Tag from '../components/svg/outline/tag.vue';
 import Clock from '../components/svg/outline/clock.vue';
 import empty_movie_state from '../assets/img/empty-movie-state.png';
-import { onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router';
+import { onBeforeRouteUpdate, useRoute } from 'vue-router';
 import { TVShowDetails, useTvShows, TVShowSeasonDetails } from '../composables/useTvShows';
 import { MovieCredit, MovieImages } from '../composables/useMovies';
 import { TVShowType } from '../composables/useTvShows';
@@ -182,7 +182,6 @@ export default defineComponent({
         const handleFetchEpisodes = async (season: number) => {
             const { data } = await fetchTvShowBySeason(tvShowId.value, season);
             episodes.value = data.value;
-            console.log("episodes", data);
         }
         const computedTvShowSeasons = computed(() => {
             if (!tvShow.value?.seasons) return [];

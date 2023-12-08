@@ -12,7 +12,7 @@
         </div>
         <div class="episode-dialog-body">
           <div class="episode-poster">
-            <img src="https://image.tmdb.org/t/p/w500/6kbAMLteGO8yyewYau6bJ683sw7.jpg" alt="Episode Poster" />
+            <img :src="useWebImage(poster)" alt="Episode Poster" />
           </div>
           <div class="episode-grid">
             <h3>Episodes</h3>
@@ -31,6 +31,7 @@
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
 import { Episode } from '../../composables/useTvShows';
+import { useWebImage } from '../../utils/useWebImage';
 
 export default defineComponent({
   name: 'EpisodeDialog',
@@ -46,7 +47,11 @@ export default defineComponent({
     seasonNumber: {
       type: Number,
       required: true,
-    }
+    },
+    poster: {
+      type: String,
+      required: true,
+    },
   },
   setup(_props, { emit }) {
     const closeDialog = () => {
@@ -55,6 +60,7 @@ export default defineComponent({
 
     return {
       closeDialog,
+      useWebImage
     };
   },
 });
