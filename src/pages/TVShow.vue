@@ -52,15 +52,15 @@
                     <div class="header-wrapper-header">
                         <h2>Seasons</h2>
                         <div class="season-wrapper-count">
-                            <span><strong>Seasons</strong>: 1</span> <!-- No. of Seasons-->
-                            <span><strong>Episodes</strong>: 6</span> <!-- No. of Episodes-->
+                            <span><strong>Seasons</strong>: {{ tvShow?.number_of_seasons }}</span> <!-- No. of Seasons-->
+                            <span><strong>Episodes</strong>: {{ tvShow?.number_of_episodes }}</span> <!-- No. of Episodes-->
                         </div>
                     </div>
                     <div class="seasons-list">
-                        <div class="season-item" @click="openDialog">
-                            <span>Season 1</span>
+                        <div class="season-item"  v-for="item in computedTvShowSeasons" @click="openDialog(item.season_number)">
+                            <span>Season {{ item.season_number }}</span>
                             <div class="season-detail">
-                                <span>6 Episodes</span>
+                                <span>{{item.episode_count}} Episodes</span>
                                 <ArrowRight />
                             </div>
                         </div>
@@ -79,8 +79,8 @@
         </section>
         <BaseFooter />
         <teleport to="body">
-            <EpisodeDialog :episodes="episodes" :showDialog="showDialog" @update:showDialog="showDialog = $event"
-                v-if="showDialog" />
+            <EpisodeDialog :episodes="episodes?.episodes || []" :showDialog="showDialog" @update:showDialog="showDialog = $event" :season-number="currentSeasonNumber" :poster="episodes.poster_path"
+                v-if="showDialog && episodes" />
         </teleport>
     </div>
 </template>
@@ -100,7 +100,7 @@ import Tag from '../components/svg/outline/tag.vue';
 import Clock from '../components/svg/outline/clock.vue';
 import empty_movie_state from '../assets/img/empty-movie-state.png';
 import { onBeforeRouteUpdate, useRoute } from 'vue-router';
-import { TVShowDetails, useTvShows } from '../composables/useTvShows';
+import { TVShowDetails, useTvShows, TVShowSeasonDetails } from '../composables/useTvShows';
 import { MovieCredit, MovieImages } from '../composables/useMovies';
 import { TVShowType } from '../composables/useTvShows';
 export default defineComponent({
@@ -124,10 +124,11 @@ export default defineComponent({
         const tvShowCredit = ref<MovieCredit>()
         const tvShowImages = ref<MovieImages>()
         const similarTvShow = ref<TVShowType[]>([])
-        const { fetchTvShow, fetchTvShowImages, fetchSimilarTvShows, fetchTvShowCredit } = useTvShows()
+        const { fetchTvShow, fetchTvShowImages, fetchSimilarTvShows, fetchTvShowCredit,fetchTvShowBySeason } = useTvShows()
         const handleFetchTvShow = async () => {
             const { data } = await fetchTvShow(tvShowId.value);
             tvShow.value = data.value;
+            console.log("tv show", tvShow.value);
         };
         const handleFetchTvShowCredits = async () => {
             const { data } = await fetchTvShowCredit(tvShowId.value);
@@ -144,50 +145,7 @@ export default defineComponent({
         };
 
         const showDialog = ref(false);
-        const episodes = [
-            { id: 1, name: 'Episode 1' },
-            { id: 2, name: 'Episode 2' },
-            { id: 3, name: 'Episode 3' },
-            { id: 4, name: 'Episode 4' },
-            { id: 5, name: 'Episode 5' },
-            { id: 6, name: 'Episode 6' },
-            { id: 7, name: 'Episode 7' },
-            { id: 8, name: 'Episode 8' },
-            { id: 9, name: 'Episode 9' },
-            { id: 10, name: 'Episode 10' },
-            { id: 11, name: 'Episode 11' },
-            { id: 12, name: 'Episode 12' },
-            { id: 13, name: 'Episode 13' },
-            { id: 14, name: 'Episode 14' },
-            { id: 15, name: 'Episode 15' },
-            { id: 16, name: 'Episode 16' },
-            { id: 17, name: 'Episode 17' },
-            { id: 18, name: 'Episode 18' },
-            { id: 19, name: 'Episode 19' },
-            { id: 20, name: 'Episode 20' },
-            { id: 21, name: 'Episode 21' },
-            { id: 22, name: 'Episode 22' },
-            { id: 23, name: 'Episode 23' },
-            { id: 24, name: 'Episode 24' },
-            { id: 25, name: 'Episode 25' },
-            { id: 26, name: 'Episode 26' },
-            { id: 27, name: 'Episode 27' },
-            { id: 28, name: 'Episode 28' },
-            { id: 29, name: 'Episode 29' },
-            { id: 30, name: 'Episode 30' },
-            { id: 31, name: 'Episode 31' },
-            { id: 32, name: 'Episode 32' },
-            { id: 33, name: 'Episode 33' },
-            { id: 34, name: 'Episode 34' },
-            { id: 35, name: 'Episode 35' },
-            { id: 36, name: 'Episode 36' },
-            { id: 37, name: 'Episode 37' },
-            { id: 38, name: 'Episode 38' },
-            { id: 39, name: 'Episode 39' },
-            { id: 40, name: 'Episode 40' },
-            { id: 41, name: 'Episode 41' },
-            { id: 42, name: 'Episode 42' },
-        ];
+        const episodes = ref<TVShowSeasonDetails>();
         onBeforeRouteUpdate(async (to, from) => {
 
             if (to.params.id !== from.params.id) {
@@ -212,12 +170,23 @@ export default defineComponent({
         }
 
         const streamNow = () => {
-            console.log('stream now');
+            const formattedName = tvShow.value?.name?.replace(/ /g, "-").toLowerCase();
+            location.href= `https://movies2watch.tv/search/${formattedName}`
         }
-
-        const openDialog = () => {
+        const currentSeasonNumber = ref(1)
+        const openDialog = (seasonNumber: number) => {
             showDialog.value = true;
+            currentSeasonNumber.value = seasonNumber;
+            handleFetchEpisodes(seasonNumber);
         }
+        const handleFetchEpisodes = async (season: number) => {
+            const { data } = await fetchTvShowBySeason(tvShowId.value, season);
+            episodes.value = data.value;
+        }
+        const computedTvShowSeasons = computed(() => {
+            if (!tvShow.value?.seasons) return [];
+            return tvShow.value?.seasons.filter((i) => i.season_number !== 0);
+        });
         const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL;
 
         const computedTvShowImages = computed(() => {
@@ -267,6 +236,8 @@ export default defineComponent({
             tvShowCredit,
             tvShowImages,
             similarTvShow,
+            computedTvShowSeasons,
+            currentSeasonNumber
         }
     }
 });

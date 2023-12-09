@@ -104,6 +104,45 @@ interface TVShowResponse {
     total_pages: number,
     total_results: number
 }
+export interface Episode {
+    air_date: string,
+    crew: {
+        id: number,
+        credit_id: string,
+        name: string,
+        department: string,
+        job: string,
+        profile_path: string
+    }[],
+    episode_number: number,
+    guest_stars: {
+        id: number,
+        name: string,
+        credit_id: string,
+        character: string,
+        order: number,
+        profile_path: string
+    }[],
+    name: string,
+    overview: string,
+    id: number,
+    production_code: string,
+    season_number: number,
+    still_path: string,
+    vote_average: number,
+    vote_count: number
+
+}
+export interface TVShowSeasonDetails {
+    _id: string,
+    air_date: string,
+    episodes: Episode[],
+    name: string,
+    overview: string,
+    id: number,
+    poster_path: string,
+    season_number: number
+}
 
 export const newShows = ref<TVShowType[]>([])
 export const useTvShows = () => {
@@ -240,12 +279,36 @@ export const useTvShows = () => {
             data
         }
     }
+    const fetchTvShowBySeason = async (id:string, season:number) =>{
+        let loading = ref(false)
+        let error = ref("")
+        let data = ref<TVShowSeasonDetails>()
+        try {
+            loading.value = true
+            const req = useAxios().get(`https://api.themoviedb.org/3/tv/${id}/season/${season}`)
+            const res = (await req).data
+            if (res) {
+                data.value = res
+            }
+        } catch (err: any) {
+            error.value = err.message
+        } finally {
+            loading.value = false
+        }
+        return {
+            loading,
+            error,
+            data
+        }
+    
+    }
     return{
         fetchNewShows,
         fetchDiscoverShows,
         fetchTvShow,
         fetchTvShowCredit,
         fetchTvShowImages,
-        fetchSimilarTvShows
+        fetchSimilarTvShows,
+        fetchTvShowBySeason
     }
 }

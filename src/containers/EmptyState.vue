@@ -7,7 +7,6 @@
 
 <script lang="ts">
 import { PropType, defineComponent } from 'vue';
-
 export default defineComponent({
     name: 'EmptyState',
     props: {
@@ -46,5 +45,4 @@ export default defineComponent({
         color: #8ea9bd;
     }
 }
-
 </style>

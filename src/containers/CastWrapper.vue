@@ -1,7 +1,7 @@
 <template>
     <div class="cast-wrapper">
         <div class="cast-wrapper-header">
-            <h2>{{ title }} Cast</h2>
+            <h2>{{ title }}</h2>
             <div class="cast-wrapper-header-right">
                 <button class="cast-button" @click="moveSlide('prev')">
                     <arrowLeft />

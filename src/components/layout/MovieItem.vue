@@ -1,7 +1,7 @@
 <template>
     <div class="movie-list-item">
         <router-link :to="type == 'movie'? `/movie/${movieId}`: `/tv-show/${movieId}`">
-            <img :src="fullPathImage" alt="Movie poster" :class="size" />
+            <img :src="fullPathImage" alt="Movie poster" :class="size" loading="eager" />
             <h5>{{title}}</h5>
             <div class="rating-number">
                 <span>{{ rating.toFixed(1) }}</span>

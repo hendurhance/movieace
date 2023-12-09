@@ -9,16 +9,19 @@
             </div>
 
             <div class="container">
-                <SearchResults :media-type="'movie'" :data="discoveredMovies" />
+                <SearchResults :media-type="'movie'" :data="discoveredMovies" v-if="discoveredMovies.length > 0" />
+                <EmptyState v-else :title="'No Movie Found'" :description="'Try searching for another movie'" />
             </div>
             <div class="container">
-                <SearchResults :media-type="'tv'" :data="discoveredTv" />
+                <SearchResults :media-type="'tv'" :data="discoveredTv" v-if="discoveredTv.length > 0" />
+                <EmptyState v-else :title="'No TV Show Found'" :description="'Try searching for another tv show'" />
             </div>
             <div class="container">
-                <CastWrapper :title="'Actor Results'" :casts="discoveredPeople" />
+                <CastWrapper :title="'Actor Results'" :casts="discoveredPeople" v-if="discoveredPeople.length > 0" />
+                <EmptyState v-else :title="'No Actor Found'" :description="'Try searching for another actor'" />
             </div>
             <div class="pagination" v-if="reqMetaData.total_pages > 1">
-                <button @click="handleLoadMoreMovies" tyep="button">Load More</button>
+                <button @click="handleLoadMoreMovies" type="button">Load More</button>
             </div>
         </section>
         <BaseFooter />
@@ -33,6 +36,7 @@ import Hero from '../containers/Hero.vue';
 import 'swiper/css';
 import SearchResults from '../containers/SearchResults.vue';
 import CastWrapper from '../containers/CastWrapper.vue';
+import EmptyState from '../containers/EmptyState.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useSearch, discoveredMovies, discoveredTv, discoveredPeople, reqMetaData } from '../composables/useSearch';
 
