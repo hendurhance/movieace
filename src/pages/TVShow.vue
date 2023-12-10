@@ -31,12 +31,11 @@
                                 </p>
                                 <div class="info-item">
                                     <span><strong>Duration</strong>: 1h 53m</span>
-                                    <span><strong>Director</strong>: Adam Wingard</span>
+                                    <!-- <span><strong>Director</strong>: Adam Wingard</span> -->
                                     <span><strong>Country</strong>: {{ computedCountry }}</span>
-                                    <span><strong>Language</strong>: English</span>
+                                    <!-- <span><strong>Language</strong>: English</span> -->
                                     <span class="imdb"><strong>Visit on IMDB</strong>: <a
-                                            href="https://www.imdb.com/title/tt5034838/" target="_blank">Godzilla vs.
-                                            Kong</a></span>
+                                            :href="IMDBLink" target="_blank">{{ tvShow?.name }}</a></span>
                                 </div>
                                 <div class="watch-now-wrapper">
                                     <button @click="showTrailer"> Watch Trailer</button>
@@ -86,6 +85,7 @@
 </template>
 
 <script lang="ts">
+import TrailerModal from '../components/TrailerModal.vue'
 import { Ref, computed, defineComponent, onMounted, ref } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
@@ -101,8 +101,9 @@ import Clock from '../components/svg/outline/clock.vue';
 import empty_movie_state from '../assets/img/empty-movie-state.png';
 import { onBeforeRouteUpdate, useRoute } from 'vue-router';
 import { TVShowDetails, useTvShows, TVShowSeasonDetails } from '../composables/useTvShows';
-import { MovieCredit, MovieImages } from '../composables/useMovies';
+import { MovieCredit, MovieImages, MovieVideo } from '../composables/useMovies';
 import { TVShowType } from '../composables/useTvShows';
+import { useModal } from '../composables/useModal';
 export default defineComponent({
     name: 'TVShow',
     components: {
@@ -115,7 +116,7 @@ export default defineComponent({
         SimilarMovie,
         RatingStar,
         Tag,
-        Clock
+        Clock, TrailerModal
     },
     setup() {
         const route = useRoute();
@@ -124,11 +125,10 @@ export default defineComponent({
         const tvShowCredit = ref<MovieCredit>()
         const tvShowImages = ref<MovieImages>()
         const similarTvShow = ref<TVShowType[]>([])
-        const { fetchTvShow, fetchTvShowImages, fetchSimilarTvShows, fetchTvShowCredit,fetchTvShowBySeason } = useTvShows()
+        const { fetchTvShow, fetchTvShowImages, fetchSimilarTvShows, fetchTvShowCredit,fetchTvShowBySeason, fetchTvShowVideos } = useTvShows()
         const handleFetchTvShow = async () => {
             const { data } = await fetchTvShow(tvShowId.value);
             tvShow.value = data.value;
-            console.log("tv show", tvShow.value);
         };
         const handleFetchTvShowCredits = async () => {
             const { data } = await fetchTvShowCredit(tvShowId.value);
@@ -165,9 +165,20 @@ export default defineComponent({
             }
 
         })
-        const showTrailer = () => {
-            console.log("show trailer", tvShow.value);
-        }
+        const tvShowTrailer = ref<MovieVideo>();
+        const showTrailer = async () => {
+            const { data } = await fetchTvShowVideos(tvShowId.value);
+            data.value?.results.forEach((i: MovieVideo) => {
+                if (i.type === "Trailer") {
+                    tvShowTrailer.value = i;
+                }
+            })
+            useModal(TrailerModal, {
+                props: {
+                    video: tvShowTrailer.value
+                }
+            })
+        };
 
         const streamNow = () => {
             const formattedName = tvShow.value?.name?.replace(/ /g, "-").toLowerCase();
@@ -212,6 +223,9 @@ export default defineComponent({
                 day: 'numeric',
             })
         });
+        const IMDBLink = computed(() => {
+            return `https://www.imdb.com/title/${tvShow.value?.id}`
+        })
         handleFetchTvShow();
         onMounted(() => {
             window.scrollTo(0, 0);
@@ -237,7 +251,8 @@ export default defineComponent({
             tvShowImages,
             similarTvShow,
             computedTvShowSeasons,
-            currentSeasonNumber
+            currentSeasonNumber,
+            IMDBLink
         }
     }
 });

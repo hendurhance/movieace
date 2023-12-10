@@ -1,6 +1,6 @@
 import { ref } from "vue"
 import useAxios from "./useAxios"
-import { MovieCredit, MovieImages } from "./useMovies"
+import { MovieCredit, MovieImages, MovieVideo } from "./useMovies"
 export interface TVShowType {
     adult: boolean,
     backdrop_path: string,
@@ -302,6 +302,36 @@ export const useTvShows = () => {
         }
     
     }
+    const fetchTvShowVideos = async (id:string) =>{
+        let loading = ref(false)
+        let error = ref("")
+        let data = ref<{
+            id: string,
+            results: MovieVideo[]
+        }>()
+        try {
+            loading.value = true
+            const req = useAxios().get(`https://api.themoviedb.org/3/tv/${id}/videos?language=en-US`)
+            const res = (await req).data as {
+                id: string,
+                results: MovieVideo[]
+            }
+            if (res) {
+                data.value = res
+            }
+        } catch (err: any) {
+            error.value = err.message
+        } finally {
+            loading.value = false
+        }
+
+        return {
+            loading,
+            error,
+            data
+        }
+    
+    }
     return{
         fetchNewShows,
         fetchDiscoverShows,
@@ -309,6 +339,7 @@ export const useTvShows = () => {
         fetchTvShowCredit,
         fetchTvShowImages,
         fetchSimilarTvShows,
-        fetchTvShowBySeason
+        fetchTvShowBySeason,
+        fetchTvShowVideos
     }
 }

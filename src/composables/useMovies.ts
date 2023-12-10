@@ -83,7 +83,17 @@ export interface MovieImages {
     logos: Image[],
     posters: Image[]
 }
-const router  = useRouter()
+export interface MovieVideo {
+    id: string,
+    iso_639_1: string,
+    iso_3166_1: string,
+    key: string,
+    name: string,
+    site: string,
+    size: number,
+    type: string
+}
+const router = useRouter()
 export const handleMovieClick = (id: number) => {
     router.push({name: "Movie", params: {id: id.toString()}})
 }
@@ -198,12 +208,41 @@ export const useMovies = () => {
             data
         }
     }
+    const fetchMovieVideos = async (id:string) =>{
+        let loading = ref(false)
+        let error = ref("")
+        let data = ref<{
+            id: string,
+            results: MovieVideo[]
+        }>()
+        try {
+            loading.value = true
+            const req = useAxios().get(`https://api.themoviedb.org/3/movie/${id}/videos?language=en-US`)
+            const res = (await req).data as {
+                id: string,
+                results: MovieVideo[]
+            }
+            if (res) {
+                data.value = res
+            }
+        } catch (err: any) {
+            error.value = err.message
+        } finally {
+            loading.value = false
+        }
+        return {
+            loading,
+            error,
+            data
+        }
+    }
     
     return{
         fetchDiscoverMovies,
         fetchMovie,
         fetchMovieCredits,
         fetchMovieImages,
-        fetchSimilarMovies
+        fetchSimilarMovies,
+        fetchMovieVideos
     }
 }

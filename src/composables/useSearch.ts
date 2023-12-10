@@ -23,7 +23,6 @@ export const useSearch = () => {
                 page: req.data.page,
                 total_pages: req.data.total_pages
             }
-            console.log(reqMetaData)
             discoveredMovies.value= res.filter((movie: any) => movie.media_type === "movie")
             discoveredTv.value= res.filter((tv: any) => tv.media_type === "tv")
             discoveredPeople.value= res.filter((people: any) => people.media_type === "person")

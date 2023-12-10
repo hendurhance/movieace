@@ -40,7 +40,7 @@
                     <div class="column">
                         <MovieItem v-for="item in newShows" :key="item.id" :size="'small'" :title="item.name"
                             :image="item.poster_path" :movie-id="item.id" :rating="item.vote_average"
-                            :categories="item.genre_ids" />
+                            :categories="item.genre_ids" type="tv" />
                     </div>
                 </div>
                 <SearchWrapper @search="handleSearchGlobal" />
@@ -90,7 +90,6 @@ export default defineComponent({
             router.push({ name: 'Search', query: { search: searchTerm } })
         }
         watch(currentHighlightTitle, async () => {
-            console.log(currentHighlightTitle.value)
             if (currentHighLightDetails.value.data.length === 0) {
                 await fetchHighlights()
             }

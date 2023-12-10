@@ -13,20 +13,23 @@
         </div>
         <Swiper :slides-per-view="SwiperOptions.knownFor.slidesPerView" :space-between="SwiperOptions.knownFor.spaceBetween"
             :breakpoints="SwiperOptions.knownFor.breakpoints">
-            <!-- <swiper-slide v-for="i in 10" :key="i">
-                <MovieItem  />
-            </swiper-slide> -->
+            <Swiper-Slide v-for="item in movieItems" :key="item.id" ref="known-for-slide">
+                <MovieItem :title="getMovieOrTVTitle(item)" :image="item.poster_path" :movie-id="item.id"
+                    :rating="item.vote_average" :categories="item.genre_ids" :type="type" />
+            </Swiper-Slide>
         </Swiper>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { PropType, defineComponent } from 'vue';
 import MovieItem from '../components/layout/MovieItem.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { SwiperOptions } from '../utils/swiper-options';
 import arrowLeft from '../components/svg/outline/arrow-left.vue';
 import arrowRight from '../components/svg/outline/arrow-right.vue';
+import { Movie } from '../composables/useHighlights';
+import { TVShowType } from '../composables/useTvShows';
 import 'swiper/css';
 export default defineComponent({
     name: 'KnownFor',
@@ -37,6 +40,16 @@ export default defineComponent({
         arrowLeft,
         arrowRight
     },
+    props: {
+        type: {
+            type: String as PropType<'movie' | 'tv'>,
+            default: 'movie'
+        },
+        movieItems: {
+            type: Array as PropType<Movie[] | TVShowType[]>,
+            default: () => []
+        }
+    },
     setup() {
         const prevSlide = () => {
             console.log('prev slide');
@@ -45,11 +58,15 @@ export default defineComponent({
         const nextSlide = () => {
             console.log('next slide');
         };
+        const getMovieOrTVTitle = (item: any) => {
+            return item.media_type === 'movie' ? item.original_title : item.name;
+        };
 
         return {
             prevSlide,
             nextSlide,
-            SwiperOptions
+            SwiperOptions,
+            getMovieOrTVTitle
         }
     }
 });

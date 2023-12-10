@@ -1,6 +1,7 @@
 import { ref } from "vue"
 import { Movie } from "./useHighlights"
 import useAxios from "./useAxios"
+import { TVShowType } from "./useTvShows"
 export interface Actor {
     adult: boolean,
     gender: number,
@@ -37,6 +38,10 @@ interface ActorResponse {
     results: Actor[],
     total_pages: number,
     total_results: number
+}
+export interface ActorCombinedCredits {
+    cast : Movie[] | TVShowType[],
+    crew : TVShowType[] | Movie[]
 }
 export const useActor = () => {
     const fetchTopActors = async (url: string = "https://api.themoviedb.org/3/trending/person/day" ) => {
@@ -105,11 +110,34 @@ export const useActor = () => {
             data
         }
     }
+    const fetchCombinedCredits = async (id: number) => {
+        let loading = ref(false)
+        let error = ref("")
+        let data = ref<ActorCombinedCredits>()
+        try {
+            loading.value = true
+            const req = useAxios().get(`https://api.themoviedb.org/3/person/${id}/combined_credits`)
+            const res = (await req).data
+            if (res) {
+                data.value = res
+            }
+        } catch (err: any) {
+            error.value = err.message
+        } finally {
+            loading.value = false
+        }
+        return {
+            loading,
+            error,
+            data
+        }
+    }
 
 
     return{
         fetchTopActors,
         fetchActorDetails,
-        fetchActorImages
+        fetchActorImages,
+        fetchCombinedCredits
     }
 }

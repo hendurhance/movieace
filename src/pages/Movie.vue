@@ -37,8 +37,8 @@
                                     <span class="budget" v-if="computedBudget"><strong>Budget</strong>:
                                         {{ computedBudget }}</span>
                                     <span class="imdb"><strong>Visit on IMDB</strong>:
-                                        <a :href="`https://imdb.com/title/${movie?.imdb_id}`"
-                                            target="_blank">{{ movie?.title }}</a></span>
+                                        <a :href="`https://imdb.com/title/${movie?.imdb_id}`" target="_blank">{{
+                                            movie?.title }}</a></span>
                                 </div>
                                 <div class="watch-now-wrapper">
                                     <button @click="showTrailer">Watch Trailer</button>
@@ -63,6 +63,7 @@
 </template>
 
 <script lang="ts">
+import TrailerModal from '../components/TrailerModal.vue'
 import { Ref, computed, defineComponent, onMounted, ref } from "vue";
 import BaseHeader from "../components/base/BaseHeader.vue";
 import BaseFooter from "../components/base/BaseFooter.vue";
@@ -79,7 +80,8 @@ import SimilarMovie from "../containers/SimilarMovie.vue";
 import MoviePicture from "../containers/MoviePicture.vue";
 import CastWrapper from "../containers/CastWrapper.vue";
 import { Movie } from "../composables/useHighlights";
-import { useMovies, MovieDetails, MovieCredit, MovieImages } from "../composables/useMovies";
+import { useMovies, MovieDetails, MovieCredit, MovieImages, MovieVideo } from "../composables/useMovies";
+import { useModal } from "../composables/useModal";
 import "swiper/css";
 import { onBeforeRouteUpdate, useRoute } from "vue-router";
 import empty_movie_state from '../assets/img/empty-movie-state.png';
@@ -99,11 +101,12 @@ export default defineComponent({
         SimilarMovie,
         MoviePicture,
         CastWrapper,
+        TrailerModal
     },
     setup() {
         const route = useRoute();
         const movieId = ref(route.params.id) as Ref<string>;
-        const { fetchMovie, fetchMovieCredits, fetchMovieImages, fetchSimilarMovies } = useMovies();
+        const { fetchMovie, fetchMovieCredits, fetchMovieImages, fetchSimilarMovies, fetchMovieVideos } = useMovies();
         const movie = ref<MovieDetails>();
         const movieCredit = ref<MovieCredit>()
         const movieImages = ref<MovieImages>()
@@ -191,9 +194,19 @@ export default defineComponent({
             }
 
         })
-
-        const showTrailer = () => {
-            console.log("show trailer", movie.value);
+        const movieTrailer = ref<MovieVideo>();
+        const showTrailer = async () => {
+            const { data } = await fetchMovieVideos(movieId.value);
+            data.value?.results.forEach((i: MovieVideo) => {
+                if (i.type === "Trailer") {
+                    movieTrailer.value = i;
+                }
+            })
+            useModal(TrailerModal, {
+                props: {
+                    video: movieTrailer.value
+                }
+            })
         };
         const prevSlide = () => {
             console.log("prev slide");

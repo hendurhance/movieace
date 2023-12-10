@@ -1,9 +1,9 @@
 <template>
-    <div class="cast-item">
+    <router-link :to="`/actor/${cast.id}`" class="cast-item">
         <img :src="fullImagePath" :alt="`${cast.name} image`">
         <span>{{ cast.name }}</span>
         <span>{{ cast.character }}</span>
-    </div>
+    </router-link>
 </template>
 
 <script lang="ts">
@@ -52,6 +52,8 @@ export default defineComponent({
     justify-content: center;
     text-align: center;
     color: #fff;
+    text-decoration: none;
+
 
     img {
         width: 135px;

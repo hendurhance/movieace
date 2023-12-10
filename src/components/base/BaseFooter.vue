@@ -13,7 +13,7 @@
                         </ul>
                     </div>
                 </div>
-                <span>© {{ year }} MovieAce. Built with ❤️ by <a href="https://github.com/hendurhance" target="_blank" class="text-yellow-400">Endurance</a> & <a href="https://github.com/classyrazy" target="_blank" class="text-yellow-400">Razaq</a></span>
+                <span>© {{ year }} MovieAce. Built with ❤️ by <a href="https://github.com/hendurhance" target="_blank" class="text-yellow-400">Endurance</a> & <a href="https://github.com/classyrazy" target="_blank" class="text-yellow-400">Classydev</a></span>
                 <span>⚡️ Powered by <a href="https://www.themoviedb.org/" target="_blank" class="text-yellow-400">TMDb</a></span>
             </div>
         </div>

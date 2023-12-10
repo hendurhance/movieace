@@ -32,8 +32,8 @@
                     </div>
                 </div>
             </div>
-            <div class="container">
-                <KnownFor />
+            <div class="container" v-if="actorCombinedCredits && actorCombinedCredits.length > 0">
+                <KnownFor :movie-items="actorCombinedCredits" />
             </div>
             <div class="container">
                 <MoviePicture :title="'Actor Pictures'" :pictures="actorImages?.profiles" />
@@ -52,6 +52,8 @@ import KnownFor from '../containers/KnownFor.vue';
 import MoviePicture from '../containers/MoviePicture.vue';
 import { ActorDetails, ActorImages, useActor } from '../composables/useActor';
 import { useWebImage } from '../utils/useWebImage';
+import { TVShowType } from '../composables/useTvShows';
+import { Movie } from '../composables/useHighlights';
 
 
 export default defineComponent({
@@ -66,39 +68,11 @@ export default defineComponent({
     setup() {
         const route = useRoute();
         const actorId = ref(route.params.id) as Ref<string>;
-        const paragraph = ref(`
-            Margot Elise Robbie (born July 2, 1990) is an Australian actress and producer. Known for her
-            work in both blockbuster and independent films, she has received several accolades,
-            including nominations for two Academy Awards, four Golden Globe Awards, and five British
-            Academy Film Awards. Time magazine named her one of the 100 most influential people in the
-            world in 2017 and she was ranked as one of the world's highest-paid actresses by Forbes in
-            2019.
-
-            Born and raised in Queensland, Robbie began her career in 2008 on the television series
-            Neighbours, on which she was a regular until 2011. After moving to America, she led the
-            television series Pan Am (2011–2012), and had her breakthrough in 2013 with the black comedy
-            film The Wolf of Wall Street. She achieved wider recognition with starring roles as Jane
-            Porter in The Legend of Tarzan (2016) and Harley Quinn in the DC superhero films Suicide
-            Squad (2016), Birds of Prey (2020) and The Suicide Squad (2021).
-
-            Robbie received critical acclaim and a nomination for the Academy Award for Best Actress for
-            her portrayal of disgraced figure skater Tonya Harding in the biopic I, Tonya (2017). This
-            acclaim continued with her roles as Queen Elizabeth I in the period drama Mary Queen of
-            Scots (2018), Sharon Tate in the comedy-drama Once Upon a Time in Hollywood (2019), and a
-            fictional Fox News employee in the drama Bombshell (2019); she received BAFTA Award
-            nominations for all three and a nomination for the Academy Award for Best Supporting Actress
-            for the lattermost.
-
-            Robbie is married to filmmaker Tom Ackerley. They are co-founders of the production company
-            LuckyChap Entertainment, under which they have produced several films, including I, Tonya
-            and Promising Young Woman (2020), as well as the television series Dollface (2019–2022) and
-            the miniseries Maid (2021).
-        `)
         
         const imdbLink = ref('');
         const showFullBio = ref(false);
         const actorDetails = ref<ActorDetails>();
-        const { fetchActorDetails, fetchActorImages} = useActor();
+        const { fetchActorDetails, fetchActorImages, fetchCombinedCredits} = useActor();
         const actorImages = ref<ActorImages>();
         const handleFetchActor = async () => {
             const { data } = await fetchActorDetails(Number(actorId.value));
@@ -110,22 +84,28 @@ export default defineComponent({
             const { data } = await fetchActorImages(Number(actorId.value));
             actorImages.value = data.value;
         };
+        const actorCombinedCredits = ref<Movie[] | TVShowType[]>();
+        const handleFetchActorCombinedCredits = async () => {
+            const { data } = await fetchCombinedCredits(Number(actorId.value));
+            actorCombinedCredits.value = data.value?.cast;
+        };
         const toggleFullBio = () => {
             showFullBio.value = !showFullBio.value;
         };
         
         onMounted(() => {
-           Promise.all([handleFetchActor(), handleFetchActorImages()]);
+           Promise.all([handleFetchActor(), handleFetchActorImages(), handleFetchActorCombinedCredits()]);
+           window.scrollTo(0, 0);
         });
 
         return {
-            paragraph,
             showFullBio,
             toggleFullBio,
             actorDetails,
             actorImages,
             useWebImage,
-            imdbLink
+            imdbLink,
+            actorCombinedCredits
         }
     }
 });
