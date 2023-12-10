@@ -181,7 +181,7 @@ export default defineComponent({
         };
 
         const streamNow = () => {
-            const formattedName = tvShow.value?.name?.replace(/ /g, "-").toLowerCase();
+            const formattedName = tvShow.value?.name?.replace(/ /g, "+").toLowerCase();
             window.open(`https://movies7.to/filter?keyword=${formattedName}`);
         }
         const currentSeasonNumber = ref(1)

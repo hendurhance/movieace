@@ -163,7 +163,7 @@ export default defineComponent({
             return `$${movie.value?.budget.toLocaleString()}`;
         });
         const streamNow = () => {
-            const formattedName = movie.value?.title?.replace(/ /g, "-").toLowerCase();
+            const formattedName = movie.value?.title?.replace(/ /g, "+").toLowerCase();
             window.open(`https://movies7.to/filter?keyword=${formattedName}`);
         }
 
