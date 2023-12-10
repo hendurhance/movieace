@@ -1,6 +1,6 @@
 <template>
     <router-link :to="`/actor/${cast.id}`" class="cast-item">
-        <img :src="fullImagePath" :alt="`${cast.name} image`">
+        <img :src="fullImagePath" :alt="`${cast.name} image`" loading="lazy">
         <span>{{ cast.name }}</span>
         <span>{{ cast.character }}</span>
     </router-link>

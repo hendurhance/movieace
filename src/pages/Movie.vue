@@ -8,7 +8,7 @@
                         <div class="movie-header-grid">
                             <div class="movie-poster">
                                 <div class="rating-number">8.1</div>
-                                <img :src="computedMovieImages.poster" :alt="movie?.title" />
+                                <img :src="computedMovieImages.poster" :alt="movie?.title" loading="lazy" />
                             </div>
                             <div class="movie-header-content">
                                 <h1>{{ movie?.title }}</h1>

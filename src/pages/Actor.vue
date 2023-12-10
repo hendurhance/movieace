@@ -6,7 +6,7 @@
                 <div class="container">
                     <div class="actor-hero-grid">
                         <div class="actor-poster" v-if="actorDetails">
-                            <img :src="useWebImage(actorDetails.profile_path)" alt="actor poster" />
+                            <img :src="useWebImage(actorDetails.profile_path)" alt="actor poster" loading="lazy" />
                             <div class="actor-info">
                                 <h1>{{actorDetails?.name}}</h1>
                                 <div class="actor-imdb">

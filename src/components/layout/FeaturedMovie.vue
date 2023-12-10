@@ -1,6 +1,6 @@
 <template>
     <div class="featured">
-        <img :src="fullPathImage" :alt="`${name} banner`">
+        <img :src="fullPathImage" :alt="`${name} banner`" loading="lazy">
         <div class="featured-overlay">
             <div class="container w-container">
                 <div class="featured-content">

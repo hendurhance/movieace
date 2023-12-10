@@ -4,7 +4,7 @@
             <h2>{{ title }}</h2>
         </div>
         <div class="movie-pictures">
-            <img v-for="(picture, idx) in pictures" :key="idx" :src="useWebImage(picture.file_path)" alt="movie-picture" />
+            <img v-for="(picture, idx) in pictures" :key="idx" :src="useWebImage(picture.file_path)" alt="movie-picture"  loading="lazy"/>
         </div>
     </div>
 </template>

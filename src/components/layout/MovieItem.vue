@@ -1,7 +1,7 @@
 <template>
     <div class="movie-list-item">
         <router-link :to="type == 'movie'? `/movie/${movieId}`: `/tv-show/${movieId}`">
-            <img :src="fullPathImage" alt="Movie poster" :class="size" loading="eager" />
+            <img :src="fullPathImage" alt="Movie poster" :class="size" loading="lazy" />
             <h5>{{title}}</h5>
             <div class="rating-number">
                 <span>{{ rating.toFixed(1) }}</span>
@@ -23,7 +23,6 @@
 import { PropType, defineComponent, onMounted, ref } from 'vue';
 import RatingStar from '../../containers/RatingStar.vue'
 import tag from '../svg/outline/tag.vue';
-// import empty_actor_state from '../../assets/img/empty-actor-state.png';
 import empty_movie_state from '../../assets/img/empty-movie-state.png';
 import votingToRating from '../../calculation/vote-to-rating';
 import { useGenresList } from '../../composables/useGenresList';

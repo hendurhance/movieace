@@ -12,7 +12,7 @@
         </div>
         <div class="episode-dialog-body">
           <div class="episode-poster">
-            <img :src="useWebImage(poster)" alt="Episode Poster" />
+            <img :src="useWebImage(poster)" alt="Episode Poster" loading="lazy"/>
           </div>
           <div class="episode-grid">
             <h3>Episodes</h3>

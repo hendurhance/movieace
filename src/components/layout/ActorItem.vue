@@ -5,7 +5,7 @@
                 <popularity_svg />
                 <span>{{popularity.toFixed(0)}}</span>
             </div>
-            <img :src="fullPathImage" :alt="name" />
+            <img :src="fullPathImage" :alt="name" loading="lazy" />
             <div class="actor-overlay">
                 <h3>{{name}}</h3>
             </div>
