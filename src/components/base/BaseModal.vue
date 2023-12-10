@@ -15,7 +15,6 @@
 </template>
     
 <script lang="ts" setup>
-import { defineEmits } from 'vue';
 import {modalOpen} from '../../composables/useModal';
 let emit = defineEmits(['close']);
 const closeDialog = () => {
