@@ -182,7 +182,7 @@ export default defineComponent({
 
         const streamNow = () => {
             const formattedName = tvShow.value?.name?.replace(/ /g, "-").toLowerCase();
-            location.href= `https://movies2watch.tv/search/${formattedName}`
+            window.open(`https://movies7.to/filter?keyword=${formattedName}`);
         }
         const currentSeasonNumber = ref(1)
         const openDialog = (seasonNumber: number) => {

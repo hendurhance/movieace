@@ -42,6 +42,7 @@
                                 </div>
                                 <div class="watch-now-wrapper">
                                     <button @click="showTrailer">Watch Trailer</button>
+                                    <button @click="streamNow"> Stream Now</button>
                                 </div>
                             </div>
                         </div>
@@ -161,6 +162,10 @@ export default defineComponent({
             if (!movie.value?.budget) return "";
             return `$${movie.value?.budget.toLocaleString()}`;
         });
+        const streamNow = () => {
+            const formattedName = movie.value?.title?.replace(/ /g, "-").toLowerCase();
+            window.open(`https://movies7.to/filter?keyword=${formattedName}`);
+        }
 
         onMounted(() => {
             window.scrollTo(0, 0);
@@ -231,7 +236,8 @@ export default defineComponent({
             movieImages,
             similarMovies,
             fullDate,
-            computedBudget
+            computedBudget,
+            streamNow
         };
     },
 });
