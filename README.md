@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="/docs/logo.png" width="200 height="100%">
+    <img src="/docs/logo.png" width="200" height="100%">
 </p>
 
 ## 📚 Table of Contents
@@ -56,6 +56,9 @@ The movie details page displays the movie's details, cast, and trailers. Users c
 </p>
 
 ## 📺 Demo
+
+https://github.com/hendurhance/movieace/assets/50846992/1abd1a24-84aa-4cac-9054-44e29ce64d99
+
 
 ## 📖 Technologies Used
 - [Vue 3](https://v3.vuejs.org/)
