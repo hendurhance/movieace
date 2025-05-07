@@ -63,7 +63,7 @@
                 <span>S{{ currentSeason }}:E{{ currentEpisode }}</span>
                 <span v-if="currentEpisodeDetails.air_date">{{ formatDate(currentEpisodeDetails.air_date) }}</span>
                 <span v-if="currentEpisodeDetails.vote_average">Rating: {{ currentEpisodeDetails.vote_average.toFixed(1)
-                }}/10</span>
+                    }}/10</span>
             </div>
             <p class="overview">{{ currentEpisodeDetails.overview }}</p>
         </div>
@@ -93,9 +93,13 @@ export default defineComponent({
         const externalId = ref('');
 
         const servers = [
+            { name: 'VidSrc CC', urlTemplate: 'https://vidsrc.cc/v2/embed/tv/{externalId}/{season}/{episode}' },
             { name: 'VidSrc XYZ', urlTemplate: 'https://vidsrc.xyz/embed/tv?tmdb={externalId}&season={season}&episode={episode}' },
             { name: 'VidSrc In', urlTemplate: 'https://vidsrc.in/embed/tv?tmdb={externalId}&season={season}&episode={episode}' },
-            { name: 'MultiEmbed', urlTemplate: 'https://multiembed.mov/?video_id={externalId}&tmdb=1&s={season}&e={episode}' }
+            { name: 'MultiEmbed', urlTemplate: 'https://multiembed.mov/?video_id={externalId}&tmdb=1&s={season}&e={episode}' },
+            { name: 'Embed.su', urlTemplate: 'https://embed.su/embed/tv/{externalId}/{season}/{episode}' },
+            { name: 'Vidlink', urlTemplate: 'https://vidlink.pro/tv/{externalId}/{season}/{episode}' },
+            { name: 'AutoEmbed', urlTemplate: 'https://player.autoembed.cc/embed/tv/{externalId}/{season}/{episode}' }
         ];
         const currentEmbedUrl = computed(() => {
             if (!externalId.value) return '';
