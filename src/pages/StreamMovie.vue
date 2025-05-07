@@ -5,20 +5,15 @@
       back-text="Back to movie"
       @back-click="goBack"
     >
-      <WatchParty
-        :media-data="mediaData"
-        :enable-sync="true"
-        @sync-request="handleSyncRequest"
-        @media-change="handleMediaChange"
-      />
+      <div class="header-actions">
+        <ShareScreen />
+        <WatchParty />
+      </div>
     </StreamHeader>
 
     <VideoPlayer 
       :embedUrl="currentEmbedUrl"
-      :enable-watch-party="isWatchPartyActive"
-      :member-count="memberCount"
       @player-event="handlePlayerEvent"
-      @sync-request="handleSyncRequest"
     />
 
     <div class="stream-controls">
@@ -67,10 +62,10 @@ import {
   getServers,
   buildStreamUrl,
 } from '../composables/useStream';
-import { useWatchPartySync, type MediaInfo, type SyncEvent } from '../composables/useWatchPartySync';
 import StreamHeader from '../components/StreamHeader.vue';
 import ServerSelection from '../components/ServerSelection.vue';
 import VideoPlayer from '../components/VideoPlayer.vue';
+import ShareScreen from '../components/ShareScreen.vue';
 import WatchParty from '../components/WatchParty.vue';
 import Disclaimer from '../components/layout/Disclaimer.vue';
 
@@ -80,6 +75,7 @@ export default defineComponent({
     StreamHeader,
     ServerSelection,
     VideoPlayer,
+    ShareScreen,
     WatchParty,
     Disclaimer
   },
@@ -92,16 +88,7 @@ export default defineComponent({
     const isLoading = ref<boolean>(false);
     const error = ref<string | null>(null);
 
-    // Watch Party Sync
-    const {
-      isConnected,
-      memberCount,
-      setCurrentMedia,
-    } = useWatchPartySync();
-
     const availableServers = computed(() => getServers('movie'));
-    
-    const isWatchPartyActive = computed(() => isConnected.value && memberCount.value > 1);
 
     const currentEmbedUrl = computed(() => {
       if (!movieId.value) return '';
@@ -112,36 +99,10 @@ export default defineComponent({
       );
     });
 
-    // Create media data for watch party
-    const mediaData = computed((): MediaInfo | null => {
-      if (!movie.value) return null;
-      
-      return {
-        type: 'movie',
-        id: movie.value.id,
-        title: movie.value.title,
-        streamUrl: currentEmbedUrl.value,
-        posterUrl: getMovieImageUrl(movie.value).poster,
-        year: movie.value.release_date ? new Date(movie.value.release_date).getFullYear() : undefined
-      };
-    });
-
     // Handle player events (from iframe messages)
     const handlePlayerEvent = (event: any) => {
       console.log('StreamMovie received player event:', event);
       // Additional handling if needed
-    };
-
-    // Handle sync requests (from watch party or player)
-    const handleSyncRequest = (syncData: SyncEvent) => {
-      console.log('StreamMovie handling sync request:', syncData);
-      // The sync is handled automatically by the WatchPartySync composable
-    };
-
-    // Handle media changes from watch party
-    const handleMediaChange = (newMediaData: MediaInfo) => {
-      console.log('Media changed in watch party:', newMediaData);
-      setCurrentMedia(newMediaData);
     };
 
     const loadMovieDetails = async () => {
@@ -171,13 +132,6 @@ export default defineComponent({
           getPreferredStreamData(movieId.value, 'movie');
         }
 
-        // Update media data in watch party system when movie loads
-        setTimeout(() => {
-          if (mediaData.value) {
-            setCurrentMedia(mediaData.value);
-          }
-        }, 100);
-
       } catch (err) {
         error.value = err instanceof Error ? err.message : 'Failed to load movie details';
         console.error('Error loading movie details:', err);
@@ -194,13 +148,6 @@ export default defineComponent({
       
       savePreferredServer(movieId.value, serverIndex, 'movie');
       getPreferredStreamData(movieId.value, 'movie');
-      
-      // Update media data when server changes
-      setTimeout(() => {
-        if (mediaData.value) {
-          setCurrentMedia(mediaData.value);
-        }
-      }, 100);
     };
 
     const goBack = () => {
@@ -217,33 +164,21 @@ export default defineComponent({
       }
     );
 
-    // Watch for embed URL changes and update media data
-    watch(currentEmbedUrl, () => {
-      if (mediaData.value) {
-        setCurrentMedia(mediaData.value);
-      }
-    });
-
     onMounted(() => {
       loadMovieDetails();
     });
 
     return {
       movie,
-      mediaData,
       currentEmbedUrl,
       availableServers,
-      isWatchPartyActive,
-      memberCount,
       changeServer,
       goBack,
       getMovieImageUrl,
       currentStreamData,
       isLoading,
       error,
-      handlePlayerEvent,
-      handleSyncRequest,
-      handleMediaChange
+      handlePlayerEvent
     };
   }
 });
@@ -547,5 +482,18 @@ export default defineComponent({
   outline: 2px solid #ff5252;
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+// Header actions
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .header-actions {
+    gap: 0.5rem;
+  }
 }
 </style>

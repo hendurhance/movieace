@@ -5,20 +5,15 @@
       back-text="Back to show"
       @back-click="goBack"
     >
-      <WatchParty
-        :media-data="mediaData"
-        :enable-sync="true"
-        @sync-request="handleSyncRequest"
-        @media-change="handleMediaChange"
-      />
+      <div class="header-actions">
+        <ShareScreen />
+        <WatchParty />
+      </div>
     </StreamHeader>
 
     <VideoPlayer 
       :embedUrl="currentEmbedUrl"
-      :enable-watch-party="isWatchPartyActive"
-      :member-count="memberCount"
       @player-event="handlePlayerEvent"
-      @sync-request="handleSyncRequest"
     />
 
     <div class="stream-controls">
@@ -82,10 +77,10 @@ import {
   getServers,
   buildStreamUrl,
 } from '../composables/useStream';
-import { useWatchPartySync, type MediaInfo, type SyncEvent } from '../composables/useWatchPartySync';
 import StreamHeader from '../components/StreamHeader.vue';
 import ServerSelection from '../components/ServerSelection.vue';
 import VideoPlayer from '../components/VideoPlayer.vue';
+import ShareScreen from '../components/ShareScreen.vue';
 import WatchParty from '../components/WatchParty.vue';
 import Disclaimer from '../components/layout/Disclaimer.vue';
 import EpisodeNavigation from '../components/EpisodeNavigation.vue';
@@ -96,6 +91,7 @@ export default defineComponent({
     StreamHeader,
     ServerSelection,
     VideoPlayer,
+    ShareScreen,
     WatchParty,
     Disclaimer,
     EpisodeNavigation
@@ -116,16 +112,7 @@ export default defineComponent({
     const isLoadingEpisodes = ref<boolean>(false);
     const error = ref<string | null>(null);
 
-    // Watch Party Sync
-    const {
-      isConnected,
-      memberCount,
-      setCurrentMedia,
-    } = useWatchPartySync();
-
     const availableServers = computed(() => getServers('tv'));
-
-    const isWatchPartyActive = computed(() => isConnected.value && memberCount.value > 1);
 
     const currentEmbedUrl = computed(() => {
       if (!externalId.value) return '';
@@ -138,22 +125,6 @@ export default defineComponent({
       );
     });
 
-    // Create media data for watch party
-    const mediaData = computed((): MediaInfo | null => {
-      if (!show.value) return null;
-      
-      return {
-        type: 'tv',
-        id: show.value.id,
-        title: show.value.name,
-        season: currentSeason.value,
-        episode: currentEpisode.value,
-        streamUrl: currentEmbedUrl.value,
-        posterUrl: getMovieImageUrl(show.value).poster,
-        year: show.value.first_air_date ? new Date(show.value.first_air_date).getFullYear() : undefined
-      };
-    });
-
     const availableSeasons = computed(() => {
       return seasons.value.filter(season => season.season_number > 0);
     });
@@ -162,18 +133,6 @@ export default defineComponent({
     const handlePlayerEvent = (event: any) => {
       console.log('StreamTVShow received player event:', event);
       // Additional handling if needed
-    };
-
-    // Handle sync requests (from watch party or player)
-    const handleSyncRequest = (syncData: SyncEvent) => {
-      console.log('StreamTVShow handling sync request:', syncData);
-      // The sync is handled automatically by the WatchPartySync composable
-    };
-
-    // Handle media changes from watch party
-    const handleMediaChange = (newMediaData: MediaInfo) => {
-      console.log('Media changed in watch party:', newMediaData);
-      setCurrentMedia(newMediaData);
     };
 
     const loadShowDetails = async () => {
@@ -211,12 +170,6 @@ export default defineComponent({
 
         await loadSeasonDetails();
         
-        // Update media data in watch party system when show loads
-        setTimeout(() => {
-          if (mediaData.value) {
-            setCurrentMedia(mediaData.value);
-          }
-        }, 100);
       } catch (err) {
         error.value = err instanceof Error ? err.message : 'Failed to load show details';
         console.error('Error loading show details:', err);
@@ -318,16 +271,6 @@ export default defineComponent({
       router.push(`/tv-show/${showId.value}?season=${currentSeason.value}&episode=${currentEpisode.value}`);
     };
 
-    // Watch for embed URL changes and update media data
-    watch(
-      [currentEmbedUrl, currentSeason, currentEpisode],
-      () => {
-        if (mediaData.value) {
-          setCurrentMedia(mediaData.value);
-        }
-      }
-    );
-
     watch(
       () => route.params,
       async (newParams) => {
@@ -352,7 +295,6 @@ export default defineComponent({
 
     return {
       show,
-      mediaData,
       currentEmbedUrl,
       availableServers,
       currentSeason,
@@ -360,8 +302,6 @@ export default defineComponent({
       availableSeasons,
       seasonEpisodes,
       currentEpisodeDetails,
-      isWatchPartyActive,
-      memberCount,
       isLoading,
       isLoadingEpisodes,
       error,
@@ -370,8 +310,6 @@ export default defineComponent({
       onSeasonChange,
       goBack,
       handlePlayerEvent,
-      handleSyncRequest,
-      handleMediaChange,
       getMovieImageUrl,
       currentStreamData
     };
@@ -685,5 +623,18 @@ export default defineComponent({
   outline: 2px solid #ff5252;
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+// Header actions
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .header-actions {
+    gap: 0.5rem;
+  }
 }
 </style>
