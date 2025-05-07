@@ -84,7 +84,7 @@ import { Movie } from "../composables/useHighlights";
 import { useMovies, MovieDetails, MovieCredit, MovieImages, MovieVideo } from "../composables/useMovies";
 import { useModal } from "../composables/useModal";
 import "swiper/css";
-import { onBeforeRouteUpdate, useRoute } from "vue-router";
+import { onBeforeRouteUpdate, useRoute, useRouter } from "vue-router";
 import empty_movie_state from '../assets/img/empty-movie-state.png';
 export default defineComponent({
     name: "Movie",
@@ -106,6 +106,7 @@ export default defineComponent({
     },
     setup() {
         const route = useRoute();
+        const router = useRouter();
         const movieId = ref(route.params.id) as Ref<string>;
         const { fetchMovie, fetchMovieCredits, fetchMovieImages, fetchSimilarMovies, fetchMovieVideos } = useMovies();
         const movie = ref<MovieDetails>();
@@ -163,9 +164,9 @@ export default defineComponent({
             return `$${movie.value?.budget.toLocaleString()}`;
         });
         const streamNow = () => {
-            const formattedName = movie.value?.title?.replace(/ /g, "+").toLowerCase();
-            window.open(`https://movies7.to/filter?keyword=${formattedName}`);
-        }
+            router.push(`/stream/movie/${movieId.value}`);
+        };
+
 
         onMounted(() => {
             window.scrollTo(0, 0);

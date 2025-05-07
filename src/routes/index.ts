@@ -89,6 +89,24 @@ const routes: Array<RouteRecordRaw> = [
             title: 'Search'
         }
     },
+    {
+        'path': '/stream/movie/:id',
+        'name': 'StreamMovie',
+        'component': () => import('../pages/StreamMovie.vue'),
+        meta: {
+            showInHeader: false,
+            title: 'Stream Movie'
+        }
+    },
+    {
+        'path': '/stream/tv-show/:id/season/:season/episode/:episode',
+        'name': 'StreamTVShow',
+        'component': () => import('../pages/StreamTVShow.vue'),
+        meta: {
+            showInHeader: false,
+            title: 'Stream TV Show'
+        }
+    },
 ];
 
 const router = createRouter({
