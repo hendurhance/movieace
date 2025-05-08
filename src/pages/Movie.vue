@@ -7,7 +7,7 @@
                     <div class="container">
                         <div class="movie-header-grid">
                             <div class="movie-poster">
-                                <div class="rating-number">8.1</div>
+                                <div class="rating-number">{{ movie?.vote_average }}</div>
                                 <img :src="computedMovieImages.poster" :alt="movie?.title" loading="lazy" />
                             </div>
                             <div class="movie-header-content">
