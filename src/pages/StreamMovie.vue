@@ -64,7 +64,11 @@ export default defineComponent({
       { name: 'MultiEmbed', urlTemplate: 'https://multiembed.mov/?video_id={tmdbId}&tmdb=1' },
       { name: 'EmbedSU', urlTemplate: 'https://embed.su/embed/movie/{tmdbId}' },
       { name: 'VidLink', urlTemplate: 'https://vidlink.pro/movie/{tmdbId}' },
-      { name: 'AutoEmbed', urlTemplate: 'https://player.autoembed.cc/embed/movie/{tmdbId}' }
+      { name: 'AutoEmbed', urlTemplate: 'https://player.autoembed.cc/embed/movie/{tmdbId}' },
+      { name: 'VidFast', urlTemplate: 'https://vidfast.pro/movie/{tmdbId}' },
+      { name: '111Movies', urlTemplate: 'https://111movies.com/movie/{tmdbId}' },
+      { name: 'Vidora', urlTemplate: 'https://vidora.su/movie/{tmdbId}?parameters' },
+      { name: 'Smashy', urlTemplate: 'https://player.smashy.stream/movie/{tmdbId}?autoplay=true' }
     ];
 
     const currentEmbedUrl = computed(() => {
