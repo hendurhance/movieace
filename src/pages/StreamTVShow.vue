@@ -25,7 +25,7 @@
             <div class="server-selection">
                 <h3>Select Server</h3>
                 <div class="server-buttons">
-                    <button v-for="(server, index) in servers" :key="index" :class="{ active: currentServer === index }"
+                    <button v-for="(server, index) in servers" :key="index" :class="{ active: currentStreamData.currentServer === index }"
                         @click="changeServer(index)">
                         {{ server.name }}
                     </button>
@@ -41,6 +41,10 @@
                                 Season {{ season.season_number }}
                             </option>
                         </select>
+                    </div>
+                    <div class="movie-poster" v-if="show">
+                        <img :src="getMovieImageUrl(show as unknown as TVShowDetails).poster" :alt="show?.name"
+                            loading="lazy" />
                     </div>
                 </div>
 
@@ -63,7 +67,7 @@
                 <span>S{{ currentSeason }}:E{{ currentEpisode }}</span>
                 <span v-if="currentEpisodeDetails.air_date">{{ formatDate(currentEpisodeDetails.air_date) }}</span>
                 <span v-if="currentEpisodeDetails.vote_average">Rating: {{ currentEpisodeDetails.vote_average.toFixed(1)
-                    }}/10</span>
+                }}/10</span>
             </div>
             <p class="overview">{{ currentEpisodeDetails.overview }}</p>
         </div>
@@ -74,6 +78,8 @@
 import { defineComponent, ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTvShows, TVShowDetails } from '../composables/useTvShows';
+import { getMovieImageUrl } from '../utils/useWebImage';
+import { currentStreamData, getPreferredStreamData, saveLastWatchedMetaData, savePreferredServer, servers, streamData } from '../composables/useStream';
 
 export default defineComponent({
     name: 'StreamTVShow',
@@ -91,31 +97,14 @@ export default defineComponent({
         const { fetchTvShow, fetchTvShowBySeason } = useTvShows();
         const currentServer = ref(0);
         const externalId = ref('');
-
-        const servers = [
-            { name: 'VidSrc CC', urlTemplate: 'https://vidsrc.cc/v2/embed/tv/{externalId}/{season}/{episode}' },
-            { name: 'VidSrc XYZ', urlTemplate: 'https://vidsrc.xyz/embed/tv?tmdb={externalId}&season={season}&episode={episode}' },
-            { name: 'VidSrc In', urlTemplate: 'https://vidsrc.in/embed/tv?tmdb={externalId}&season={season}&episode={episode}' },
-            { name: 'MultiEmbed', urlTemplate: 'https://multiembed.mov/?video_id={externalId}&tmdb=1&s={season}&e={episode}' },
-            { name: 'Embed.su', urlTemplate: 'https://embed.su/embed/tv/{externalId}/{season}/{episode}' },
-            { name: 'Vidlink', urlTemplate: 'https://vidlink.pro/tv/{externalId}/{season}/{episode}' },
-            { name: 'AutoEmbed', urlTemplate: 'https://player.autoembed.cc/embed/tv/{externalId}/{season}/{episode}' },
-            { name: 'VidFast', urlTemplate: 'https://vidfast.pro/tv/{externalId}/{season}/{episode}' },
-            { name: '111Movies', urlTemplate: 'https://111movies.com/tv/{externalId}/{season}/{episode}' },
-            { name: 'Vidora', urlTemplate: 'https://vidora.su/tv/{externalId}/{season}/{episode}?autoplay=true' },
-            { name: 'Smashy', urlTemplate: 'https://player.smashy.stream/tv/{externalId}?s={season}&e={episode}' }
-        ];
-
         const currentEmbedUrl = computed(() => {
             if (!externalId.value) return '';
 
-            return servers[currentServer.value].urlTemplate
+            return servers.value[currentStreamData.value.currentServer].urlTemplate
                 .replace('{externalId}', externalId.value)
                 .replace('{season}', currentSeason.value.toString())
                 .replace('{episode}', currentEpisode.value.toString());
         });
-
-        console.log('currentEmbedUrl', currentEmbedUrl.value);
 
         const availableSeasons = computed(() => {
             if (!seasons.value) return [];
@@ -134,6 +123,12 @@ export default defineComponent({
                     }
                     externalId.value = showId.value;
 
+                    const preferredDataExist = getPreferredStreamData(Number(showId.value));
+                    if (!preferredDataExist) {
+                        savePreferredServer(showId.value, 0);
+                        getPreferredStreamData(Number(showId.value));
+                    }
+
                     await loadSeasonDetails();
                 }
             } catch (error) {
@@ -150,6 +145,10 @@ export default defineComponent({
                     currentEpisodeDetails.value = seasonEpisodes.value.find(
                         ep => ep.episode_number === currentEpisode.value
                     ) || null;
+                    saveLastWatchedMetaData(showId.value, 'tv', {
+                        season: currentSeason.value,
+                        episode: currentEpisode.value
+                    });
                 }
             } catch (error) {
                 console.error('Error loading season details:', error);
@@ -159,7 +158,10 @@ export default defineComponent({
         const onSeasonChange = async () => {
             currentSeason.value = selectedSeason.value;
             currentEpisode.value = 1;
-
+            saveLastWatchedMetaData(showId.value, 'tv', {
+                season: currentSeason.value,
+                episode: currentEpisode.value
+            });
             router.replace({
                 name: 'StreamTVShow',
                 params: {
@@ -174,6 +176,10 @@ export default defineComponent({
 
         const changeEpisode = (episodeNumber: number) => {
             currentEpisode.value = episodeNumber;
+            saveLastWatchedMetaData(showId.value, 'tv', {
+                season: currentSeason.value,
+                episode: currentEpisode.value
+            });
 
             currentEpisodeDetails.value = seasonEpisodes.value.find(
                 ep => ep.episode_number === episodeNumber
@@ -194,7 +200,8 @@ export default defineComponent({
         };
 
         const changeServer = (serverIndex: number) => {
-            currentServer.value = serverIndex;
+            streamData.value.movieServerMap[showId.value].serverIndex = serverIndex;
+            getPreferredStreamData(Number(showId.value));
         };
 
         const goBack = () => {
@@ -237,7 +244,9 @@ export default defineComponent({
             changeEpisode,
             onSeasonChange,
             goBack,
-            formatDate
+            formatDate,
+            getMovieImageUrl,
+            currentStreamData
         };
     }
 });
@@ -379,6 +388,22 @@ export default defineComponent({
         margin-bottom: 1rem;
         font-weight: 500;
         font-size: 1.2rem;
+    }
+
+    .movie-poster {
+        margin-top: 2rem;
+        position: relative;
+        width: 100%;
+        height: clamp(400px, 30vw, 600px);
+        margin-right: 1.5rem;
+        flex-shrink: 0;
+
+        img {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            object-fit: cover;
+        }
     }
 
     .season-selector {
