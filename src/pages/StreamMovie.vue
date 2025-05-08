@@ -23,7 +23,7 @@
     <div class="server-selection">
       <h3>Select Server</h3>
       <div class="server-buttons">
-        <button v-for="(server, index) in servers" :key="index" :class="{ active: currentServer === index }"
+        <button v-for="(server, index) in servers" :key="index" :class="{ active: streamData.currentServer === index }"
           @click="changeServer(index)">
           {{ server.name }}
         </button>
@@ -31,6 +31,11 @@
     </div>
 
     <div class="movie-info" v-if="movie">
+      <div class="movie-poster">
+        <div class="rating-number">{{ movie?.vote_average }}</div>
+        <img :src="getMovieImageUrl(movie as unknown as Movie).poster" :alt="movie?.title" loading="lazy" />
+      </div>
+    <div class="movie-sub-texts">
       <h2>{{ movie.title }}</h2>
       <div class="info-details">
         <span v-if="movie.release_date">{{ new Date(movie.release_date).getFullYear() }}</span>
@@ -39,6 +44,7 @@
       </div>
       <p class="overview">{{ movie.overview }}</p>
     </div>
+    </div>
   </div>
 </template>
 
@@ -46,6 +52,9 @@
 import { defineComponent, ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMovies, MovieDetails } from '../composables/useMovies';
+import { getMovieImageUrl } from '../utils/useWebImage';
+import { Movie } from '../composables/useHighlights';
+import { servers, streamData } from '../composables/useStream';
 
 export default defineComponent({
   name: 'StreamMovie',
@@ -55,25 +64,9 @@ export default defineComponent({
     const movieId = ref(route.params.id as string);
     const movie = ref<MovieDetails | null>(null);
     const { fetchMovie } = useMovies();
-    const currentServer = ref(0);
-
-    const servers = [
-      { name: 'VidSrc CC', urlTemplate: 'https://vidsrc.cc/v2/embed/movie/{tmdbId}' },
-      { name: 'VidSrc XYZ', urlTemplate: 'https://vidsrc.xyz/embed/movie?tmdb={tmdbId}' },
-      { name: 'VidSrc In', urlTemplate: 'https://vidsrc.in/embed/movie?tmdb={tmdbId}' },
-      { name: 'MultiEmbed', urlTemplate: 'https://multiembed.mov/?video_id={tmdbId}&tmdb=1' },
-      { name: 'EmbedSU', urlTemplate: 'https://embed.su/embed/movie/{tmdbId}' },
-      { name: 'VidLink', urlTemplate: 'https://vidlink.pro/movie/{tmdbId}' },
-      { name: 'AutoEmbed', urlTemplate: 'https://player.autoembed.cc/embed/movie/{tmdbId}' },
-      { name: 'VidFast', urlTemplate: 'https://vidfast.pro/movie/{tmdbId}' },
-      { name: '111Movies', urlTemplate: 'https://111movies.com/movie/{tmdbId}' },
-      { name: 'Vidora', urlTemplate: 'https://vidora.su/movie/{tmdbId}?parameters' },
-      { name: 'Smashy', urlTemplate: 'https://player.smashy.stream/movie/{tmdbId}?autoplay=true' }
-    ];
-
     const currentEmbedUrl = computed(() => {
       if (!movieId.value) return '';
-      return servers[currentServer.value].urlTemplate.replace('{tmdbId}', movieId.value);
+      return servers.value[streamData.value.currentServer].urlTemplate.replace('{tmdbId}', movieId.value);
     });
 
     const loadMovieDetails = async () => {
@@ -91,7 +84,7 @@ export default defineComponent({
     };
 
     const changeServer = (serverIndex: number) => {
-      currentServer.value = serverIndex;
+      streamData.value.currentServer = serverIndex;
     };
 
     const goBack = () => {
@@ -106,9 +99,10 @@ export default defineComponent({
       movie,
       currentEmbedUrl,
       servers,
-      currentServer,
       changeServer,
-      goBack
+      goBack,
+      getMovieImageUrl,
+      streamData
     };
   }
 });
@@ -236,10 +230,35 @@ export default defineComponent({
 }
 
 .movie-info {
+  margin-top: 3rem;
   padding: 1rem 2rem;
   max-width: 960px;
-  margin: 0 auto;
+  display: flex;
+  .movie-poster{
+    position: relative;
+    width: 200px;
+    height: 300px;
+    margin-right: 1.5rem;
+    flex-shrink: 0;
 
+    img {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    .rating-number {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+  }
   h2 {
     margin-top: 0;
     font-size: 1.75rem;
