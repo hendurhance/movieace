@@ -24,6 +24,7 @@ const defaultStreamData: StreamData = {
 export const streamData = useStorage<StreamData>('streamData', defaultStreamData);
 
 export const movieServers = ref<Server[]>([
+  { name: 'VidEasy', urlTemplate: 'https://player.videasy.net/movie/{tmdbId}?color=#4eb5ff' },
   { name: 'VidSrc CC', urlTemplate: 'https://vidsrc.cc/v2/embed/movie/{tmdbId}' },
   { name: 'VidSrc XYZ', urlTemplate: 'https://vidsrc.xyz/embed/movie?tmdb={tmdbId}' },
   { name: 'VidSrc In', urlTemplate: 'https://vidsrc.in/embed/movie?tmdb={tmdbId}' },
@@ -38,6 +39,7 @@ export const movieServers = ref<Server[]>([
 ]);
 
 export const tvServers = ref<Server[]>([
+  { name: 'VidEasy', urlTemplate: 'https://player.videasy.net/tv/{externalId}/{season}/{episode}?color=#4eb5ff&nextEpisode=true&autoplayNextEpisode=true&episodeSelector=true' },
   { name: 'VidSrc CC', urlTemplate: 'https://vidsrc.cc/v2/embed/tv/{externalId}/{season}/{episode}' },
   { name: 'VidSrc XYZ', urlTemplate: 'https://vidsrc.xyz/embed/tv?tmdb={externalId}&season={season}&episode={episode}' },
   { name: 'VidSrc In', urlTemplate: 'https://vidsrc.in/embed/tv?tmdb={externalId}&season={season}&episode={episode}' },
@@ -61,14 +63,14 @@ export const currentStreamData = ref({
 
 export function getPreferredStreamData(mediaId: number | string, type: 'movie' | 'tv' = 'movie'): MovieServer | null {
   const id = String(mediaId);
-  
+
   if (!id) {
     console.warn('Invalid media ID provided');
     return null;
   }
 
   const savedData = streamData.value.movieServerMap[id];
-  
+
   if (savedData) {
     currentStreamData.value = {
       currentStreamId: Number(id),
@@ -88,7 +90,7 @@ export function getPreferredStreamData(mediaId: number | string, type: 'movie' |
     currentSeason: type === 'tv' ? 1 : 0,
     currentEpisode: type === 'tv' ? 1 : 0
   };
-  
+
   return null;
 }
 
@@ -99,7 +101,7 @@ export function savePreferredServer(mediaId: string | number, serverIndex: numbe
   }
 
   const id = String(mediaId);
-  
+
   streamData.value.movieServerMap[id] = {
     serverIndex,
     type,
@@ -125,7 +127,7 @@ export function saveLastWatchedMetaData(
   }
 
   const id = String(mediaId);
-  
+
   streamData.value.movieServerMap[id] = {
     serverIndex: streamData.value.movieServerMap[id]?.serverIndex || 0,
     type,
@@ -156,18 +158,18 @@ export function buildStreamUrl(
 ): string {
   const id = String(mediaId);
   const servers = getServers(type);
-  
+
   if (serverIndex < 0 || serverIndex >= servers.length) {
     console.warn('Invalid server index, using default');
     serverIndex = 0;
   }
 
   const server = servers[serverIndex] || servers[0];
-  
+
   if (type === 'movie') {
     return server.urlTemplate.replace('{tmdbId}', id);
   }
-  
+
   return server.urlTemplate
     .replace('{externalId}', id)
     .replace('{season}', String(Math.max(1, season)))
