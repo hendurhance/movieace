@@ -198,7 +198,7 @@ export default defineComponent({
         };
 
         const goBack = () => {
-            router.push(`/tv-show/${showId.value}`);
+            router.push(`/tv-show/${showId.value}?season=${currentSeason.value}&episode=${currentEpisode.value}`);
         };
 
         const formatDate = (dateString: string) => {
