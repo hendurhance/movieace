@@ -37,7 +37,8 @@
                                 </div>
                                 <div class="watch-now-wrapper">
                                     <button @click="showTrailer"> Watch Trailer</button>
-                                    <button @click="watchFirstEpisode"> Stream Now</button>
+                                    <button @click="watchFirstEpisode" v-if="!lastWatchedData"> Stream Now</button>
+                                    <button @click="watchFirstEpisode" v-else> Continue Watching </button>
                                 </div>
                             </div>
                         </div>
@@ -112,6 +113,7 @@ import { TVShowDetails, useTvShows, TVShowSeasonDetails } from '../composables/u
 import { MovieCredit, MovieImages, MovieVideo } from '../composables/useMovies';
 import { TVShowType } from '../composables/useTvShows';
 import { useModal } from '../composables/useModal';
+import { getLastWatchedMetaData } from '../composables/useStream';
 
 export default defineComponent({
     name: 'TVShow',
@@ -158,7 +160,6 @@ export default defineComponent({
             if (!data.value) return;
             similarTvShow.value = data.value?.results;
         };
-        console.log(tvShow);
         const showDialog = ref(false);
         const episodes = ref<TVShowSeasonDetails>();
         
@@ -190,8 +191,21 @@ export default defineComponent({
                 }
             });
         };
-
+        const lastWatchedData = computed(() => {
+            return getLastWatchedMetaData(tvShowId.value);
+        });
         const watchFirstEpisode = () => {
+            if (lastWatchedData.value) {
+                router.push({
+                    name: 'StreamTVShow',
+                    params: {
+                        id: tvShowId.value,
+                        season: lastWatchedData.value.season.toString(),
+                        episode: lastWatchedData.value.episode.toString()
+                    }
+                });
+                return;
+            }
             router.push({
                 name: 'StreamTVShow',
                 params: {
@@ -311,7 +325,8 @@ export default defineComponent({
             currentSeasonNumber,
             IMDBLink,
             formatAirDate,
-            handleWatchEpisode
+            handleWatchEpisode,
+            lastWatchedData
         };
     }
 });

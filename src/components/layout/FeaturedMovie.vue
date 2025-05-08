@@ -82,7 +82,6 @@ export default defineComponent({
             return `${IMAGE_BASEURL}${props.imgSize}/${props.image}`
         })
 
-        console.log(props.categories)
         
          const fullDate = computed(() => {
             return new Date(props.date).toLocaleDateString('en-US', {

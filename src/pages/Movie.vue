@@ -7,7 +7,7 @@
                     <div class="container">
                         <div class="movie-header-grid">
                             <div class="movie-poster">
-                                <div class="rating-number">{{ movie?.vote_average }}</div>
+                                <div class="rating-number">{{ movie?.vote_average.toFixed(1) }}</div>
                                 <img :src="computedMovieImages.poster" :alt="movie?.title" loading="lazy" />
                             </div>
                             <div class="movie-header-content">
@@ -42,7 +42,7 @@
                                 </div>
                                 <div class="watch-now-wrapper">
                                     <button @click="showTrailer">Watch Trailer</button>
-                                    <button @click="streamNow"> Stream Now</button>
+                                    <button @click="streamNow"> {{ lastWatchedData ? 'Continue Watching' : 'Stream Now' }}</button>
                                 </div>
                             </div>
                         </div>
@@ -86,6 +86,7 @@ import { useModal } from "../composables/useModal";
 import "swiper/css";
 import { onBeforeRouteUpdate, useRoute, useRouter } from "vue-router";
 import empty_movie_state from '../assets/img/empty-movie-state.png';
+import { getLastWatchedMetaData } from '../composables/useStream';
 export default defineComponent({
     name: "Movie",
     components: {
@@ -149,6 +150,10 @@ export default defineComponent({
         const computedLanguage = computed(() => {
             if (!movie.value?.spoken_languages) return "";
             return movie.value?.spoken_languages.map((i) => i.name).join(", ");
+        });
+
+        const lastWatchedData = computed(() => {
+            return getLastWatchedMetaData(movieId.value);
         });
         const fullDate = computed(() => {
             if (!movie.value?.release_date) return "";
@@ -238,7 +243,8 @@ export default defineComponent({
             similarMovies,
             fullDate,
             computedBudget,
-            streamNow
+            streamNow,
+            lastWatchedData,
         };
     },
 });

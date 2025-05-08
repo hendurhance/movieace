@@ -23,7 +23,7 @@
     <div class="server-selection">
       <h3>Select Server</h3>
       <div class="server-buttons">
-        <button v-for="(server, index) in servers" :key="index" :class="{ active: streamData.currentServer === index }"
+        <button v-for="(server, index) in servers" :key="index" :class="{ active: currentStreamData.currentServer === index }"
           @click="changeServer(index)">
           {{ server.name }}
         </button>
@@ -54,7 +54,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useMovies, MovieDetails } from '../composables/useMovies';
 import { getMovieImageUrl } from '../utils/useWebImage';
 import { Movie } from '../composables/useHighlights';
-import { servers, streamData } from '../composables/useStream';
+import { currentStreamData, getPreferredStreamData, savePreferredServer, servers, streamData } from '../composables/useStream';
 
 export default defineComponent({
   name: 'StreamMovie',
@@ -66,7 +66,7 @@ export default defineComponent({
     const { fetchMovie } = useMovies();
     const currentEmbedUrl = computed(() => {
       if (!movieId.value) return '';
-      return servers.value[streamData.value.currentServer].urlTemplate.replace('{tmdbId}', movieId.value);
+      return servers.value[currentStreamData.value.currentServer].urlTemplate.replace('{tmdbId}', movieId.value);
     });
 
     const loadMovieDetails = async () => {
@@ -77,10 +77,11 @@ export default defineComponent({
           if (movie.value?.title) {
             document.title = `Stream ${movie.value.title}`;
           }
-          if(streamData.value.currentStreamId !== movie.value.id) {
-            streamData.value.currentServer = 0;
+          const preferredDataExist = getPreferredStreamData(Number(movieId.value));
+          if (!preferredDataExist) {
+            savePreferredServer(movieId.value, 0);
+            getPreferredStreamData(Number(movieId.value));
           }
-          streamData.value.currentStreamId = movie.value.id;
         }
       } catch (error) {
         console.error('Error loading movie details:', error);
@@ -88,9 +89,10 @@ export default defineComponent({
     };
 
     const changeServer = (serverIndex: number) => {
-      streamData.value.currentServer = serverIndex;
+      streamData.value.movieServerMap[movieId.value].serverIndex = serverIndex;
+      getPreferredStreamData(Number(movieId.value));
     };
-   
+
 
     const goBack = () => {
       router.push(`/movie/${movieId.value}`);
@@ -107,7 +109,7 @@ export default defineComponent({
       changeServer,
       goBack,
       getMovieImageUrl,
-      streamData
+      currentStreamData
     };
   }
 });
