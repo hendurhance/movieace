@@ -35,15 +35,15 @@
         <div class="rating-number">{{ movie?.vote_average }}</div>
         <img :src="getMovieImageUrl(movie as unknown as Movie).poster" :alt="movie?.title" loading="lazy" />
       </div>
-    <div class="movie-sub-texts">
-      <h2>{{ movie.title }}</h2>
-      <div class="info-details">
-        <span v-if="movie.release_date">{{ new Date(movie.release_date).getFullYear() }}</span>
-        <span v-if="movie.runtime">{{ Math.floor(movie.runtime / 60) }}h {{ movie.runtime % 60 }}m</span>
-        <span v-if="movie.vote_average">Rating: {{ movie.vote_average.toFixed(1) }}/10</span>
+      <div class="movie-sub-texts">
+        <h2>{{ movie.title }}</h2>
+        <div class="info-details">
+          <span v-if="movie.release_date">{{ new Date(movie.release_date).getFullYear() }}</span>
+          <span v-if="movie.runtime">{{ Math.floor(movie.runtime / 60) }}h {{ movie.runtime % 60 }}m</span>
+          <span v-if="movie.vote_average">Rating: {{ movie.vote_average.toFixed(1) }}/10</span>
+        </div>
+        <p class="overview">{{ movie.overview }}</p>
       </div>
-      <p class="overview">{{ movie.overview }}</p>
-    </div>
     </div>
   </div>
 </template>
@@ -77,6 +77,10 @@ export default defineComponent({
           if (movie.value?.title) {
             document.title = `Stream ${movie.value.title}`;
           }
+          if(streamData.value.currentStreamId !== movie.value.id) {
+            streamData.value.currentServer = 0;
+          }
+          streamData.value.currentStreamId = movie.value.id;
         }
       } catch (error) {
         console.error('Error loading movie details:', error);
@@ -86,6 +90,7 @@ export default defineComponent({
     const changeServer = (serverIndex: number) => {
       streamData.value.currentServer = serverIndex;
     };
+   
 
     const goBack = () => {
       router.push(`/movie/${movieId.value}`);
@@ -234,7 +239,8 @@ export default defineComponent({
   padding: 1rem 2rem;
   max-width: 960px;
   display: flex;
-  .movie-poster{
+
+  .movie-poster {
     position: relative;
     width: 200px;
     height: 300px;
@@ -259,6 +265,7 @@ export default defineComponent({
       font-size: 1rem;
     }
   }
+
   h2 {
     margin-top: 0;
     font-size: 1.75rem;
