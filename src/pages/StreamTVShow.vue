@@ -1,256 +1,332 @@
 <template>
     <div class="stream-container">
-        <div class="stream-header">
-            <div class="back-button" @click="goBack">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-                <span>Back to show</span>
-            </div>
-            <h1 v-if="show && show.name">{{ show.name }}</h1>
-            <div class="placeholder" v-else>Loading...</div>
+      <div class="stream-header">
+        <div class="back-button" @click="goBack">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          <span>Back to show</span>
         </div>
-
-        <div class="video-container">
-            <iframe v-if="currentEmbedUrl" :src="currentEmbedUrl" allow="fullscreen" allowfullscreen
-                frameborder="0"></iframe>
-            <div class="loading-placeholder" v-else>
-                <div class="spinner"></div>
-                <p>Loading video player...</p>
-            </div>
+        <h1 v-if="show && show.name">{{ show.name }}</h1>
+        <div class="placeholder" v-else>Loading...</div>
+      </div>
+  
+      <div class="video-container">
+        <iframe v-if="currentEmbedUrl" :src="currentEmbedUrl" allow="fullscreen" allowfullscreen
+          frameborder="0"></iframe>
+        <div class="loading-placeholder" v-else>
+          <div class="spinner"></div>
+          <p>Loading video player...</p>
         </div>
-
-        <div class="stream-controls">
-            <div class="server-selection">
-                <h3>Select Server</h3>
-                <div class="server-buttons">
-                    <button v-for="(server, index) in servers" :key="index" :class="{ active: currentStreamData.currentServer === index }"
-                        @click="changeServer(index)">
-                        {{ server.name }}
-                    </button>
-                </div>
-            </div>
-
-            <div class="episode-navigation">
-                <div class="season-selector">
-                    <h3>Season</h3>
-                    <div class="season-dropdown">
-                        <select v-model="selectedSeason" @change="onSeasonChange">
-                            <option v-for="season in availableSeasons" :key="season.id" :value="season.season_number">
-                                Season {{ season.season_number }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="movie-poster" v-if="show">
-                        <img :src="getMovieImageUrl(show as unknown as TVShowDetails).poster" :alt="show?.name"
-                            loading="lazy" />
-                    </div>
-                </div>
-
-                <div class="episode-selector">
-                    <h3>Episodes</h3>
-                    <div class="episodes-grid">
-                        <button v-for="episode in seasonEpisodes" :key="episode.id"
-                            :class="{ active: currentEpisode === episode.episode_number }"
-                            @click="changeEpisode(episode.episode_number)">
-                            {{ episode.episode_number }}
-                        </button>
-                    </div>
-                </div>
-            </div>
+      </div>
+  
+      <div class="stream-controls">
+        <div class="server-selection">
+          <h3>Select Server</h3>
+          <div class="server-buttons">
+            <button v-for="(server, index) in availableServers" :key="index" 
+              :class="{ active: currentStreamData.currentServer === index }"
+              @click="changeServer(index)">
+              {{ server.name }}
+            </button>
+          </div>
         </div>
-
-        <div class="episode-info" v-if="currentEpisodeDetails">
-            <h2>{{ currentEpisodeDetails.name }}</h2>
-            <div class="info-details">
-                <span>S{{ currentSeason }}:E{{ currentEpisode }}</span>
-                <span v-if="currentEpisodeDetails.air_date">{{ formatDate(currentEpisodeDetails.air_date) }}</span>
-                <span v-if="currentEpisodeDetails.vote_average">Rating: {{ currentEpisodeDetails.vote_average.toFixed(1)
-                }}/10</span>
+  
+        <div class="episode-navigation">
+          <div class="season-selector">
+            <h3>Season</h3>
+            <div class="season-dropdown">
+              <select v-model="selectedSeason" @change="onSeasonChange">
+                <option v-for="season in availableSeasons" :key="season.id" :value="season.season_number">
+                  Season {{ season.season_number }}
+                </option>
+              </select>
             </div>
-            <p class="overview">{{ currentEpisodeDetails.overview }}</p>
+          </div>
+  
+          <div class="episode-selector">
+            <h3>Episodes</h3>
+            <div class="episodes-grid">
+              <button v-for="episode in seasonEpisodes" :key="episode.id"
+                :class="{ active: currentEpisode === episode.episode_number }"
+                @click="changeEpisode(episode.episode_number)">
+                {{ episode.episode_number }}
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
+
+        <Disclaimer />
+    <div class="episode-info" v-if="currentEpisodeDetails">
+    <div class="episode-info-container">
+      <div class="movie-poster" v-if="show">
+        <img :src="getMovieImageUrl(show as unknown as TVShowDetails).poster" :alt="show?.name" loading="lazy" />
+        <div class="rating">{{ currentEpisodeDetails.vote_average ? currentEpisodeDetails.vote_average.toFixed(1) : '0.0' }}</div>
+      </div>
+      <div class="episode-details">
+        <h1>{{ currentEpisodeDetails.name }}</h1>
+        <div class="info-bar">
+          <span class="year">{{ new Date(currentEpisodeDetails.air_date).getFullYear() }}</span>
+          <span class="separator">•</span>
+          <span class="runtime">{{ Math.floor(currentEpisodeDetails.runtime / 60) }}h {{ currentEpisodeDetails.runtime % 60 }}m</span>
+          <span class="separator">•</span>
+          <span class="rating">Rating: {{ currentEpisodeDetails.vote_average ? currentEpisodeDetails.vote_average.toFixed(1) : '0.0' }}/10</span>
+        </div>
+        <p class="overview">{{ currentEpisodeDetails.overview }}</p>
+      </div>
     </div>
-</template>
+  </div>
+    </div>
+  </template>
+  
+  <script lang="ts">
+  import { defineComponent, ref, computed, watch, onMounted } from 'vue';
+  import { useRoute, useRouter } from 'vue-router';
+  import { useTvShows, TVShowDetails, Episode, TVShowSeasonDetails } from '../composables/useTvShows';
+  import { getMovieImageUrl } from '../utils/useWebImage';
+  import Disclaimer from '../components/layout/Disclaimer.vue';
+  import { 
+    currentStreamData, 
+    getPreferredStreamData, 
+    saveLastWatchedMetaData, 
+    savePreferredServer,
+    getServers,
+    buildStreamUrl,
+  } from '../composables/useStream';
+  
 
-<script lang="ts">
-import { defineComponent, ref, onMounted, computed, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useTvShows, TVShowDetails } from '../composables/useTvShows';
-import { getMovieImageUrl } from '../utils/useWebImage';
-import { currentStreamData, getPreferredStreamData, saveLastWatchedMetaData, savePreferredServer, servers, streamData } from '../composables/useStream';
-
-export default defineComponent({
+  
+  export default defineComponent({
     name: 'StreamTVShow',
+    components: {
+      Disclaimer
+    },
     setup() {
-        const route = useRoute();
-        const router = useRouter();
-        const showId = ref(route.params.id as string);
-        const show = ref<TVShowDetails | null>(null);
-        const currentSeason = ref(parseInt(route.params.season as string) || 1);
-        const currentEpisode = ref(parseInt(route.params.episode as string) || 1);
-        const selectedSeason = ref(currentSeason.value);
-        const seasons = ref<any[]>([]);
-        const seasonEpisodes = ref<any[]>([]);
-        const currentEpisodeDetails = ref<any | null>(null);
-        const { fetchTvShow, fetchTvShowBySeason } = useTvShows();
-        const currentServer = ref(0);
-        const externalId = ref('');
-        const currentEmbedUrl = computed(() => {
-            if (!externalId.value) return '';
-
-            return servers.value[currentStreamData.value.currentServer].urlTemplate
-                .replace('{externalId}', externalId.value)
-                .replace('{season}', currentSeason.value.toString())
-                .replace('{episode}', currentEpisode.value.toString());
-        });
-
-        const availableSeasons = computed(() => {
-            if (!seasons.value) return [];
-            return seasons.value.filter(season => season.season_number > 0);
-        });
-
-        const loadShowDetails = async () => {
-            try {
-                const { data } = await fetchTvShow(showId.value);
-                if (data.value) {
-                    show.value = data.value;
-                    seasons.value = data.value.seasons || [];
-
-                    if (show.value?.name) {
-                        document.title = `Stream ${show.value.name} S${currentSeason.value}:E${currentEpisode.value}`;
-                    }
-                    externalId.value = showId.value;
-
-                    const preferredDataExist = getPreferredStreamData(Number(showId.value));
-                    if (!preferredDataExist) {
-                        savePreferredServer(showId.value, 0);
-                        getPreferredStreamData(Number(showId.value));
-                    }
-
-                    await loadSeasonDetails();
-                }
-            } catch (error) {
-                console.error('Error loading show details:', error);
-            }
-        };
-
-        const loadSeasonDetails = async () => {
-            try {
-                const { data } = await fetchTvShowBySeason(showId.value, currentSeason.value);
-                if (data.value && data.value.episodes) {
-                    seasonEpisodes.value = data.value.episodes;
-
-                    currentEpisodeDetails.value = seasonEpisodes.value.find(
-                        ep => ep.episode_number === currentEpisode.value
-                    ) || null;
-                    saveLastWatchedMetaData(showId.value, 'tv', {
-                        season: currentSeason.value,
-                        episode: currentEpisode.value
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading season details:', error);
-            }
-        };
-
-        const onSeasonChange = async () => {
-            currentSeason.value = selectedSeason.value;
-            currentEpisode.value = 1;
-            saveLastWatchedMetaData(showId.value, 'tv', {
-                season: currentSeason.value,
-                episode: currentEpisode.value
-            });
-            router.replace({
-                name: 'StreamTVShow',
-                params: {
-                    id: showId.value,
-                    season: currentSeason.value.toString(),
-                    episode: currentEpisode.value.toString()
-                }
-            });
-
-            await loadSeasonDetails();
-        };
-
-        const changeEpisode = (episodeNumber: number) => {
-            currentEpisode.value = episodeNumber;
-            saveLastWatchedMetaData(showId.value, 'tv', {
-                season: currentSeason.value,
-                episode: currentEpisode.value
-            });
-
-            currentEpisodeDetails.value = seasonEpisodes.value.find(
-                ep => ep.episode_number === episodeNumber
-            ) || null;
-
-            router.replace({
-                name: 'StreamTVShow',
-                params: {
-                    id: showId.value,
-                    season: currentSeason.value.toString(),
-                    episode: currentEpisode.value.toString()
-                }
-            });
-
-            if (show.value?.name) {
-                document.title = `Stream ${show.value.name} S${currentSeason.value}:E${currentEpisode.value}`;
-            }
-        };
-
-        const changeServer = (serverIndex: number) => {
-            streamData.value.movieServerMap[showId.value].serverIndex = serverIndex;
-            getPreferredStreamData(Number(showId.value));
-        };
-
-        const goBack = () => {
-            router.push(`/tv-show/${showId.value}?season=${currentSeason.value}&episode=${currentEpisode.value}`);
-        };
-
-        const formatDate = (dateString: string) => {
-            const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
-            return new Date(dateString).toLocaleDateString(undefined, options);
-        };
-
-        watch(
-            () => route.params,
-            (newParams) => {
-                if (newParams.season && newParams.episode) {
-                    currentSeason.value = parseInt(newParams.season as string);
-                    selectedSeason.value = currentSeason.value;
-                    currentEpisode.value = parseInt(newParams.episode as string);
-                    loadSeasonDetails();
-                }
-            }
+      const route = useRoute();
+      const router = useRouter();
+      const showId = ref<string>(route.params.id as string);
+      const show = ref<TVShowDetails | null>(null);
+      const currentSeason = ref<number>(parseInt(route.params.season as string) || 1);
+      const currentEpisode = ref<number>(parseInt(route.params.episode as string) || 1);
+      const selectedSeason = ref<number>(currentSeason.value);
+      const seasons = ref<TVShowSeasonDetails[]>([]);
+      const seasonEpisodes = ref<Episode[]>([]);
+      const currentEpisodeDetails = ref<Episode | null>(null);
+      const { fetchTvShow, fetchTvShowBySeason } = useTvShows();
+      const externalId = ref<string>('');
+      const isLoading = ref<boolean>(false);
+      const error = ref<string | null>(null);
+  
+      const availableServers = computed(() => getServers('tv'));
+  
+      const currentEmbedUrl = computed(() => {
+        if (!externalId.value) return '';
+        return buildStreamUrl(
+          externalId.value,
+          'tv',
+          currentStreamData.value.currentServer,
+          currentSeason.value,
+          currentEpisode.value
         );
-
-        onMounted(() => {
-            loadShowDetails();
-        });
-
-        return {
-            show,
-            currentEmbedUrl,
-            servers,
-            currentServer,
-            currentSeason,
-            currentEpisode,
-            selectedSeason,
-            availableSeasons,
-            seasonEpisodes,
-            currentEpisodeDetails,
-            changeServer,
-            changeEpisode,
-            onSeasonChange,
-            goBack,
-            formatDate,
-            getMovieImageUrl,
-            currentStreamData
-        };
+      });
+  
+      const availableSeasons = computed(() => {
+        return seasons.value.filter(season => season.season_number > 0);
+      });
+  
+      const loadShowDetails = async () => {
+        if (!showId.value) {
+          error.value = 'Invalid show ID';
+          return;
+        }
+  
+        isLoading.value = true;
+        error.value = null;
+        
+        try {
+          const { data } = await fetchTvShow(showId.value);
+          if (!data.value) {
+            throw new Error('No show data received');
+          }
+  
+          show.value = data.value;
+          seasons.value = (data.value.seasons || []).map(season => ({
+            ...season,
+            _id: season.id.toString(),
+            episodes: []
+          }));
+          externalId.value = showId.value;
+  
+          updateDocumentTitle();
+          
+          const preferredData = getPreferredStreamData(showId.value, 'tv');
+          if (!preferredData) {
+            savePreferredServer(showId.value, 0, 'tv');
+          } else {
+            currentSeason.value = preferredData.season > 0 ? preferredData.season : 1;
+            selectedSeason.value = currentSeason.value;
+            currentEpisode.value = preferredData.episode > 0 ? preferredData.episode : 1;
+          }
+  
+          await loadSeasonDetails();
+        } catch (err) {
+          error.value = err instanceof Error ? err.message : 'Failed to load show details';
+          console.error('Error loading show details:', err);
+        } finally {
+          isLoading.value = false;
+        }
+      };
+  
+      const loadSeasonDetails = async () => {
+        if (!showId.value || currentSeason.value < 1) {
+          error.value = 'Invalid show ID or season';
+          return;
+        }
+  
+        isLoading.value = true;
+        
+        try {
+          const { data } = await fetchTvShowBySeason(showId.value, currentSeason.value);
+          if (!data.value?.episodes) {
+            throw new Error('No season data received');
+          }
+  
+          seasonEpisodes.value = data.value.episodes;
+          currentEpisodeDetails.value = seasonEpisodes.value.find(
+            ep => ep.episode_number === currentEpisode.value
+          ) || seasonEpisodes.value[0] || null;
+  
+          if (currentEpisodeDetails.value) {
+            saveLastWatchedMetaData(showId.value, 'tv', {
+              season: currentSeason.value,
+              episode: currentEpisode.value
+            });
+          }
+  
+          updateDocumentTitle();
+        } catch (err) {
+          error.value = err instanceof Error ? err.message : 'Failed to load season details';
+          console.error('Error loading season details:', err);
+        } finally {
+          isLoading.value = false;
+        }
+      };
+  
+      const updateDocumentTitle = () => {
+        if (show.value?.name) {
+          document.title = `Stream ${show.value.name} S${currentSeason.value}:E${currentEpisode.value}`;
+        }
+      };
+  
+      const onSeasonChange = async () => {
+        if (currentSeason.value === selectedSeason.value) return;
+  
+        currentSeason.value = selectedSeason.value;
+        currentEpisode.value = 1;
+        
+        await updateRouteAndSave();
+        await loadSeasonDetails();
+      };
+  
+      const changeEpisode = async (episodeNumber: number) => {
+        if (episodeNumber < 1 || episodeNumber === currentEpisode.value) return;
+  
+        currentEpisode.value = episodeNumber;
+        currentEpisodeDetails.value = seasonEpisodes.value.find(
+          ep => ep.episode_number === episodeNumber
+        ) || null;
+  
+        await updateRouteAndSave();
+      };
+  
+      const updateRouteAndSave = async () => {
+        try {
+          await router.replace({
+            name: 'StreamTVShow',
+            params: {
+              id: showId.value,
+              season: currentSeason.value.toString(),
+              episode: currentEpisode.value.toString()
+            }
+          });
+  
+          saveLastWatchedMetaData(showId.value, 'tv', {
+            season: currentSeason.value,
+            episode: currentEpisode.value
+          });
+  
+          updateDocumentTitle();
+        } catch (err) {
+          console.error('Error updating route:', err);
+        }
+      };
+  
+      const changeServer = (serverIndex: number) => {
+        savePreferredServer(showId.value, serverIndex, 'tv');
+        getPreferredStreamData(showId.value, 'tv');
+      };
+  
+      const goBack = () => {
+        router.push(`/tv-show/${showId.value}?season=${currentSeason.value}&episode=${currentEpisode.value}`);
+      };
+  
+      const formatDate = (dateString: string): string => {
+        try {
+          const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+          return new Date(dateString).toLocaleDateString(undefined, options);
+        } catch {
+          return dateString;
+        }
+      };
+  
+      watch(
+        () => route.params,
+        async (newParams) => {
+          const newSeason = parseInt(newParams.season as string);
+          const newEpisode = parseInt(newParams.episode as string);
+  
+          if (newParams.id !== showId.value) {
+            showId.value = newParams.id as string;
+            await loadShowDetails();
+          } else if (newSeason !== currentSeason.value || newEpisode !== currentEpisode.value) {
+            currentSeason.value = newSeason || 1;
+            selectedSeason.value = currentSeason.value;
+            currentEpisode.value = newEpisode || 1;
+            await loadSeasonDetails();
+          }
+        },
+        { deep: true }
+      );
+  
+      onMounted(() => {
+        loadShowDetails();
+      });
+  
+      return {
+        show,
+        currentEmbedUrl,
+        availableServers,
+        currentSeason,
+        currentEpisode,
+        selectedSeason,
+        availableSeasons,
+        seasonEpisodes,
+        currentEpisodeDetails,
+        isLoading,
+        error,
+        changeServer,
+        changeEpisode,
+        onSeasonChange,
+        goBack,
+        formatDate,
+        getMovieImageUrl,
+        currentStreamData
+      };
     }
-});
-</script>
+  });
+  </script>
 
 <style lang="scss" scoped>
 .stream-container {
@@ -503,30 +579,98 @@ export default defineComponent({
 }
 
 .episode-info {
-    padding: 1rem 2rem;
-    max-width: 960px;
-    margin: 0 auto;
-
-    h2 {
-        margin-top: 0;
+  width: 100%;
+  padding: 2rem 0;
+  
+  .episode-info-container {
+    max-width: 1200px;
+    display: flex;
+    gap: 2rem;
+    padding: 0 1.5rem;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+  }
+  
+  .movie-poster {
+    position: relative;
+    flex-shrink: 0;
+    width: 300px;
+    height: auto;
+    overflow: hidden;
+    border-radius: 8px;
+    
+    @media (max-width: 768px) {
+      width: 200px;
+    }
+    
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: cover;
+    }
+    
+    .rating {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 1.5rem;
+    }
+  }
+  
+  .episode-details {
+    flex: 1;
+    
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem 0;
+      color: #ffffff;
+      line-height: 1.2;
+      
+      @media (max-width: 768px) {
         font-size: 1.75rem;
-        font-weight: 600;
-        margin-bottom: 0.75rem;
+      }
     }
-
-    .info-details {
-        display: flex;
-        gap: 1.5rem;
-        margin-bottom: 1rem;
-        color: #b0b0b0;
-        font-size: 0.95rem;
+    
+    .info-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      color: #b0b0b0;
+      margin-bottom: 1.5rem;
+      font-size: 1rem;
+      
+      .separator {
+        color: #666;
+      }
+      
+      .year, .runtime, .rating {
+        font-weight: 500;
+      }
     }
-
+    
     .overview {
-        line-height: 1.6;
-        color: #e1e1e1;
-        margin-top: 1rem;
+      font-size: 1.125rem;
+      line-height: 1.6;
+      color: #e1e1e1;
+      margin: 0;
+      max-width: 800px;
+      
+      @media (max-width: 768px) {
+        font-size: 1rem;
+      }
     }
+  }
 }
 
 @keyframes spin {

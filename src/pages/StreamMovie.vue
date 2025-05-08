@@ -23,13 +23,13 @@
     <div class="server-selection">
       <h3>Select Server</h3>
       <div class="server-buttons">
-        <button v-for="(server, index) in servers" :key="index" :class="{ active: currentStreamData.currentServer === index }"
+        <button v-for="(server, index) in availableServers" :key="index" :class="{ active: currentStreamData.currentServer === index }"
           @click="changeServer(index)">
           {{ server.name }}
         </button>
       </div>
     </div>
-
+    <Disclaimer />
     <div class="movie-info" v-if="movie">
       <div class="movie-poster">
         <div class="rating-number">{{ movie?.vote_average }}</div>
@@ -49,50 +49,79 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, computed } from 'vue';
+import { defineComponent, ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMovies, MovieDetails } from '../composables/useMovies';
 import { getMovieImageUrl } from '../utils/useWebImage';
 import { Movie } from '../composables/useHighlights';
-import { currentStreamData, getPreferredStreamData, savePreferredServer, servers, streamData } from '../composables/useStream';
-
+import { currentStreamData, getPreferredStreamData, savePreferredServer, getServers, buildStreamUrl } from '../composables/useStream';
+import Disclaimer from '../components/layout/Disclaimer.vue';
 export default defineComponent({
   name: 'StreamMovie',
+  components:{
+    Disclaimer
+  },
   setup() {
     const route = useRoute();
     const router = useRouter();
-    const movieId = ref(route.params.id as string);
+    const movieId = ref<string>(route.params.id as string);
     const movie = ref<MovieDetails | null>(null);
     const { fetchMovie } = useMovies();
+    const isLoading = ref<boolean>(false);
+    const error = ref<string | null>(null);
+
+    const availableServers = computed(() => getServers('movie'));
+
     const currentEmbedUrl = computed(() => {
       if (!movieId.value) return '';
-      return servers.value[currentStreamData.value.currentServer].urlTemplate.replace('{tmdbId}', movieId.value);
+      return buildStreamUrl(
+        movieId.value,
+        'movie',
+        currentStreamData.value.currentServer
+      );
     });
 
     const loadMovieDetails = async () => {
+      if (!movieId.value) {
+        error.value = 'Invalid movie ID';
+        return;
+      }
+
+      isLoading.value = true;
+      error.value = null;
+
       try {
         const { data } = await fetchMovie(movieId.value);
-        if (data.value) {
-          movie.value = data.value;
-          if (movie.value?.title) {
-            document.title = `Stream ${movie.value.title}`;
-          }
-          const preferredDataExist = getPreferredStreamData(Number(movieId.value));
-          if (!preferredDataExist) {
-            savePreferredServer(movieId.value, 0);
-            getPreferredStreamData(Number(movieId.value));
-          }
+        if (!data.value) {
+          throw new Error('No movie data received');
         }
-      } catch (error) {
-        console.error('Error loading movie details:', error);
+
+        movie.value = data.value;
+        if (movie.value?.title) {
+          document.title = `Stream ${movie.value.title}`;
+        }
+
+        const preferredData = getPreferredStreamData(movieId.value, 'movie');
+        if (!preferredData) {
+          savePreferredServer(movieId.value, 0, 'movie');
+          getPreferredStreamData(movieId.value, 'movie');
+        }
+      } catch (err) {
+        error.value = err instanceof Error ? err.message : 'Failed to load movie details';
+        console.error('Error loading movie details:', err);
+      } finally {
+        isLoading.value = false;
       }
     };
 
     const changeServer = (serverIndex: number) => {
-      streamData.value.movieServerMap[movieId.value].serverIndex = serverIndex;
-      getPreferredStreamData(Number(movieId.value));
+      if (serverIndex < 0 || serverIndex >= availableServers.value.length) {
+        console.warn('Invalid server index');
+        return;
+      }
+      savePreferredServer(movieId.value, serverIndex, 'movie');
+      getPreferredStreamData(movieId.value, 'movie');
     };
-
 
     const goBack = () => {
       router.push(`/movie/${movieId.value}`);
@@ -105,11 +134,13 @@ export default defineComponent({
     return {
       movie,
       currentEmbedUrl,
-      servers,
+      availableServers,
       changeServer,
       goBack,
       getMovieImageUrl,
-      currentStreamData
+      currentStreamData,
+      isLoading,
+      error
     };
   }
 });
@@ -241,6 +272,11 @@ export default defineComponent({
   padding: 1rem 2rem;
   max-width: 960px;
   display: flex;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
 
   .movie-poster {
     position: relative;

@@ -115,6 +115,7 @@ export interface Episode {
         profile_path: string
     }[],
     episode_number: number,
+    runtime: number,
     guest_stars: {
         id: number,
         name: string,
