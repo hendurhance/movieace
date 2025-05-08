@@ -1,6 +1,6 @@
 import empty_movie_state from '../assets/img/empty-movie-state.png';
 import { Movie } from '../composables/useHighlights';
-import { TVShowDetails, TVShowType } from '../composables/useTvShows';
+import { TVShowDetails } from '../composables/useTvShows';
 
 const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL;
 
