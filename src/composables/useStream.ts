@@ -1,9 +1,11 @@
 import { useStorage } from "@vueuse/core";
 import { ref } from "vue";
 interface StreamData {
+    currentStreamId: number;
     currentServer: number;
 }
 export const streamData  = useStorage('streamData', {
+    currentStreamId: 0,
     currentServer: 0
 } as StreamData);
 export const servers = ref([
