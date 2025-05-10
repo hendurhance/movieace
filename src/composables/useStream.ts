@@ -1,5 +1,6 @@
 import { useStorage } from "@vueuse/core";
 import { ref } from "vue";
+import { MovieDetails } from "./useMovies";
 
 interface MovieServer {
   serverIndex: number;
@@ -174,4 +175,139 @@ export function buildStreamUrl(
     .replace('{externalId}', id)
     .replace('{season}', String(Math.max(1, season)))
     .replace('{episode}', String(Math.max(1, episode)));
+}
+
+interface WatchPartyStream {
+  [quality: string]: string;
+}
+
+interface WatchPartySubtitle {
+  file: string;
+  label: string;
+}
+
+export interface WatchPartyResponse {
+  available_qualities: string[];
+  has_subtitles: boolean;
+  status: string;
+  streams: WatchPartyStream;
+  subtitles: WatchPartySubtitle[];
+  title: string;
+}
+
+// Add watch party state
+export const watchPartyData = ref<{
+  isLoading: boolean;
+  error: string | null;
+  response: WatchPartyResponse | null;
+  selectedQuality: string;
+  currentMovieId: number | null;
+}>({
+  isLoading: false,
+  error: null,
+  response: null,
+  selectedQuality: '',
+  currentMovieId: null
+});
+
+// Add function to fetch watch party data
+export async function fetchWatchPartyData(movie: MovieDetails): Promise<void> {
+  // Skip if it's the same movie we already have data for
+  if (watchPartyData.value.currentMovieId === movie.id && watchPartyData.value.response) {
+    return;
+  }
+
+  if (!movie?.title || !movie?.release_date) {
+    watchPartyData.value.error = "Missing movie information";
+    return;
+  }
+
+  watchPartyData.value.isLoading = true;
+  watchPartyData.value.error = null;
+  
+  try {
+    // Extract year from release_date
+    const releaseYear = new Date(movie.release_date).getFullYear();
+    const fallbackYear = releaseYear - 1;
+    
+    // Encode movie title for URL
+    const encodedTitle = encodeURIComponent(movie.title);
+    
+    const url = `https://xprime.tv/primebox?name=${encodedTitle}&year=${releaseYear}&fallback_year=${fallbackYear}`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.status !== "ok" || !data.streams || Object.keys(data.streams).length === 0) {
+      watchPartyData.value.error = "Watch party not available for this movie";
+      return;
+    }
+    
+    watchPartyData.value.response = data;
+    watchPartyData.value.currentMovieId = movie.id;
+    
+    // Set default selected quality to the highest available
+    if (data.available_qualities && data.available_qualities.length > 0) {
+      watchPartyData.value.selectedQuality = data.available_qualities[0];
+    }
+    
+  } catch (error) {
+    watchPartyData.value.error = "Failed to fetch watch party data";
+    console.error("Watch party fetch error:", error);
+  } finally {
+    watchPartyData.value.isLoading = false;
+  }
+}
+
+// Add function to create watch party URL
+export function createWatchPartyUrl(): string | null {
+  const { response, selectedQuality } = watchPartyData.value;
+  
+  if (!response || !response.streams || !selectedQuality) {
+    return null;
+  }
+  
+  const streamUrl = response.streams[selectedQuality];
+  if (!streamUrl) {
+    return null;
+  }
+  
+  return `https://www.watchparty.me/create?video=${encodeURIComponent(streamUrl)}`;
+}
+
+// Add function to open watch party in new tab
+export function openWatchParty(): void {
+  const watchPartyUrl = createWatchPartyUrl();
+  
+  if (watchPartyUrl) {
+    window.open(watchPartyUrl, '_blank');
+  }
+}
+
+// Add function to change quality selection
+export function setWatchPartyQuality(quality: string): void {
+  watchPartyData.value.selectedQuality = quality;
+}
+
+// Add function to reset watch party data (useful when changing movies)
+export function resetWatchPartyData(): void {
+  watchPartyData.value = {
+    isLoading: false,
+    error: null,
+    response: null,
+    selectedQuality: '',
+    currentMovieId: null
+  };
+}
+
+// Export a Vue composable to use in components
+export function useWatchParty() {
+  return {
+    watchPartyData,
+    fetchWatchPartyData,
+    createWatchPartyUrl,
+    openWatchParty,
+    setWatchPartyQuality,
+    resetWatchPartyData
+  };
 }
