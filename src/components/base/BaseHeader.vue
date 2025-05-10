@@ -4,7 +4,7 @@
             <router-link to="/" class="logo-container">
                 <Logo :fill="'#fff'" />
             </router-link>
-            
+
             <nav id="navigation" :class="{ 'active': isNavOpen }">
                 <div class="nav-header">
                     <Logo :fill="'#fff'" class="mobile-logo" />
@@ -12,20 +12,15 @@
                         <XIcon :fill="'#fff'" />
                     </button>
                 </div>
-                
+
                 <div class="nav-links">
-                    <RouterLink 
-                        v-for="route in routes" 
-                        :key="route.name" 
-                        :to="route.path"
-                        @click="closeNavigation"
-                        class="nav-link"
-                    >
+                    <RouterLink v-for="route in routes" :key="route.name" :to="route.path" @click="closeNavigation"
+                        class="nav-link" :class="{ 'router-link-active': isActive(route) }">
                         {{ route.meta?.title }}
                     </RouterLink>
                 </div>
             </nav>
-            
+
             <button class="menu-button" @click="toggleNavigation" aria-label="Toggle navigation">
                 <MenuIcon :fill="'#fff'" />
             </button>
@@ -34,8 +29,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { defineComponent, ref, computed } from 'vue';
+import { RouterLink, useRoute } from 'vue-router';
 import MenuIcon from '../svg/outline/menu.vue';
 import XIcon from '../svg/outline/x.vue';
 import Logo from '../svg/logo/movieace.vue';
@@ -51,11 +46,11 @@ export default defineComponent({
     },
     setup() {
         const isNavOpen = ref(false);
+        const route = useRoute();
 
         const toggleNavigation = () => {
             isNavOpen.value = !isNavOpen.value;
-            
-            // Prevent scrolling when nav is open
+
             if (isNavOpen.value) {
                 document.body.style.overflow = 'hidden';
             } else {
@@ -68,11 +63,25 @@ export default defineComponent({
             document.body.style.overflow = '';
         };
 
+        const isActive = (navRoute: typeof routes[number]) => {
+            const currentPath = route.path;
+
+            if (navRoute.path === '/movies' && currentPath.startsWith('/movie/')) {
+                return true;
+            }
+            if (navRoute.path === '/tv-shows' && currentPath.startsWith('/tv-show/')) {
+                return true;
+            }
+
+            return currentPath === navRoute.path;
+        };
+
         return {
             routes: routes.filter(route => route.meta?.showInHeader),
             isNavOpen,
             toggleNavigation,
-            closeNavigation
+            closeNavigation,
+            isActive
         };
     }
 });
@@ -119,7 +128,7 @@ header {
         display: flex;
         align-items: center;
         height: 100%;
-        
+
         @media (max-width: 768px) {
             position: fixed;
             top: 0;
@@ -144,7 +153,7 @@ header {
 
     .nav-header {
         display: none;
-        
+
         @media (max-width: 768px) {
             display: flex;
             align-items: center;
@@ -178,7 +187,7 @@ header {
     .nav-links {
         display: flex;
         height: 100%;
-        
+
         @media (max-width: 768px) {
             flex-direction: column;
             height: auto;
@@ -197,14 +206,14 @@ header {
         align-items: center;
         position: relative;
         transition: color 0.2s;
-        
+
         &:hover {
             color: #4eb5ff;
         }
-        
+
         &.router-link-active {
             color: #4eb5ff;
-            
+
             &::after {
                 content: '';
                 position: absolute;
@@ -215,19 +224,19 @@ header {
                 background-color: #4eb5ff;
             }
         }
-        
+
         @media (max-width: 768px) {
             height: auto;
             padding: 1rem 1.5rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            
+
             &:hover {
                 background-color: rgba(255, 255, 255, 0.05);
             }
-            
+
             &.router-link-active {
                 background-color: rgba(78, 181, 255, 0.1);
-                
+
                 &::after {
                     left: 0;
                     bottom: auto;
@@ -248,11 +257,11 @@ header {
         padding: 0.75rem;
         cursor: pointer;
         transition: background-color 0.2s;
-        
+
         &:hover {
             background-color: #0a243a;
         }
-        
+
         @media (max-width: 768px) {
             display: flex;
             align-items: center;

@@ -1,5 +1,6 @@
 import empty_movie_state from '../assets/img/empty-movie-state.png';
 import { Movie } from '../composables/useHighlights';
+import { MovieDetails } from '../composables/useMovies';
 import { TVShowDetails } from '../composables/useTvShows';
 
 const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL;
@@ -20,7 +21,7 @@ export const useWebImage = (url: string, size: "medium" | "large" | "small" = "m
 //     backdrop: movie.value?.backdrop_path === null ? empty_movie_state : `${IMAGE_BASEURL}w1280${movie.value?.backdrop_path}`,
 //     poster: movie.value?.poster_path === null ? empty_movie_state : `${IMAGE_BASEURL}w780${movie.value?.poster_path}`
 // };
-export const getMovieImageUrl = (data: Movie| TVShowDetails) => {
+export const getMovieImageUrl = (data: Movie | MovieDetails | TVShowDetails) => {
     const backdrop = data.backdrop_path === null ? empty_movie_state : `${IMAGE_BASEURL}w1280${data.backdrop_path}`;
     const poster = data.poster_path === null ? empty_movie_state : `${IMAGE_BASEURL}w780${data.poster_path}`;
     return {
