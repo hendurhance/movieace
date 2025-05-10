@@ -30,7 +30,7 @@ export default defineComponent({
     }
   },
   emits: ['back-click'],
-  setup(props, { emit }) {
+  setup(_props, { emit }) {
     const goBack = () => {
       emit('back-click');
     };

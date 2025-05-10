@@ -29,7 +29,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed } from 'vue';
+import { defineComponent, ref } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import MenuIcon from '../svg/outline/menu.vue';
 import XIcon from '../svg/outline/x.vue';

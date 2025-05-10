@@ -34,7 +34,7 @@ export default defineComponent({
     }
   },
   emits: ['server-change'],
-  setup(props, { emit }) {
+  setup(_props, { emit }) {
     const changeServer = (serverIndex: number) => {
       emit('server-change', serverIndex);
     };
