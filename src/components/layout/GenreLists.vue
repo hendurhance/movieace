@@ -2,7 +2,7 @@
     <div class="genres-section">
         <div class="genres-header">
             <h3 class="genres-title">Browse by Genre</h3>
-            <p class="genres-subtitle">Discover movies by your favorite categories</p>
+            <p class="genres-subtitle">Discover {{ type }} by your favorite categories</p>
             <button 
                 v-if="activeGenres.length > 0" 
                 @click="clearAllGenres"
@@ -105,6 +105,10 @@ export default defineComponent({
         activeGenres: {
             type: Array as PropType<number[]>,
             default: () => []
+        },
+        type: {
+            type: String as PropType<'movies' | 'tv shows'>,
+            default: 'movie'
         }
     },
     emits: ['genreClick', 'clearAll'],
