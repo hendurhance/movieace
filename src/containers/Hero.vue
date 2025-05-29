@@ -47,8 +47,6 @@ export default defineComponent({
         }
     },
     setup(props) {
-
-            // State for the input value and showClearButton flag
         const searchValue = ref('');
         const showClearButton = ref(false);
 
@@ -58,7 +56,6 @@ export default defineComponent({
 
         // };
 
-        // Clear the input and hide the clear button
         const clearInput = () => {
             searchValue.value = '';
             showClearButton.value = false;

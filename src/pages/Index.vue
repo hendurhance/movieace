@@ -288,7 +288,6 @@ export default defineComponent({
             grid-gap: 1rem;
         }
 
-        // Loading and Error states span full width
         .loading-section,
         .error-state {
             grid-column: 1 / -1;

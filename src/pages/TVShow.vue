@@ -253,7 +253,6 @@ export default defineComponent({
         const router = useRouter();
         const tvShowId = ref(route.params.id) as Ref<string>;
 
-        // State
         const tvShow = ref<TVShowDetails>();
         const tvShowCredit = ref<MovieCredit>();
         const tvShowImages = ref<MovieImages>();
@@ -930,7 +929,6 @@ export default defineComponent({
     }
 }
 
-// Seasons Section
 .seasons-wrapper {
     margin: 4rem 0;
     padding: 3rem 0;

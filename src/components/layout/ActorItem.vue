@@ -62,7 +62,6 @@ export default defineComponent({
         }
     },
     setup(props) {
-        // Use a fallback image if empty_actor_state doesn't exist
         const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDIwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTUwIiBmaWxsPSIjNjY2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCI+Tm8gSW1hZ2U8L3RleHQ+Cjwvc3ZnPg==';
         
         const fullPathImage = props.image === null || props.image === undefined 
@@ -232,7 +231,6 @@ export default defineComponent({
     }
 }
 
-// Responsive adjustments
 @media (max-width: 768px) {
     .actor-list-item {
         .actor-content {

@@ -102,7 +102,6 @@ export default defineComponent({
         const isEnd = ref(false);
         const currentSlide = ref(0);
 
-        // Responsive breakpoints
         const breakpoints = {
             320: { slidesPerView: 2.2, spaceBetween: 10 },
             480: { slidesPerView: 3.2, spaceBetween: 15 },
@@ -162,7 +161,6 @@ export default defineComponent({
         };
 
         onMounted(() => {
-            // Update responsive values based on window size
             const updateSlidesPerView = () => {
                 const width = window.innerWidth;
                 if (width < 480) {
@@ -211,10 +209,9 @@ export default defineComponent({
 .cast-wrapper {
     padding: 3rem 0;
     background-color: #081b27;
-    overflow: hidden; // Prevent horizontal overflow
+    overflow: hidden;
 
     @media screen and (max-width: 750px) {
-        margin-top: 35rem;
         padding: 2rem 0;
     }
 
@@ -223,7 +220,7 @@ export default defineComponent({
         align-items: center;
         justify-content: space-between;
         margin-bottom: 2rem;
-        padding: 0 1rem; // Add padding to header
+        padding: 0 1rem;
         
         @media (max-width: 768px) {
             flex-direction: column;
@@ -334,12 +331,12 @@ export default defineComponent({
 
 .swiper-container {
     position: relative;
-    margin: 0 -1rem; // Negative margin to allow cards to extend
-    padding: 0 1rem; // Add padding back for content
+    margin: 0 -1rem;
+    padding: 0 1rem;
     
     .cast-swiper {
         overflow: visible;
-        padding: 1rem 0 3rem 0; // Increased bottom padding for metadata
+        padding: 1rem 0 3rem 0;
         
         .cast-slide {
             height: auto;
@@ -348,8 +345,7 @@ export default defineComponent({
                 position: relative;
                 height: 100%;
                 width: 100%;
-                
-                // Ensure cast items are properly sized
+
                 :deep(.cast-item) {
                     width: 100%;
                     height: auto;
@@ -415,7 +411,6 @@ export default defineComponent({
     }
 }
 
-// Responsive improvements
 @media (max-width: 576px) {
     .cast-wrapper {
         .cast-wrapper-header {

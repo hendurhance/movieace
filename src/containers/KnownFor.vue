@@ -111,7 +111,6 @@ export default defineComponent({
         const isEnd = ref(false);
         const currentSlide = ref(0);
 
-        // Responsive breakpoints
         const breakpoints = {
             320: { slidesPerView: 1.2, spaceBetween: 15 },
             480: { slidesPerView: 2.2, spaceBetween: 15 },
@@ -191,7 +190,6 @@ export default defineComponent({
         };
 
         onMounted(() => {
-            // Update responsive values based on window size
             const updateSlidesPerView = () => {
                 const width = window.innerWidth;
                 if (width < 480) {
@@ -445,7 +443,6 @@ export default defineComponent({
     }
 }
 
-// Responsive improvements
 @media (max-width: 576px) {
     .known-for-wrapper {
         padding: 2rem 0;

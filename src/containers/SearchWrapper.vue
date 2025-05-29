@@ -147,7 +147,6 @@ const quickSearch = (term: string) => {
     }
 }
 
-// Animated Background
 .hero-bg {
     position: absolute;
     top: 0;
@@ -225,7 +224,6 @@ const quickSearch = (term: string) => {
     }
 }
 
-// Hero Content
 .hero-content {
     position: relative;
     z-index: 2;
@@ -304,7 +302,6 @@ const quickSearch = (term: string) => {
     }
 }
 
-// Search Container
 .search-container {
     margin-bottom: 3rem;
 }
@@ -420,7 +417,6 @@ const quickSearch = (term: string) => {
     }
 }
 
-// Quick Suggestions
 .quick-suggestions {
     display: flex;
     align-items: center;
@@ -473,7 +469,6 @@ const quickSearch = (term: string) => {
     }
 }
 
-// Search Stats
 .search-stats {
     display: flex;
     align-items: center;
@@ -526,7 +521,6 @@ const quickSearch = (term: string) => {
     }
 }
 
-// Scroll Indicator
 .scroll-indicator {
     position: absolute;
     bottom: 2rem;
@@ -548,7 +542,6 @@ const quickSearch = (term: string) => {
     }
 }
 
-// Animations
 @keyframes float {
     0%, 100% { 
         transform: translateY(0px) rotate(0deg); 

@@ -166,8 +166,7 @@ export default defineComponent({
         onMounted(async () => {
             await nextTick();
             checkScrollButtons();
-            
-            // Add resize listener to update scroll buttons
+
             window.addEventListener('resize', checkScrollButtons);
         });
 

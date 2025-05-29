@@ -476,7 +476,6 @@ export default defineComponent({
     }
 }
 
-// Lightbox Styles
 .lightbox-overlay {
     position: fixed;
     top: 0;
@@ -595,7 +594,6 @@ export default defineComponent({
     100% { transform: rotate(360deg); }
 }
 
-// Responsive adjustments
 @media (max-width: 768px) {
     .movie-pictures {
         margin: 0 0.5rem;

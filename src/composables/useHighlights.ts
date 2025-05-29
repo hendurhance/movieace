@@ -89,7 +89,6 @@ export const useHighlights = () => {
         if (highLightOptions[highlight].data.length === 0) {
             return await fetchHighlights(highlight)
         } else {
-            // If data is already available, just return it
             return {
                 loading: loading.value,
                 error: error.value,
@@ -98,7 +97,6 @@ export const useHighlights = () => {
         }
     }
 
-    // Fetch all highlights at once (useful for initial load)
     const fetchAllHighlights = async () => {
         try {
             loading.value = true

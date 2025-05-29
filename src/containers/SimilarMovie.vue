@@ -84,7 +84,6 @@ export default defineComponent({
         const isEnd = ref(false);
         const currentSlide = ref(0);
 
-        // Responsive breakpoints
         const breakpoints = {
             320: { slidesPerView: 1.5, spaceBetween: 10 },
             480: { slidesPerView: 2.3, spaceBetween: 15 },
@@ -152,7 +151,6 @@ export default defineComponent({
         };
 
         onMounted(() => {
-            // Update responsive values based on window size
             const updateSlidesPerView = () => {
                 const width = window.innerWidth;
                 if (width < 480) {
@@ -201,14 +199,14 @@ export default defineComponent({
 <style scoped lang="scss">
 .similar-movie-wrapper {
     padding: 3rem 0;
-    overflow: hidden; // Prevent horizontal overflow
+    overflow: hidden;
 
     .similar-movie-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         margin-bottom: 2rem;
-        padding: 0 1rem; // Add padding to header
+        padding: 0 1rem;
 
         @media (max-width: 768px) {
             flex-direction: column;
@@ -310,12 +308,12 @@ export default defineComponent({
 
 .swiper-container {
     position: relative;
-    margin: 0 -1rem; // Negative margin to allow cards to extend
-    padding: 0 1rem; // Add padding back for content
+    margin: 0 -1rem;
+    padding: 0 1rem;
 
     .similar-movie-swiper {
         overflow: visible;
-        padding: 1rem 0 3rem 0; // Increased bottom padding for metadata
+        padding: 1rem 0 3rem 0;
 
         .similar-movie-slide {
             height: auto;
@@ -325,7 +323,6 @@ export default defineComponent({
                 height: 100%;
                 width: 100%;
 
-                // Ensure movie items are properly sized
                 :deep(.movie-item) {
                     width: 100%;
                     height: auto;
@@ -391,7 +388,6 @@ export default defineComponent({
     }
 }
 
-// Responsive improvements
 @media (max-width: 576px) {
     .similar-movie-wrapper {
         padding: 2rem 0;

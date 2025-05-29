@@ -207,16 +207,12 @@ const handleSearch = (searchQuery: string) => {
 };
 
 const handleClearSearch = () => {
-    // Clear the search results
     clearSearchResults();
     
-    // Clear the current search parameter
     currentSearchParam.value = '';
     
-    // Remove the search query from URL
     router.push({ query: {} });
     
-    // Reset loading states
     isLoading.value = false;
     isLoadingMore.value = false;
 };
@@ -239,7 +235,6 @@ const performSearch = async (query: string, page: number = 1) => {
         await fetchSearchResults(query.trim(), page);
     } catch (error) {
         console.error('Search failed:', error);
-        // Handle error state if needed
     } finally {
         isLoading.value = false;
         isLoadingMore.value = false;
@@ -247,11 +242,11 @@ const performSearch = async (query: string, page: number = 1) => {
 };
 
 watch(() => route.query.search, (query) => {
-    currentSearchParam.value = query as string;
-    if (query && query.trim()) {
-        performSearch(query as string);
+    const queryStr = typeof query === 'string' ? query : Array.isArray(query) ? query[0] || '' : '';
+    currentSearchParam.value = queryStr;
+    if (queryStr && queryStr.trim()) {
+        performSearch(queryStr);
     } else {
-        // If query is empty, clear the search
         clearSearchResults();
         currentSearchParam.value = '';
     }
@@ -502,7 +497,6 @@ const handleLoadMoreMovies = async () => {
     }
 }
 
-// Responsive improvements
 @media (max-width: 768px) {
     .container {
         padding: 0 1rem;

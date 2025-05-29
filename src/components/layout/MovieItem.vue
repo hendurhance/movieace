@@ -299,7 +299,7 @@ export default defineComponent({
                 }
                 
                 svg {
-                    margin-left: 2px; // Optical alignment for play icon
+                    margin-left: 2px;
                 }
             }
         }
@@ -393,7 +393,6 @@ export default defineComponent({
     }
 }
 
-// Responsive adjustments
 @media (max-width: 768px) {
     .movie-list-item {
         .movie-content {

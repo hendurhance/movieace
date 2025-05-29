@@ -191,7 +191,6 @@ export default defineComponent({
         const movieId = ref(route.params.id) as Ref<string>;
         const { fetchMovie, fetchMovieCredits, fetchMovieImages, fetchSimilarMovies, fetchMovieVideos } = useMovies();
 
-        // State
         const movie = ref<MovieDetails>();
         const movieCredit = ref<MovieCredit>();
         const movieImages = ref<MovieImages>();

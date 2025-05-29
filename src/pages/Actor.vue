@@ -165,8 +165,7 @@ export default defineComponent({
     setup() {
         const route = useRoute();
         const actorId = ref(route.params.id) as Ref<string>;
-        
-        // State
+
         const actorDetails = ref<ActorDetails>();
         const actorImages = ref<ActorImages>();
         const actorCombinedCredits = ref<Movie[] | TVShowType[]>();
