@@ -6,7 +6,7 @@
                 <Hero :title="'Discover Movies'" :subtitle="'Find your favorite movies and explore new ones'"
                     :search="true" :searchPlaceholder="'Search for a movie'" @search="handleSearchMovies" />
                 <GenreLists :genres="genresFetched" :activeGenres="filteredGenres" @genre-click="handleAddGenre"
-                    @clear-all="handleClearAllGenres" />
+                    :type="'movies'" @clear-all="handleClearAllGenres" />
             </div>
 
             <!-- Results Section -->

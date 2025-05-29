@@ -5,7 +5,7 @@
             <div class="container">
                 <Hero :title="'Discover TV Shows'" :subtitle="'Find your favorite TV shows and explore new ones'"
                     :search="true" :searchPlaceholder="'Search for a TV show'" @search="handleSearchTvShows" />
-                <GenreLists :genres="genres" :activeGenres="filteredGenres" @genre-click="handleAddGenre"
+                <GenreLists :genres="genres" :activeGenres="filteredGenres" @genre-click="handleAddGenre" :type="'tv shows'"
                     @clear-all="handleClearAllGenres" />
             </div>
 
