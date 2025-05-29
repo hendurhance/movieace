@@ -108,7 +108,7 @@ export async function fetchWatchPartyTVShowData(
     
     const encodedTitle = encodeURIComponent(show.name);
     
-    const url = `https://backend.xprime.tvprimebox?name=${encodedTitle}&year=${year}&fallback_year=${fallbackYear}&season=${seasonNumber}&episode=${episodeNumber}`;
+    const url = `https://backend.xprime.tv/primebox?name=${encodedTitle}&year=${year}&fallback_year=${fallbackYear}&season=${seasonNumber}&episode=${episodeNumber}`;
     
     const response = await fetch(url);
     const data = await response.json();
