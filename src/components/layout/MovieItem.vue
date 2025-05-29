@@ -107,13 +107,13 @@ export default defineComponent({
             type: String,
             default: 'w500'
         },
-        releaseDate: {
-            type: String,
-            default: ''
-        },
         adult: {
             type: Boolean,
             default: false
+        },
+        releaseDate: {
+            type: String,
+            default: ''
         }
     },
     setup(props) {
@@ -149,13 +149,13 @@ export default defineComponent({
 .movie-list-item {
     display: flex;
     flex-direction: column;
-    height: auto;
+    height: 100%;
     
     .movie-link {
         position: relative;
         display: flex;
         flex-direction: column;
-        height: auto;
+        height: 100%;
         text-decoration: none;
         color: #fff;
         transition: all 0.3s ease;
@@ -192,10 +192,11 @@ export default defineComponent({
         overflow: hidden;
         border-radius: 0.75rem 0.75rem 0 0;
         flex: 0 0 auto;
+        aspect-ratio: 2/3;
         
         img {
             width: 100%;
-            height: auto;
+            height: 100%;
             display: block;
             object-fit: cover;
             object-position: center;
@@ -203,12 +204,12 @@ export default defineComponent({
             
             &.large {
                 width: 100%;
-                height: auto;
+                height: 100%;
             }
 
             &.small {
                 width: 100%;
-                height: 220px;
+                height: 100%;
                 object-fit: cover;
             }
         }
@@ -299,7 +300,7 @@ export default defineComponent({
                 }
                 
                 svg {
-                    margin-left: 2px;
+                    margin-left: 2px; // Optical alignment for play icon
                 }
             }
         }
@@ -307,10 +308,11 @@ export default defineComponent({
     
     .movie-content {
         padding: 1rem;
-        flex: 0 0 auto;
+        flex: 1;
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+        min-height: 0;
         
         .movie-title {
             font-size: 1.1rem;
@@ -354,6 +356,7 @@ export default defineComponent({
             display: flex;
             align-items: flex-start;
             gap: 0.5rem;
+            margin-top: auto;
             
             .category-icon {
                 margin-top: 0.125rem;
@@ -393,6 +396,7 @@ export default defineComponent({
     }
 }
 
+// Responsive adjustments
 @media (max-width: 768px) {
     .movie-list-item {
         .movie-content {
