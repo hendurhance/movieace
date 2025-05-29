@@ -72,6 +72,12 @@ export default defineComponent({
             if (navRoute.path === '/tv-shows' && currentPath.startsWith('/tv-show/')) {
                 return true;
             }
+            if (navRoute.path === '/actors' && currentPath.startsWith('/actor/')) {
+                return true;
+            }
+            if (navRoute.path === '/search' && currentPath.startsWith('/search')) {
+                return true;
+            }
 
             return currentPath === navRoute.path;
         };

@@ -41,7 +41,6 @@ export const useGenres = (type: string) => {
         loading.value = false;
       }
     } else {
-      // Data already available in cache, no need to fetch from the API
       data.value = data.value;
     }
 
