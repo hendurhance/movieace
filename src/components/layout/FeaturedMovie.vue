@@ -9,11 +9,11 @@
                     <div class="info-wrapper">
                         <RatingStar :count="4" :max="5" />
                         <div class="category">
-                            <span>Thriller</span>
+                            <span>{{ categoryNames }}</span>
                         </div>
                         <div class="date-created">
                             <clock />
-                            <span>{{fullDate}}</span>
+                            <span>{{ fullDate }}</span>
                         </div>
                     </div>
                     <p class="featured-paragraph">
@@ -23,18 +23,14 @@
                 </div>
             </div>
         </div>
-        <div class="author-block">
-            <img src="https://assets.website-files.com/59f5ae906a27c400013267f0/5a097100d65a2f0001bcecad_Portrait-1.jpg"
-                alt="">
-            <h6>Jonathan Lewis</h6>
-        </div>
     </div>
 </template>
 
 <script lang="ts">
-import { PropType, computed, defineComponent } from 'vue';
+import { PropType, computed, defineComponent, ref, onMounted } from 'vue';
 import clock from '../../components/svg/outline/clock.vue';
 import RatingStar from '../../containers/RatingStar.vue';
+import { useGenresList } from '../../composables/useGenresList';
 export default defineComponent({
     name: 'FeaturedMovie',
     components: {
@@ -82,18 +78,30 @@ export default defineComponent({
             return `${IMAGE_BASEURL}${props.imgSize}/${props.image}`
         })
 
-        
-         const fullDate = computed(() => {
+
+        const fullDate = computed(() => {
             return new Date(props.date).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
             })
         })
-       
+
+        const { getGenresList } = useGenresList(props.categories.slice(0, 2))
+        const categoryNames = ref('')
+        
+        onMounted(async () => {
+            const genres = await getGenresList()
+            categoryNames.value = genres
+                .filter((genre: { id: number; name: string }) => props.categories.includes(genre.id))
+                .map((genre: { id: number; name: string }) => genre.name)
+                .join(', ')
+        })
+
         return {
             fullPathImage,
-            fullDate
+            fullDate,
+            categoryNames
         }
     }
 })

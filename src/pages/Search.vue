@@ -3,25 +3,146 @@
         <BaseHeader />
         <section>
             <div class="container">
-                <Hero :title="'Discovered Results'"
-                    :subtitle="'Find your favorite actors, movies, tv shows and explore new ones'" :search="true" :default-value="currentSearchParam as string"
-                    :searchPlaceholder="'Search for an actor, movie or tv show'" @search="handleSearch" />
+                <Hero 
+                    :title="'Search Results'"
+                    :subtitle="'Discover movies, TV shows, and actors all in one place'" 
+                    :search="true" 
+                    :default-value="currentSearchParam as string"
+                    :searchPlaceholder="'Search for movies, TV shows, or actors...'" 
+                    @search="handleSearch" 
+                />
             </div>
 
-            <div class="container">
-                <SearchResults :media-type="'movie'" :data="discoveredMovies" v-if="discoveredMovies.length > 0" />
-                <EmptyState v-else :title="'No Movie Found'" :description="'Try searching for another movie'" />
+            <!-- Search Summary -->
+            <div class="container" v-if="currentSearchParam">
+                <div class="search-summary">
+                    <h2 class="search-title">
+                        Results for "{{ currentSearchParam }}"
+                    </h2>
+                    <div class="search-stats">
+                        <div class="stat-item" v-if="discoveredMovies.length > 0">
+                            <span class="stat-number">{{ discoveredMovies.length }}</span>
+                            <span class="stat-label">Movies</span>
+                        </div>
+                        <div class="stat-item" v-if="discoveredTv.length > 0">
+                            <span class="stat-number">{{ discoveredTv.length }}</span>
+                            <span class="stat-label">TV Shows</span>
+                        </div>
+                        <div class="stat-item" v-if="discoveredPeople.length > 0">
+                            <span class="stat-number">{{ discoveredPeople.length }}</span>
+                            <span class="stat-label">Actors</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="container">
-                <SearchResults :media-type="'tv'" :data="discoveredTv" v-if="discoveredTv.length > 0" />
-                <EmptyState v-else :title="'No TV Show Found'" :description="'Try searching for another tv show'" />
+
+            <!-- Loading State -->
+            <div class="container" v-if="isLoading">
+                <LoadingState
+                    message="Searching across movies, TV shows, and actors..."
+                    size="large"
+                />
             </div>
-            <div class="container">
-                <CastWrapper :title="'Actor Results'" :casts="discoveredPeople" v-if="discoveredPeople.length > 0" />
-                <EmptyState v-else :title="'No Actor Found'" :description="'Try searching for another actor'" />
+
+            <!-- Results Sections -->
+            <template v-else-if="hasAnyResults">
+                <!-- Movies Section -->
+                <div class="container results-section" v-if="discoveredMovies.length > 0">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h3>Movies</h3>
+                            <span class="section-count">{{ discoveredMovies.length }} results</span>
+                        </div>
+                        <div class="section-icon">🎬</div>
+                    </div>
+                    <SearchResults :media-type="'movie'" :data="discoveredMovies" />
+                </div>
+
+                <!-- TV Shows Section -->
+                <div class="container results-section" v-if="discoveredTv.length > 0">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h3>TV Shows</h3>
+                            <span class="section-count">{{ discoveredTv.length }} results</span>
+                        </div>
+                        <div class="section-icon">📺</div>
+                    </div>
+                    <SearchResults :media-type="'tv'" :data="discoveredTv" />
+                </div>
+
+                <!-- Actors Section -->
+                <div class="container results-section" v-if="discoveredPeople.length > 0">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h3>Actors</h3>
+                            <span class="section-count">{{ discoveredPeople.length }} results</span>
+                        </div>
+                        <div class="section-icon">🎭</div>
+                    </div>
+                    <CastWrapper :title="''" :casts="discoveredPeople" />
+                </div>
+
+                <!-- Load More Button -->
+                <div class="container">
+                    <LoadMoreButton
+                        v-if="reqMetaData.total_pages > reqMetaData.page"
+                        :current-page="reqMetaData.page"
+                        :total-pages="reqMetaData.total_pages"
+                        :is-loading="isLoadingMore"
+                        item-type="Results"
+                        @load-more="handleLoadMoreMovies"
+                    />
+                </div>
+            </template>
+
+            <!-- Empty State -->
+            <div class="container" v-else-if="currentSearchParam && !isLoading">
+                <EmptyState
+                    title="No results found"
+                    :description="`We couldn't find any movies, TV shows, or actors matching '${currentSearchParam}'. Try a different search term.`"
+                    icon="🔍"
+                    :show-reset-button="false"
+                />
+                
+                <!-- Search Suggestions -->
+                <div class="search-suggestions">
+                    <h4>Try searching for:</h4>
+                    <div class="suggestion-chips">
+                        <button 
+                            v-for="suggestion in searchSuggestions"
+                            :key="suggestion"
+                            @click="handleSearch(suggestion)"
+                            class="suggestion-chip"
+                        >
+                            {{ suggestion }}
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="pagination" v-if="reqMetaData.total_pages > 1">
-                <button @click="handleLoadMoreMovies" type="button">Load More</button>
+
+            <!-- Initial State -->
+            <div class="container" v-else-if="!currentSearchParam">
+                <div class="initial-search-state">
+                    <div class="search-welcome">
+                        <div class="welcome-icon">🎯</div>
+                        <h3>Ready to discover?</h3>
+                        <p>Search for your favorite movies, TV shows, or actors to get started</p>
+                    </div>
+                    
+                    <div class="popular-searches">
+                        <h4>Popular searches:</h4>
+                        <div class="popular-chips">
+                            <button 
+                                v-for="popular in popularSearches"
+                                :key="popular"
+                                @click="handleSearch(popular)"
+                                class="popular-chip"
+                            >
+                                {{ popular }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
         <BaseFooter />
@@ -29,61 +150,308 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
 import Hero from '../containers/Hero.vue';
-import 'swiper/css';
 import SearchResults from '../containers/SearchResults.vue';
 import CastWrapper from '../containers/CastWrapper.vue';
-import EmptyState from '../containers/EmptyState.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useSearch, discoveredMovies, discoveredTv, discoveredPeople, reqMetaData } from '../composables/useSearch';
-
+import LoadMoreButton from '../components/layout/LoadMoreButton.vue';
+import EmptyState from '../containers/EmptyState.vue';
+import LoadingState from '../containers/LoadingState.vue';
 
 const route = useRoute();
 const router = useRouter();
 const { fetchSearchResults } = useSearch();
+
+const isLoading = ref(false);
+const isLoadingMore = ref(false);
+
+const searchSuggestions = [
+    'Marvel', 'Christopher Nolan', 'Breaking Bad', 'Game of Thrones', 
+    'Leonardo DiCaprio', 'The Office', 'Star Wars', 'Friends'
+];
+
+const popularSearches = [
+    'Avengers', 'Stranger Things', 'Tom Hanks', 'The Dark Knight',
+    'Friends', 'Ryan Gosling', 'Inception', 'The Crown'
+];
+
+const hasAnyResults = computed(() => {
+    return discoveredMovies.value.length > 0 || 
+           discoveredTv.value.length > 0 || 
+           discoveredPeople.value.length > 0;
+});
+
 const handleSearch = (searchQuery: string) => {
     router.push({ query: { search: searchQuery } });
 };
 
 const currentSearchParam = ref(route.query.search);
+
+const performSearch = async (query: string, page: number = 1) => {
+    if (!query) return;
+    
+    if (page === 1) {
+        isLoading.value = true;
+    } else {
+        isLoadingMore.value = true;
+    }
+    
+    try {
+        await fetchSearchResults(query, page);
+    } finally {
+        isLoading.value = false;
+        isLoadingMore.value = false;
+    }
+};
+
 watch(() => route.query.search, (query) => {
     currentSearchParam.value = query as string;
-    fetchSearchResults(currentSearchParam.value);
+    if (query) {
+        performSearch(query as string);
+    }
 });
+
 onMounted(() => {
     window.scrollTo(0, 0);
     currentSearchParam.value = route.query.search as string;
-    fetchSearchResults(currentSearchParam.value);
+    if (currentSearchParam.value) {
+        performSearch(currentSearchParam.value as string);
+    }
 });
+
 const handleLoadMoreMovies = async () => {
     if (reqMetaData.value.page < reqMetaData.value.total_pages) {
-        fetchSearchResults(route.query.search as string, reqMetaData.value.page + 1);
+        await performSearch(route.query.search as string, reqMetaData.value.page + 1);
     }
-}
+};
 </script>
 
 <style lang="scss" scoped>
-.pagination {
+.search-summary {
+    margin: 2rem 0;
+    padding: 2rem;
+    background: linear-gradient(135deg, rgba(15, 20, 25, 0.6) 0%, rgba(26, 35, 50, 0.4) 100%);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    
+    .search-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0 0 1.5rem 0;
+        text-align: center;
+        
+        @media (max-width: 768px) {
+            font-size: 1.5rem;
+        }
+    }
+    
+    .search-stats {
         display: flex;
-        align-items: start;
         justify-content: center;
-        button {
-            padding: 1rem 2rem;
-            border-radius: 0.5rem;
-            background-color: #f1b722;
-            color: #000;
-            border: 0;
-            font-size: 1rem;
-            font-weight: 400;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            &:hover {
-                background-color: #f1b722;
-                color: #fff;
+        gap: 2rem;
+        
+        @media (max-width: 768px) {
+            gap: 1rem;
+        }
+        
+        @media (max-width: 480px) {
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            
+            .stat-number {
+                display: block;
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: #f1b722;
+                
+                @media (max-width: 768px) {
+                    font-size: 1.2rem;
+                }
+            }
+            
+            .stat-label {
+                display: block;
+                font-size: 0.9rem;
+                color: #8ea9bd;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-top: 0.25rem;
             }
         }
     }
+}
+
+.results-section {
+    margin: 3rem 0;
+    
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: rgba(15, 20, 25, 0.3);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        
+        .section-title {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            
+            h3 {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: #ffffff;
+                margin: 0;
+                
+                @media (max-width: 768px) {
+                    font-size: 1.3rem;
+                }
+            }
+            
+            .section-count {
+                font-size: 0.9rem;
+                color: #8ea9bd;
+                font-weight: 500;
+            }
+        }
+        
+        .section-icon {
+            font-size: 1.5rem;
+            opacity: 0.7;
+        }
+    }
+}
+
+.search-suggestions, .popular-searches {
+    margin-top: 3rem;
+    text-align: center;
+    
+    h4 {
+        font-size: 1.2rem;
+        color: #ffffff;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    
+    .suggestion-chips, .popular-chips {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.75rem;
+    }
+    
+    .suggestion-chip, .popular-chip {
+        padding: 0.75rem 1.5rem;
+        background: rgba(241, 183, 34, 0.1);
+        border: 1px solid rgba(241, 183, 34, 0.3);
+        border-radius: 25px;
+        color: #f1b722;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        
+        &:hover {
+            background: rgba(241, 183, 34, 0.2);
+            border-color: rgba(241, 183, 34, 0.5);
+            transform: translateY(-2px);
+        }
+    }
+    
+    .popular-chip {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+        
+        &:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+    }
+}
+
+.initial-search-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    
+    .search-welcome {
+        margin-bottom: 3rem;
+        
+        .welcome-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.8;
+        }
+        
+        h3 {
+            font-size: 2rem;
+            color: #ffffff;
+            margin: 0 0 1rem 0;
+            font-weight: 700;
+            
+            @media (max-width: 768px) {
+                font-size: 1.7rem;
+            }
+        }
+        
+        p {
+            font-size: 1.1rem;
+            color: #8ea9bd;
+            margin: 0;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+    }
+}
+
+// Responsive improvements
+@media (max-width: 768px) {
+    .container {
+        padding: 0 1rem;
+    }
+    
+    .results-section {
+        margin: 2rem 0;
+        
+        .section-header {
+            padding: 1rem;
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+    }
+    
+    .search-summary {
+        margin: 1.5rem 0;
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-suggestions, .popular-searches {
+        .suggestion-chips, .popular-chips {
+            flex-direction: column;
+            align-items: center;
+            
+            .suggestion-chip, .popular-chip {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+    }
+}
 </style>

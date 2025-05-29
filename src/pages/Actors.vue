@@ -4,7 +4,7 @@
         <section>
             <div class="container">
                 <Hero :title="'Discover Actors'" :subtitle="'Find your favorite actors and explore new ones'" :search="true"
-                    :searchPlaceholder="'Search for an actor'" @search="handleSearchMovies" />
+                    :searchPlaceholder="'Search for an actor'" @search="handleSearchActors" />
             </div>
             <div class="container">
                 <div class="actor-meta-grid">
@@ -65,7 +65,7 @@ export default defineComponent({
             discoveredActors.value = pageNumber.value === 1 ? data.value?.results ?? [] : [...discoveredActors.value, ...data.value?.results ?? []];
         }
 
-        const handleSearchMovies = debounce(async (searchValue: string) => {
+        const handleSearchActors = debounce(async (searchValue: string) => {
             if (searchValue === ''){
                 await handleFetchTopActors()
                 return
@@ -84,7 +84,7 @@ export default defineComponent({
             discoveredActors,
             handleFetchTopActors,
             handleLoadMoreActors,
-            handleSearchMovies,
+            handleSearchActors,
             totalPage
         }
     }

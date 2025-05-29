@@ -30,7 +30,7 @@
                                 </p>
                                 <div class="info-item">
                                     <span><strong>Duration</strong>: {{ computedMovieDuration }}</span>
-                                    <span><strong>Director</strong>: Adam Wingard</span>
+                                    <span><strong>Director</strong>: {{ movieCredit?.crew?.find(i => i.job === 'Director')?.name || 'N/A' }}</span>
                                     <span><strong>Country</strong>: {{ computedCountry }}
                                     </span>
                                     <span><strong>Language</strong>: {{ computedLanguage }}</span>
