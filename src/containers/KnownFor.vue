@@ -65,7 +65,7 @@
             <!-- Custom Navigation Dots -->
             <div class="navigation-dots" v-if="showDots">
                 <button 
-                    v-for="(, index) in Math.ceil(movieItems.length / slidesPerView)" 
+                    v-for="(_, index) in Math.ceil(movieItems.length / slidesPerView)" 
                     :key="index"
                     @click="goToSlide(index * slidesPerView)"
                     class="dot"

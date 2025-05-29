@@ -3,7 +3,7 @@
         <BaseHeader />
         <section class="remove-padding">
             <!-- Search Section -->
-            <HeroSearchWrapper @search="handleSearchGlobal" />
+            <SearchWrapper @search="handleSearchGlobal" />
             
             <!-- Highlights Section -->
             <div class="container">
@@ -101,11 +101,11 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, watch } from 'vue';
+import { computed, defineComponent, onMounted } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue'
 import MovieItem from '../components/layout/MovieItem.vue'
 import FeaturedMovie from '../components/layout/FeaturedMovie.vue';
-import HeroSearchWrapper from '../containers/SearchWrapper.vue';
+import SearchWrapper from '../containers/SearchWrapper.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
 import { useHighlights, highLightOptions, currentHighlightTitle, currentHighLightDetails } from "../composables/useHighlights"
 import { useTvShows, newShows } from '../composables/useTvShows';
@@ -120,7 +120,7 @@ export default defineComponent({
         BaseHeader,
         MovieItem,
         FeaturedMovie,
-        HeroSearchWrapper,
+        SearchWrapper,
         BaseFooter,
         LoadingState,
         ErrorState
