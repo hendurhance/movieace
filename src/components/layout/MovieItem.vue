@@ -149,13 +149,13 @@ export default defineComponent({
 .movie-list-item {
     display: flex;
     flex-direction: column;
-    height: auto;
+    height: 100%;
     
     .movie-link {
         position: relative;
         display: flex;
         flex-direction: column;
-        height: auto;
+        height: 100%;
         text-decoration: none;
         color: #fff;
         transition: all 0.3s ease;
@@ -200,16 +200,19 @@ export default defineComponent({
             object-fit: cover;
             object-position: center;
             transition: transform 0.4s ease;
+            aspect-ratio: 2/3;
             
             &.large {
                 width: 100%;
                 height: auto;
+                aspect-ratio: 2/3;
             }
 
             &.small {
                 width: 100%;
                 height: 220px;
                 object-fit: cover;
+                aspect-ratio: unset;
             }
         }
         
@@ -307,10 +310,11 @@ export default defineComponent({
     
     .movie-content {
         padding: 1rem;
-        flex: 0 0 auto;
+        flex: 1 1 auto;
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+        min-height: 0;
         
         .movie-title {
             font-size: 1.1rem;
@@ -323,6 +327,8 @@ export default defineComponent({
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            height: 2.6em;
+            flex: 0 0 auto;
         }
         
         .item-meta {
@@ -330,6 +336,7 @@ export default defineComponent({
             justify-content: space-between;
             align-items: center;
             margin: 0;
+            flex: 0 0 auto;
             
             .release-year {
                 background: rgba(142, 169, 189, 0.15);
@@ -354,10 +361,13 @@ export default defineComponent({
             display: flex;
             align-items: flex-start;
             gap: 0.5rem;
+            flex: 1 1 auto;
+            min-height: 0;
             
             .category-icon {
                 margin-top: 0.125rem;
                 opacity: 0.7;
+                flex: 0 0 auto;
                 
                 svg {
                     width: 14px;
@@ -371,6 +381,7 @@ export default defineComponent({
                 flex-wrap: wrap;
                 gap: 0.375rem;
                 flex: 1;
+                align-content: flex-start;
                 
                 .genre-tag {
                     background: rgba(255, 255, 255, 0.08);
@@ -381,6 +392,7 @@ export default defineComponent({
                     font-weight: 500;
                     border: 1px solid rgba(255, 255, 255, 0.1);
                     transition: all 0.3s ease;
+                    white-space: nowrap;
                     
                     &:hover {
                         background: rgba(241, 183, 34, 0.1);
@@ -401,6 +413,7 @@ export default defineComponent({
             
             .movie-title {
                 font-size: 1rem;
+                height: 2.4em;
             }
         }
         

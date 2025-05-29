@@ -139,7 +139,7 @@ const quickSearch = (term: string) => {
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background: linear-gradient(135deg, #0f1419 0%, #1a2332 50%, #0f1419 100%);
+    background: linear-gradient(135deg, #0b3954 0%, #020d14 50%, #0c2737 100%);
     
     @media (max-width: 768px) {
         min-height: 80vh;
