@@ -1,21 +1,59 @@
 <template>
     <div class="movie-list-item">
-        <router-link :to="type == 'movie'? `/movie/${movieId}`: `/tv-show/${movieId}`">
-            <img :src="fullPathImage" alt="Movie poster" :class="size" loading="lazy" />
-            <h5>{{title}}</h5>
-            <div class="rating-number">
-                <span>{{ rating.toFixed(1) }}</span>
-            </div>
-        </router-link>
-        <div class="info-block">
-            <RatingStar :count="votingToRating(rating, 5)" :max="5" />
-            <div class="category">
-                <tag />
-                <div class="categories">
-                    <span v-for="(genre, idx) in genres" :key="idx">{{genre.name}}</span>
+        <router-link :to="type == 'movie' ? `/movie/${movieId}` : `/tv-show/${movieId}`" class="movie-link">
+            <div class="movie-poster-container">
+                <img :src="fullPathImage" alt="Movie poster" :class="size" loading="lazy" />
+                <div class="rating-overlay">
+                    <div class="rating-badge">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>
+                        </svg>
+                        {{ rating.toFixed(1) }}
+                    </div>
+                </div>
+                <div class="adult-overlay" v-if="adult">
+                    <div class="adult-badge">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2"/>
+                            <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        18+
+                    </div>
+                </div>
+                <div class="hover-overlay">
+                    <div class="play-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M8 5v14l11-7z" fill="currentColor"/>
+                        </svg>
+                    </div>
                 </div>
             </div>
-        </div>
+            
+            <div class="movie-content">
+                <h5 class="movie-title">{{ title }}</h5>
+                
+                <div class="item-meta">
+                    <span class="release-year" v-if="releaseDate">
+                        {{ getReleaseYear(releaseDate) }}
+                    </span>
+                    <div class="rating-stars">
+                        <RatingStar :count="votingToRating(rating, 5)" :max="5" />
+                    </div>
+                </div>
+                
+                <div class="category-section">
+                    <div class="category-icon">
+                        <tag />
+                    </div>
+                    <div class="categories">
+                        <span v-for="(genre, idx) in genres" :key="idx" class="genre-tag">
+                            {{ genre.name }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </router-link>
     </div>
 </template>
 
@@ -29,6 +67,7 @@ import { useGenresList } from '../../composables/useGenresList';
 import { Genre } from '../../composables/useGenre';
 import { useRouter } from 'vue-router';
 import { useWebImage } from '../../utils/useWebImage';
+
 export default defineComponent({
     name: 'MovieItem',
     components: {
@@ -67,6 +106,14 @@ export default defineComponent({
         imgSize: {
             type: String,
             default: 'w500'
+        },
+        releaseDate: {
+            type: String,
+            default: ''
+        },
+        adult: {
+            type: Boolean,
+            default: false
         }
     },
     setup(props) {
@@ -74,110 +121,337 @@ export default defineComponent({
         const fullPathImage = props.image === null ? empty_movie_state : useWebImage(props.image, "large")
         const genres = ref<Genre[]>([])
 
-        onMounted( async () => {
+        onMounted(async () => {
             const { getGenresList } = useGenresList(props.categories.slice(0, 2))
             genres.value = await getGenresList()
         })
+
         const handleMovieRouting = () => {
             router.push(`/movie/${props.movieId}`)
+        }
+
+        const getReleaseYear = (date: string) => {
+            return date ? new Date(date).getFullYear() : '';
         }
 
         return {
             fullPathImage,
             votingToRating,
             genres,
-            handleMovieRouting
+            handleMovieRouting,
+            getReleaseYear
         }
     }
 })
 </script>
 
 <style lang="scss" scoped>
-.movie-list-item{
+.movie-list-item {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-
-    a {
+    height: auto;
+    
+    .movie-link {
         position: relative;
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
+        height: auto;
         text-decoration: none;
         color: #fff;
-
-        .rating-number {
-            position: absolute;
-            top: 0;
-            right: 0;
-            padding: 0.5rem 1rem;
-            border-radius: 0 0 0 0.5rem;
-            background-color: #f1b722;
-            font-size: 1.2rem;
-            font-weight: 400;
-            color: #323232;
+        transition: all 0.3s ease;
+        border-radius: 1rem;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        
+        &:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(241, 183, 34, 0.3);
+            
+            .movie-poster-container {
+                .hover-overlay {
+                    opacity: 1;
+                }
+                
+                img {
+                    transform: scale(1.05);
+                }
+            }
+            
+            .movie-title {
+                color: #f1b722;
+            }
         }
-
+    }
+    
+    .movie-poster-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 0.75rem 0.75rem 0 0;
+        flex: 0 0 auto;
+        
         img {
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+            object-position: center;
+            transition: transform 0.4s ease;
+            
             &.large {
                 width: 100%;
-                height: 100%;
+                height: auto;
             }
 
             &.small {
                 width: 100%;
                 height: 220px;
                 object-fit: cover;
-                object-position: top;
-            }
-
-            &:hover {
-                transition: all 0.3s ease-in-out;
-                transform: scale(1.05);
             }
         }
-
-        h5 {
-            font-size: 1.2rem;
-            margin: .5rem 0;
-            text-align: left;
-            font-weight: 400;
-            color: #fff;
-            font-weight: 600;
+        
+        .rating-overlay {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            z-index: 2;
+            
+            .rating-badge {
+                display: flex;
+                align-items: center;
+                gap: 0.25rem;
+                background: rgba(241, 183, 34, 0.95);
+                backdrop-filter: blur(10px);
+                color: #000;
+                padding: 0.375rem 0.625rem;
+                border-radius: 12px;
+                font-size: 0.75rem;
+                font-weight: 700;
+                box-shadow: 0 4px 12px rgba(241, 183, 34, 0.3);
+                
+                svg {
+                    width: 12px;
+                    height: 12px;
+                    color: #000;
+                }
+            }
         }
-    }
-
-    .info-block {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-
-        .category {
+        
+        .adult-overlay {
+            position: absolute;
+            top: 0.75rem;
+            left: 0.75rem;
+            z-index: 2;
+            
+            .adult-badge {
+                display: flex;
+                align-items: center;
+                gap: 0.25rem;
+                background: rgba(239, 68, 68, 0.95);
+                backdrop-filter: blur(10px);
+                color: #fff;
+                padding: 0.375rem 0.625rem;
+                border-radius: 12px;
+                font-size: 0.7rem;
+                font-weight: 700;
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+                border: 1px solid rgba(239, 68, 68, 0.6);
+                
+                svg {
+                    width: 10px;
+                    height: 10px;
+                    color: #fff;
+                }
+            }
+        }
+        
+        .hover-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(241, 183, 34, 0.1), rgba(241, 183, 34, 0.2));
+            backdrop-filter: blur(2px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
             display: flex;
-            flex-direction: row;
             align-items: center;
             justify-content: center;
-            margin-top: .5rem;
-
-            .categories {
+            
+            .play-icon {
+                width: 60px;
+                height: 60px;
+                background: rgba(241, 183, 34, 0.9);
+                border-radius: 50%;
                 display: flex;
-                flex-direction: row;
                 align-items: center;
                 justify-content: center;
-
-                span {
-                    font-size: 1rem;
-                    font-weight: 400;
+                color: #000;
+                transform: scale(0.8);
+                transition: transform 0.3s ease;
+                
+                &:hover {
+                    transform: scale(1);
+                }
+                
+                svg {
+                    margin-left: 2px; // Optical alignment for play icon
+                }
+            }
+        }
+    }
+    
+    .movie-content {
+        padding: 1rem;
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        
+        .movie-title {
+            font-size: 1.1rem;
+            margin: 0;
+            font-weight: 600;
+            color: #fff;
+            line-height: 1.3;
+            transition: color 0.3s ease;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .item-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0;
+            
+            .release-year {
+                background: rgba(142, 169, 189, 0.15);
+                color: #8ea9bd;
+                padding: 0.25rem 0.625rem;
+                border-radius: 10px;
+                font-size: 0.75rem;
+                font-weight: 500;
+                border: 1px solid rgba(142, 169, 189, 0.2);
+            }
+            
+            .rating-stars {
+                opacity: 0.9;
+                
+                :deep(.rating-star) {
+                    font-size: 0.9rem;
+                }
+            }
+        }
+        
+        .category-section {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            
+            .category-icon {
+                margin-top: 0.125rem;
+                opacity: 0.7;
+                
+                svg {
+                    width: 14px;
+                    height: 14px;
                     color: #8ea9bd;
-                    margin-left: .2rem;
+                }
+            }
+            
+            .categories {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.375rem;
+                flex: 1;
+                
+                .genre-tag {
+                    background: rgba(255, 255, 255, 0.08);
+                    color: #8ea9bd;
+                    padding: 0.25rem 0.5rem;
+                    border-radius: 8px;
+                    font-size: 0.75rem;
+                    font-weight: 500;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    transition: all 0.3s ease;
+                    
+                    &:hover {
+                        background: rgba(241, 183, 34, 0.1);
+                        color: #f1b722;
+                        border-color: rgba(241, 183, 34, 0.3);
+                    }
+                }
+            }
+        }
+    }
+}
 
-                    &:not(:last-child)::after {
-                        content: ',';
-                        margin-right: .2rem;
+// Responsive adjustments
+@media (max-width: 768px) {
+    .movie-list-item {
+        .movie-content {
+            padding: 0.75rem;
+            gap: 0.375rem;
+            
+            .movie-title {
+                font-size: 1rem;
+            }
+        }
+        
+        .movie-poster-container {
+            .rating-overlay {
+                top: 0.5rem;
+                right: 0.5rem;
+                
+                .rating-badge {
+                    padding: 0.25rem 0.5rem;
+                    font-size: 0.7rem;
+                }
+            }
+            
+            .adult-overlay {
+                top: 0.5rem;
+                left: 0.5rem;
+                
+                .adult-badge {
+                    padding: 0.25rem 0.5rem;
+                    font-size: 0.65rem;
+                    gap: 0.2rem;
+                    
+                    svg {
+                        width: 8px;
+                        height: 8px;
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .movie-list-item {
+        .movie-content {
+            padding: 0.625rem;
+            gap: 0.25rem;
+            
+            .item-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.375rem;
+            }
+            
+            .category-section {
+                .categories {
+                    .genre-tag {
+                        font-size: 0.7rem;
+                        padding: 0.2rem 0.4rem;
                     }
                 }
             }

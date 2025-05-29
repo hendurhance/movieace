@@ -50,6 +50,7 @@
                                 :movie-id="item.id" 
                                 :rating="item.vote_average"
                                 :categories="item.genre_ids" 
+                                :adult="item.adult"
                             />
                         </template>
                     </div>
@@ -89,6 +90,7 @@
                             :rating="item.vote_average"
                             :categories="item.genre_ids" 
                             type="tv" 
+                            :adult="item.adult"
                         />
                     </div>
                 </div>
@@ -169,10 +171,6 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.remove-padding {
-    padding: 0;
-}
-
 .highlights {
     display: flex;
     flex-direction: row;
@@ -307,8 +305,7 @@ export default defineComponent({
 }
 
 .push-up {
-    margin-top: -2rem;
-
+    padding-bottom: 2rem;
     .new-releases-title-wrapper {
         text-align: center;
         margin-bottom: 3rem;

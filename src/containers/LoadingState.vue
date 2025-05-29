@@ -1,5 +1,5 @@
 <template>
-    <div class="loading-section">
+    <div class="loading-section" :style="{ backgroundColor: backgroundColor }">
         <div class="loading-spinner" :class="{ 'large': size === 'large' }"></div>
         <p>{{ message }}</p>
     </div>
@@ -18,6 +18,10 @@ export default defineComponent({
         size: {
             type: String as PropType<'small' | 'medium' | 'large'>,
             default: 'medium'
+        },
+        backgroundColor: {
+            type: String as PropType<string>,
+            default: '#081b27'
         }
     }
 });

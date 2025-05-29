@@ -36,7 +36,18 @@ export const useSearch = () => {
             error,
         }
     }
+
+    const clearSearchResults = () => {
+        discoveredMovies.value = []
+        discoveredTv.value = []
+        discoveredPeople.value = []
+        reqMetaData.value = {
+            page: 0,
+            total_pages: 0
+        }
+    }
     return {
-        fetchSearchResults
+        fetchSearchResults,
+        clearSearchResults,
     }
 }

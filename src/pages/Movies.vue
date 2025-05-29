@@ -27,7 +27,7 @@
                     <div class="movie-item-grid">
                         <MovieItem v-for="item in discoveredMovies" :key="item.id" :size="'large'" :title="item.title"
                             :movie-id="item.id" :image="item.poster_path" :rating="item.vote_average"
-                            :categories="item.genre_ids" />
+                            :categories="item.genre_ids" :adult="true" />
                     </div>
 
                     <!-- Load More Button -->

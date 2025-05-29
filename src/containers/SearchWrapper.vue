@@ -428,7 +428,7 @@ const quickSearch = (term: string) => {
     gap: 1rem;
     flex-wrap: wrap;
     opacity: 0.7;
-    padding-top: .45em;
+    padding-top: 1rem;
     transition: all 0.3s ease;
     
     &.focused {

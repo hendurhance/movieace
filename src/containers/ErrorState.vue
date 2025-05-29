@@ -1,5 +1,5 @@
 <template>
-    <div class="error-state">
+    <div class="error-state" :style="{ backgroundColor: backgroundColor }">
         <div class="error-icon">⚠️</div>
         <h3>{{ title }}</h3>
         <p>{{ message }}</p>
@@ -29,6 +29,10 @@ export default defineComponent({
         retryText: {
             type: String as PropType<string>,
             default: 'Try Again'
+        },
+        backgroundColor: {
+            type: String as PropType<string>,
+            default: '#fff'
         }
     },
     emits: ['retry']

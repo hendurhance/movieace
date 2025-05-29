@@ -9,16 +9,26 @@
                     :search="true" 
                     :default-value="currentSearchParam as string"
                     :searchPlaceholder="'Search for movies, TV shows, or actors...'" 
-                    @search="handleSearch" 
+                    @search="handleSearch"
+                    @clear="handleClearSearch"
                 />
             </div>
 
             <!-- Search Summary -->
             <div class="container" v-if="currentSearchParam">
                 <div class="search-summary">
-                    <h2 class="search-title">
-                        Results for "{{ currentSearchParam }}"
-                    </h2>
+                    <div class="search-header">
+                        <h2 class="search-title">
+                            Results for "{{ currentSearchParam }}"
+                        </h2>
+                        <button @click="handleClearSearch" class="clear-search-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+                                <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                            Clear Search
+                        </button>
+                    </div>
                     <div class="search-stats">
                         <div class="stat-item" v-if="discoveredMovies.length > 0">
                             <span class="stat-number">{{ discoveredMovies.length }}</span>
@@ -101,7 +111,9 @@
                     title="No results found"
                     :description="`We couldn't find any movies, TV shows, or actors matching '${currentSearchParam}'. Try a different search term.`"
                     icon="🔍"
-                    :show-reset-button="false"
+                    :show-reset-button="true"
+                    @reset="handleClearSearch"
+                    :retry-text="'Clear Search'"
                 />
                 
                 <!-- Search Suggestions -->
@@ -164,7 +176,7 @@ import LoadingState from '../containers/LoadingState.vue';
 
 const route = useRoute();
 const router = useRouter();
-const { fetchSearchResults } = useSearch();
+const { fetchSearchResults, clearSearchResults } = useSearch();
 
 const isLoading = ref(false);
 const isLoadingMore = ref(false);
@@ -186,13 +198,36 @@ const hasAnyResults = computed(() => {
 });
 
 const handleSearch = (searchQuery: string) => {
-    router.push({ query: { search: searchQuery } });
+    if (!searchQuery || !searchQuery.trim()) {
+        handleClearSearch();
+        return;
+    }
+    
+    router.push({ query: { search: searchQuery.trim() } });
+};
+
+const handleClearSearch = () => {
+    // Clear the search results
+    clearSearchResults();
+    
+    // Clear the current search parameter
+    currentSearchParam.value = '';
+    
+    // Remove the search query from URL
+    router.push({ query: {} });
+    
+    // Reset loading states
+    isLoading.value = false;
+    isLoadingMore.value = false;
 };
 
 const currentSearchParam = ref(route.query.search);
 
 const performSearch = async (query: string, page: number = 1) => {
-    if (!query) return;
+    if (!query || !query.trim()) {
+        handleClearSearch();
+        return;
+    }
     
     if (page === 1) {
         isLoading.value = true;
@@ -201,7 +236,10 @@ const performSearch = async (query: string, page: number = 1) => {
     }
     
     try {
-        await fetchSearchResults(query, page);
+        await fetchSearchResults(query.trim(), page);
+    } catch (error) {
+        console.error('Search failed:', error);
+        // Handle error state if needed
     } finally {
         isLoading.value = false;
         isLoadingMore.value = false;
@@ -210,22 +248,26 @@ const performSearch = async (query: string, page: number = 1) => {
 
 watch(() => route.query.search, (query) => {
     currentSearchParam.value = query as string;
-    if (query) {
+    if (query && query.trim()) {
         performSearch(query as string);
+    } else {
+        // If query is empty, clear the search
+        clearSearchResults();
+        currentSearchParam.value = '';
     }
 });
 
 onMounted(() => {
     window.scrollTo(0, 0);
     currentSearchParam.value = route.query.search as string;
-    if (currentSearchParam.value) {
+    if (currentSearchParam.value && currentSearchParam.value.trim()) {
         performSearch(currentSearchParam.value as string);
     }
 });
 
 const handleLoadMoreMovies = async () => {
-    if (reqMetaData.value.page < reqMetaData.value.total_pages) {
-        await performSearch(route.query.search as string, reqMetaData.value.page + 1);
+    if (reqMetaData.value.page < reqMetaData.value.total_pages && currentSearchParam.value) {
+        await performSearch(currentSearchParam.value as string, reqMetaData.value.page + 1);
     }
 };
 </script>
@@ -239,15 +281,53 @@ const handleLoadMoreMovies = async () => {
     border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     
-    .search-title {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #ffffff;
-        margin: 0 0 1.5rem 0;
-        text-align: center;
+    .search-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
         
         @media (max-width: 768px) {
-            font-size: 1.5rem;
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+        
+        .search-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+            
+            @media (max-width: 768px) {
+                font-size: 1.5rem;
+            }
+        }
+        
+        .clear-search-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            
+            &:hover {
+                background: rgba(255, 255, 255, 0.15);
+                border-color: rgba(255, 255, 255, 0.3);
+                transform: translateY(-2px);
+            }
+            
+            svg {
+                width: 14px;
+                height: 14px;
+            }
         }
     }
     
@@ -293,7 +373,7 @@ const handleLoadMoreMovies = async () => {
 }
 
 .results-section {
-    margin: 3rem 0;
+    margin-bottom: 3rem;
     
     .section-header {
         display: flex;
@@ -325,6 +405,10 @@ const handleLoadMoreMovies = async () => {
                 font-size: 0.9rem;
                 color: #8ea9bd;
                 font-weight: 500;
+                background: rgba(241, 183, 34, 0.1);
+                padding: 0.25rem 0.75rem;
+                border-radius: 12px;
+                border: 1px solid rgba(241, 183, 34, 0.3);
             }
         }
         
@@ -425,8 +509,6 @@ const handleLoadMoreMovies = async () => {
     }
     
     .results-section {
-        margin: 2rem 0;
-        
         .section-header {
             padding: 1rem;
             flex-direction: column;

@@ -85,7 +85,7 @@ const routes: Array<RouteRecordRaw> = [
         'name': 'Search',
         'component': () => import('../pages/Search.vue'),
         meta: {
-            showInHeader: false,
+            showInHeader: true,
             title: 'Search'
         }
     },

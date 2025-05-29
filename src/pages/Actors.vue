@@ -3,17 +3,53 @@
         <BaseHeader />
         <section>
             <div class="container">
-                <Hero :title="'Discover Actors'" :subtitle="'Find your favorite actors and explore new ones'" :search="true"
-                    :searchPlaceholder="'Search for an actor'" @search="handleSearchActors" />
+                <Hero :title="'Discover Actors'" :subtitle="'Find your favorite actors and explore new ones'" 
+                    :search="true" :searchPlaceholder="'Search for an actor'" @search="handleSearchActors" />
             </div>
+
+            <!-- Results Section -->
             <div class="container">
-                <div class="actor-meta-grid">
+                <ResultsHeader 
+                    :title="getResultsTitle()" 
+                    :count="discoveredActors.length" 
+                    item-type="actors"
+                    :sort-value="sortBy"
+                    :sort-options="actorSortOptions" 
+                    @sort-change="handleSortChange" 
+                />
+
+                <!-- Loading State -->
+                <LoadingState v-if="isLoading" message="Loading amazing actors..." size="large" />
+
+                <!-- Empty State -->
+                <EmptyState v-else-if="discoveredActors.length === 0" 
+                    title="No actors found"
+                    description="Try adjusting your search terms" 
+                    icon="🎭" 
+                    @reset="handleResetFilters" 
+                />
+
+                <!-- Actors Grid -->
+                <div v-else class="actor-meta-grid">
                     <div class="actor-item-grid">
-                        <ActorItem v-for="item in discoveredActors" :key="item.id" :name="item.name" :image="item.profile_path" :popularity="item.popularity" :actorId="item.id" />
+                        <ActorItem v-for="item in discoveredActors" 
+                            :key="item.id" 
+                            :name="item.name" 
+                            :image="item.profile_path" 
+                            :popularity="item.popularity" 
+                            :actorId="item.id" 
+                            :known-for="item.known_for_department"
+                        />
                     </div>
-                    <!-- <div class="pagination" v-if="totalPage > 1">
-                        <button @click="handleLoadMoreActors" tyep="button">Load More</button>
-                    </div> -->
+
+                    <!-- Load More Button -->
+                    <LoadMoreButton 
+                        :current-page="pageNumber" 
+                        :total-pages="totalPage" 
+                        :is-loading="isLoadingMore"
+                        item-type="Actors" 
+                        @load-more="handleLoadMoreActors" 
+                    />
                 </div>
             </div>
         </section>
@@ -22,176 +58,193 @@
 </template>
 
 <script lang="ts">
-import search from '../components/svg/outline/search.vue'
 import { computed, defineComponent, onMounted, ref } from 'vue';
 import BaseHeader from '../components/base/BaseHeader.vue';
-import Hero from '../containers/Hero.vue';
-import ActorItem from '../components/layout/ActorItem.vue';
 import BaseFooter from '../components/base/BaseFooter.vue';
+import ActorItem from '../components/layout/ActorItem.vue';
+import Hero from '../containers/Hero.vue';
+import ResultsHeader from '../components/layout/ResultsHeader.vue';
+import LoadingState from '../containers/LoadingState.vue';
+import EmptyState from '../containers/EmptyState.vue';
+import LoadMoreButton from '../components/layout/LoadMoreButton.vue';
 import { useActor, Actor } from '../composables/useActor';
 import debounce from 'lodash.debounce';
+
 export default defineComponent({
     name: 'Actors',
     components: {
         BaseHeader,
-        Hero,
+        BaseFooter,
         ActorItem,
-        search,
-        BaseFooter
+        Hero,
+        ResultsHeader,
+        LoadingState,
+        EmptyState,
+        LoadMoreButton
     },
-    setup(){
+    setup() {
         const pageNumber = ref<number>(1);
-        const mainUrl = "https://api.themoviedb.org/3/person/popular"
+        const sortBy = ref<string>('popularity.desc');
         const totalPage = ref<number>(1);
+        const isLoading = ref<boolean>(false);
+        const isLoadingMore = ref<boolean>(false);
+        const currentSearchTerm = ref<string>('');
+
+        const actorSortOptions = [
+            { value: 'popularity.desc', label: 'Most Popular' },
+            { value: 'popularity.asc', label: 'Least Popular' },
+            { value: 'name.asc', label: 'A-Z' },
+            { value: 'name.desc', label: 'Z-A' }
+        ];
+
+        const mainUrl = computed(() => {
+            const baseUrl = "https://api.themoviedb.org/3/person/popular";
+            return `${baseUrl}?language=en-US`;
+        });
+
         const computedFetchUrl = computed(() => {
-            return `${mainUrl}&page=${pageNumber.value}`
-        })
-        const discoveredActors = ref<Actor[]>([])
+            return `${mainUrl.value}&page=${pageNumber.value}`;
+        });
+
+        const discoveredActors = ref<Actor[]>([]);
         const { fetchTopActors } = useActor();
+
         const handleFetchTopActors = async () => {
-            const { data } = await fetchTopActors();
-            totalPage.value = data.value?.total_pages ?? 0
-            discoveredActors.value = data.value?.results ?? [];
-        }
+            isLoading.value = true;
+            try {
+                const { data } = await fetchTopActors(mainUrl.value);
+                totalPage.value = data.value?.total_pages ?? 0;
+                discoveredActors.value = data.value?.results ?? [];
+            } finally {
+                isLoading.value = false;
+            }
+        };
+
         const handleLoadMoreActors = async () => {
             if (pageNumber.value < totalPage.value) {
+                isLoadingMore.value = true;
                 pageNumber.value += 1;
-                const { data } = await fetchTopActors(computedFetchUrl.value);
-                discoveredActors.value = [...discoveredActors.value, ...data.value?.results ?? []];
+                try {
+                    const url = currentSearchTerm.value ?
+                        `https://api.themoviedb.org/3/search/person?query=${currentSearchTerm.value}&language=en-US&page=${pageNumber.value}` :
+                        computedFetchUrl.value;
+                    const { data } = await fetchTopActors(url);
+                    discoveredActors.value = [...discoveredActors.value, ...data.value?.results ?? []];
+                } finally {
+                    isLoadingMore.value = false;
+                }
             }
-        }
+        };
+
+        const handleSortChange = async (newSortValue: string) => {
+            sortBy.value = newSortValue;
+            pageNumber.value = 1;
+            if (currentSearchTerm.value) {
+                currentSearchTerm.value = '';
+            }
+            await handleFetchTopActors();
+        };
+
+        const handleResetFilters = async () => {
+            currentSearchTerm.value = '';
+            sortBy.value = 'popularity.desc';
+            pageNumber.value = 1;
+            await handleFetchTopActors();
+        };
+
         const searchActors = async (searchUrl: string) => {
-            const { data } = await fetchTopActors(searchUrl);
-            discoveredActors.value = pageNumber.value === 1 ? data.value?.results ?? [] : [...discoveredActors.value, ...data.value?.results ?? []];
-        }
+            isLoading.value = true;
+            try {
+                const { data } = await fetchTopActors(searchUrl);
+                totalPage.value = data.value?.total_pages ?? 0;
+                discoveredActors.value = data.value?.results ?? [];
+            } finally {
+                isLoading.value = false;
+            }
+        };
 
         const handleSearchActors = debounce(async (searchValue: string) => {
-            if (searchValue === ''){
-                await handleFetchTopActors()
-                return
+            pageNumber.value = 1;
+
+            if (searchValue === '') {
+                currentSearchTerm.value = '';
+                await handleFetchTopActors();
+                return;
             }
-            let searchQueryBefore: string = '';
-            if (searchQueryBefore?.trim() === searchValue) return
-            searchQueryBefore = searchValue
-            const searchUrl = `https://api.themoviedb.org/3/search/person?query=${searchValue}&language=en-US&page=${pageNumber.value}`
-            await searchActors(searchUrl)
-        }, 500)
+
+            currentSearchTerm.value = searchValue;
+            const searchUrl = `https://api.themoviedb.org/3/search/person?query=${searchValue}&language=en-US&page=1`;
+            await searchActors(searchUrl);
+        }, 500);
+
+        const getResultsTitle = (): string => {
+            if (currentSearchTerm.value) {
+                return `Search Results for "${currentSearchTerm.value}"`;
+            }
+            return 'Popular Actors';
+        };
 
         onMounted(() => {
-            handleFetchTopActors()
-        })
-        return{
+            handleFetchTopActors();
+        });
+
+        return {
             discoveredActors,
-            handleFetchTopActors,
+            totalPage,
+            pageNumber,
+            sortBy,
+            isLoading,
+            isLoadingMore,
+            actorSortOptions,
             handleLoadMoreActors,
             handleSearchActors,
-            totalPage
-        }
+            handleSortChange,
+            handleResetFilters,
+            getResultsTitle
+        };
     }
 });
 </script>
 
-<style lang="scss" scoped>
+<style scoped lang="scss">
 .actor-meta-grid {
+    margin-top: 2rem;
+}
+
+.actor-item-grid {
+    align-items: start;
     display: grid;
-    grid-gap: 2rem;
-    margin: 2rem 0;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 2rem;
+
+    @media (max-width: 1200px) {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+
+    @media (max-width: 992px) {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 1.5rem;
+    }
 
     @media (max-width: 768px) {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 1.25rem;
     }
 
-    .actor-item-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        grid-gap: 2rem;
-
-        @media (max-width: 1196px) {
-            grid-template-columns: repeat(4, 1fr);
-        }
-
-        @media (max-width: 960px) {
-            grid-template-columns: repeat(3, 1fr);
-        }
-
-        @media (max-width: 668px) {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        @media (max-width: 448px) {
-            grid-template-columns: repeat(1, 1fr);
-        }
-
-        .actor-list-item {
-            position: relative;
-            overflow: hidden;
-            border-radius: 0.5rem;
-            box-shadow: inset 0 1px 1px 0 hsla(0, 0%, 100%, 0.1);
-
-            a {
-                display: block;
-                position: relative;
-                overflow: hidden;
-                border-radius: 0.5rem;
-
-                &:hover {
-                    img {
-                        transform: scale(1.1);
-                    }
-
-                    .actor-overlay {
-                        background-image: linear-gradient(180deg, transparent -3%, #000 99%);
-                    }
-                }
-
-                img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                    transition: all 0.2s ease-in-out;
-                }
-
-                .actor-overlay {
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    width: 100%;
-                    padding: 1rem;
-                    background-image: linear-gradient(180deg, transparent -3%, #000 99%);
-                    color: #fff;
-                    transition: all 0.2s ease-in-out;
-
-                    h3 {
-                        font-size: 1.2rem;
-                        font-weight: 400;
-                        text-align: center;
-                    }
-                }
-            }
-        }
+    @media (max-width: 576px) {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 1rem;
     }
 
-    .pagination {
-        display: flex;
-        align-items: start;
-        justify-content: center;
+    @media (max-width: 480px) {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+}
 
-        button {
-            padding: 1rem 2rem;
-            border-radius: 0.5rem;
-            background-color: #f1b722;
-            color: #000;
-            border: 0;
-            font-size: 1rem;
-            font-weight: 400;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-
-            &:hover {
-                background-color: #f1b722;
-                color: #fff;
-            }
-        }
+@media (max-width: 576px) {
+    .container {
+        padding: 0 1rem;
     }
 }
 </style>
