@@ -2,10 +2,12 @@
   <div class="video-container">
     <iframe
       v-if="embedUrl"
+      ref="iframeRef"
       :src="embedUrl"
       allow="fullscreen"
       allowfullscreen
       frameborder="0"
+      referrerpolicy="no-referrer"
     ></iframe>
     <div class="loading-placeholder" v-else>
       <div class="spinner"></div>
@@ -15,7 +17,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref, onMounted } from 'vue';
 
 export default defineComponent({
   name: 'VideoPlayer',
@@ -24,6 +26,54 @@ export default defineComponent({
       type: String,
       default: ''
     }
+  },
+  setup() {
+    const iframeRef = ref<HTMLIFrameElement | null>(null);
+
+    onMounted(() => {
+      const iframe = iframeRef.value;
+      if (!iframe) return;
+
+      const removeAds = () => {
+        try {
+          const doc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (!doc) return;
+          const adSelectors = [
+            'iframe[src*="ads"]',
+            '[id*="ad" i]',
+            '[class*="ad" i]',
+            '[href*="adservice" i]'
+          ];
+          adSelectors.forEach(sel => {
+            doc.querySelectorAll(sel).forEach(el => el.remove());
+          });
+        } catch {
+          // cross-origin, cannot remove
+        }
+      };
+
+      const disablePopups = () => {
+        try {
+          const win = iframe.contentWindow as any;
+          if (!win) return;
+          const noop = () => null;
+          if (typeof win.open === 'function') win.open = noop;
+          if (typeof win.alert === 'function') win.alert = noop;
+          if (typeof win.confirm === 'function') win.confirm = noop;
+          if (typeof win.prompt === 'function') win.prompt = noop;
+        } catch {
+          // cross-origin, cannot override
+        }
+      };
+
+      iframe.addEventListener('load', () => {
+        disablePopups();
+        removeAds();
+        setInterval(removeAds, 2000);
+      });
+    });
+
+    return { iframeRef };
   }
 });
 </script>
