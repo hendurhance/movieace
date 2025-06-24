@@ -17,7 +17,7 @@
                             :key="`view-${item.type}-${item.id}`"
                             :size="'small'"
                             :title="item.title"
-                            :image="item.image"
+                            :image="item.image || undefined"
                             :movie-id="item.id"
                             :rating="item.rating"
                             :categories="item.categories"
