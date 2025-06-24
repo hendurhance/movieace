@@ -159,6 +159,7 @@ import Play from '../components/svg/solid/play.vue';
 import Video from '../components/svg/outline/video.vue';
 import Clock from '../components/svg/outline/clock.vue';
 import OpenExternal from '../components/svg/outline/open-external.vue';
+import { addViewedItem } from '../composables/useHistory';
 
 export default defineComponent({
     name: "Movie",
@@ -241,6 +242,17 @@ export default defineComponent({
                     handleFetchMovieImages(),
                     handleFetchSimilarMovies()
                 ]);
+                if (movie.value) {
+                    addViewedItem({
+                        id: movie.value.id,
+                        title: movie.value.title,
+                        image: movie.value.poster_path,
+                        rating: movie.value.vote_average,
+                        categories: movie.value.genres?.map(g => g.id) || [],
+                        adult: movie.value.adult,
+                        type: 'movie'
+                    });
+                }
             } catch (error: any) {
                 hasError.value = true;
                 errorMessage.value = error.message || 'Failed to load movie details';

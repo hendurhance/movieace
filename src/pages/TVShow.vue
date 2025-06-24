@@ -219,6 +219,7 @@ import Video from '../components/svg/outline/video.vue';
 import Clock from '../components/svg/outline/clock.vue';
 import OpenExternal from '../components/svg/outline/open-external.vue';
 import ArrowRight from '../components/svg/outline/arrow-right.vue';
+import { addViewedItem } from '../composables/useHistory';
 
 export default defineComponent({
     name: 'TVShow',
@@ -315,6 +316,17 @@ export default defineComponent({
                     handleFetchTvShowImages(),
                     handleFetchSimilarTvShows(),
                 ]);
+                if (tvShow.value) {
+                    addViewedItem({
+                        id: tvShow.value.id,
+                        title: tvShow.value.name,
+                        image: tvShow.value.poster_path,
+                        rating: tvShow.value.vote_average,
+                        categories: tvShow.value.genres?.map(g => g.id) || [],
+                        adult: (tvShow.value as any).adult || false,
+                        type: 'tv'
+                    });
+                }
             } catch (error: any) {
                 hasError.value = true;
                 errorMessage.value = error.message || 'Failed to load TV show details';
