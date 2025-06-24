@@ -9,7 +9,7 @@
                 <div class="nav-header">
                     <Logo :fill="'#fff'" class="mobile-logo" />
                     <button class="close-button" @click="closeNavigation">
-                        <XIcon :fill="'#fff'" />
+                        <XIcon :stroke="'#fff'" />
                     </button>
                 </div>
 

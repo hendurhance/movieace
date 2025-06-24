@@ -30,9 +30,7 @@
                     <!-- Main Search Input -->
                     <div class="search-input-wrapper">
                         <div class="search-icon-left">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M21 21L16.514 16.506M19 10.5A8.5 8.5 0 1 1 10.5 2a8.5 8.5 0 0 1 8.5 8.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
+                            <Search :stroke="'currentColor'" />
                         </div>
                         <input 
                             type="text" 
@@ -50,9 +48,7 @@
                             :disabled="!searchValue.trim()"
                         >
                             <span class="submit-text">Search</span>
-                            <svg class="submit-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                <path d="M5 12h14m-7-7 7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                            <ArrowRightLong class="submit-arrow" :stroke="'currentColor'" />
                         </button>
                     </div>
 
@@ -97,9 +93,7 @@
         <div class="scroll-indicator">
             <div class="scroll-text">Scroll to explore</div>
             <div class="scroll-arrow">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M7 13l5 5 5-5M7 6l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <ChevronDoubleDown :stroke="'currentColor'" />
             </div>
         </div>
     </div>
@@ -107,6 +101,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import Search from '../components/svg/outline/search.vue';
+import ArrowRight from '../components/svg/outline/arrow-right.vue';
+import ChevronDoubleDown from '../components/svg/outline/chevron-double-down.vue';
+import ArrowRightLong from '../components/svg/outline/arrow-right-long.vue';
 
 const emit = defineEmits(['search']);
 
@@ -346,6 +344,15 @@ const quickSearch = (term: string) => {
         width: 24px;
         height: 24px;
     }
+    
+    @media (max-width: 375px) {
+        padding: 1rem 0 1rem 1rem;
+        
+        svg {
+            width: 20px;
+            height: 20px;
+        }
+    }
 }
 
 .search-input {
@@ -357,6 +364,7 @@ const quickSearch = (term: string) => {
     font-weight: 400;
     color: #333;
     outline: none;
+    min-width: 0; /* Allows input to shrink below its content width */
     
     &::placeholder {
         color: #999;
@@ -366,6 +374,11 @@ const quickSearch = (term: string) => {
     @media (max-width: 768px) {
         font-size: 1rem;
         padding: 1rem 0.5rem;
+    }
+    
+    @media (max-width: 375px) {
+        font-size: 0.9rem;
+        padding: 1rem 0.25rem;
     }
 }
 
@@ -384,6 +397,7 @@ const quickSearch = (term: string) => {
     transition: all 0.3s ease;
     transform: scale(0.95);
     opacity: 0.7;
+    flex-shrink: 0; /* Prevents button from shrinking */
     
     &.active {
         transform: scale(1);
@@ -413,6 +427,16 @@ const quickSearch = (term: string) => {
         
         .submit-text {
             display: none;
+        }
+    }
+    
+    @media (max-width: 375px) {
+        padding: 0.75rem 1rem;
+        min-width: 44px; /* Ensures button has minimum touch target */
+        
+        svg {
+            width: 18px;
+            height: 18px;
         }
     }
 }
@@ -466,6 +490,11 @@ const quickSearch = (term: string) => {
         background: rgba(241, 183, 34, 0.2);
         border-color: rgba(241, 183, 34, 0.4);
         transform: translateY(-2px);
+    }
+    
+    @media (max-width: 375px) {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
     }
 }
 

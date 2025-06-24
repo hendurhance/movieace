@@ -6,30 +6,26 @@
                 <span class="item-count">{{ movieItems.length }} credits</span>
             </div>
             <div class="navigation-controls">
-                <button 
-                    class="nav-button prev-button" 
+                <button
+                    class="nav-button prev-button"
                     @click="prevSlide"
                     :disabled="isBeginning"
                     :class="{ disabled: isBeginning }"
                 >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                    <ArrowLeft :stroke="'currentColor'" width="20" height="20" />
                 </button>
-                <button 
-                    class="nav-button next-button" 
+                <button
+                    class="nav-button next-button"
                     @click="nextSlide"
                     :disabled="isEnd"
                     :class="{ disabled: isEnd }"
                 >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                    <ArrowRight :stroke="'currentColor'" width="20" height="20" />
                 </button>
             </div>
         </div>
         
-        <div class="swiper-container">
+        <div class="swiper-container" v-if="movieItems.length > 0">
             <Swiper 
                 ref="swiperRef"
                 :slides-per-view="slidesPerView"
@@ -75,11 +71,12 @@
         </div>
         
         <!-- Empty State -->
-        <div v-if="movieItems.length === 0" class="empty-state">
-            <div class="empty-icon">🎭</div>
-            <h3>No credits available</h3>
-            <p>This actor doesn't have any known credits in our database yet.</p>
-        </div>
+        <EmptyState 
+            v-if="movieItems.length === 0"
+            type="actor"
+            message="No credits available"
+            description="This actor doesn't have any known credits in our database yet."
+        />
     </div>
 </template>
 
@@ -90,6 +87,9 @@ import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Movie } from '../composables/useHighlights';
 import { TVShowType } from '../composables/useTvShows';
 import 'swiper/css';
+import ArrowLeft from '../components/svg/outline/arrow-left.vue';
+import ArrowRight from '../components/svg/outline/arrow-right.vue';
+import EmptyState from './EmptyState.vue';
 
 export default defineComponent({
     name: 'KnownFor',
@@ -97,6 +97,9 @@ export default defineComponent({
         MovieItem,
         Swiper,
         SwiperSlide,
+        ArrowLeft,
+        ArrowRight,
+        EmptyState,
     },
     props: {
         movieItems: {
@@ -240,12 +243,14 @@ export default defineComponent({
 <style scoped lang="scss">
 .known-for-wrapper {
     padding: 3rem 0;
+    overflow: hidden;
     
     .known-for-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         margin-bottom: 2rem;
+        padding: 0 1rem;
         
         @media (max-width: 768px) {
             flex-direction: column;
@@ -280,6 +285,11 @@ export default defineComponent({
                 
                 @media (max-width: 768px) {
                     font-size: 2rem;
+                    padding-left: 0;
+                    
+                    &::before {
+                        display: none;
+                    }
                 }
                 
                 @media (max-width: 480px) {
@@ -347,6 +357,8 @@ export default defineComponent({
 
 .swiper-container {
     position: relative;
+    margin: 0 -1rem;
+    padding: 0 1rem;
     
     .known-for-swiper {
         overflow: visible;
@@ -411,35 +423,6 @@ export default defineComponent({
                 transform: scale(1.4);
             }
         }
-    }
-}
-
-.empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4rem 2rem;
-    text-align: center;
-    color: #8ea9bd;
-    
-    .empty-icon {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        opacity: 0.7;
-    }
-    
-    h3 {
-        font-size: 1.5rem;
-        color: #fff;
-        margin: 0 0 0.5rem 0;
-    }
-    
-    p {
-        font-size: 1rem;
-        margin: 0;
-        max-width: 400px;
-        line-height: 1.5;
     }
 }
 

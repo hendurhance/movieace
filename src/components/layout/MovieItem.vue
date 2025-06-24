@@ -5,27 +5,19 @@
                 <img :src="fullPathImage" alt="Movie poster" :class="size" loading="lazy" />
                 <div class="rating-overlay">
                     <div class="rating-badge">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>
-                        </svg>
+                        <Star width="14" height="14" fill="currentColor" />
                         {{ rating.toFixed(1) }}
                     </div>
                 </div>
                 <div class="adult-overlay" v-if="adult">
                     <div class="adult-badge">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                            <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2"/>
-                            <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2"/>
-                        </svg>
+                        <XCircle stroke="currentColor" width="12" height="12" />
                         18+
                     </div>
                 </div>
                 <div class="hover-overlay">
                     <div class="play-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M8 5v14l11-7z" fill="currentColor"/>
-                        </svg>
+                        <Play stroke="currentColor" />
                     </div>
                 </div>
             </div>
@@ -61,6 +53,9 @@
 import { PropType, defineComponent, onMounted, ref } from 'vue';
 import RatingStar from '../../containers/RatingStar.vue'
 import tag from '../svg/outline/tag.vue';
+import Star from '../svg/solid/star.vue';
+import XCircle from '../svg/outline/x-circle.vue';
+import Play from '../svg/outline/play.vue';
 import empty_movie_state from '../../assets/img/empty-movie-state.png';
 import votingToRating from '../../calculation/vote-to-rating';
 import { useGenresList } from '../../composables/useGenresList';
@@ -73,6 +68,9 @@ export default defineComponent({
     components: {
         RatingStar,
         tag,
+        Star,
+        XCircle,
+        Play
     },
     props: {
         type: {

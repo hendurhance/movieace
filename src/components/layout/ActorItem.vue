@@ -5,18 +5,13 @@
                 <img :src="fullPathImage" :alt="name" loading="lazy" />
                 <div class="popularity-overlay">
                     <div class="popularity-badge">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>
-                        </svg>
+                        <Star width="14" height="14" fill="currentColor" />
                         {{ Math.round(popularity) }}
                     </div>
                 </div>
                 <div class="hover-overlay">
                     <div class="view-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2" fill="none"/>
-                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/>
-                        </svg>
+                        <Eye stroke="currentColor" />
                     </div>
                 </div>
             </div>
@@ -36,9 +31,15 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { useWebImage } from '../../utils/useWebImage';
+import Star from '../svg/solid/star.vue';
+import Eye from '../svg/outline/eye.vue';
 
 export default defineComponent({
     name: 'ActorItem',
+    components: {
+        Star,
+        Eye
+    },
     props: {
         actorId: {
             type: [Number, String],

@@ -33,9 +33,7 @@
                                             {{ actorDetails.known_for_department }}
                                         </div>
                                         <a :href="imdbLink" target="_blank" class="imdb-btn">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                                <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                            </svg>
+                                            <OpenExternal stroke="currentColor" />
                                             View on IMDB
                                         </a>
                                     </div>
@@ -77,9 +75,7 @@
                                     class="read-more-btn"
                                 >
                                     {{ showFullBio ? 'Read Less' : 'Read More' }}
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" :class="{ rotated: showFullBio }">
-                                        <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
+                                    <ChevronDown :class="{ rotated: showFullBio }" stroke="currentColor" />
                                 </button>
                             </div>
                             
@@ -144,6 +140,8 @@ import BaseFooter from '../components/base/BaseFooter.vue';
 import { useRoute } from 'vue-router';
 import KnownFor from '../containers/KnownFor.vue';
 import MoviePicture from '../containers/MoviePicture.vue';
+import OpenExternal from '../components/svg/outline/open-external.vue';
+import ChevronDown from '../components/svg/outline/chevron-down.vue';
 import { ActorDetails, ActorImages, useActor } from '../composables/useActor';
 import { useWebImage } from '../utils/useWebImage';
 import { TVShowType } from '../composables/useTvShows';
@@ -160,7 +158,9 @@ export default defineComponent({
         LoadingState,
         ErrorState,
         KnownFor,
-        MoviePicture
+        MoviePicture,
+        OpenExternal,
+        ChevronDown
     },
     setup() {
         const route = useRoute();

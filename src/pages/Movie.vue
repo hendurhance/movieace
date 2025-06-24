@@ -28,9 +28,7 @@
                                     </div>
                                     <div class="poster-overlay">
                                         <button @click="showTrailer" class="trailer-btn">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                                <path d="M8 5v14l11-7z" fill="currentColor" />
-                                            </svg>
+                                            <Play class="icon" />
                                             <span>Trailer</span>
                                         </button>
                                     </div>
@@ -54,11 +52,7 @@
                                             </span>
                                         </div>
                                         <div class="release-date">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-                                                <path d="m12 6 0 6 4 2" stroke="currentColor" stroke-width="2"
-                                                    stroke-linecap="round" />
-                                            </svg>
+                                            <Clock stroke="currentColor" />
                                             {{ fullDate }}
                                         </div>
                                     </div>
@@ -93,28 +87,18 @@
                                         <a :href="`https://imdb.com/title/${movie.imdb_id}`" target="_blank"
                                             class="imdb-link">
                                             View on IMDB
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                                <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                            </svg>
+                                            <OpenExternal stroke="currentColor" />
                                         </a>
                                     </div>
                                 </div>
 
                                 <div class="action-buttons">
                                     <button @click="streamNow" class="stream-btn primary">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                            <path d="M8 5v14l11-7z" fill="currentColor" />
-                                        </svg>
+                                        <Play class="icon" />
                                         {{ lastWatchedData ? 'Continue Watching' : 'Stream Now' }}
                                     </button>
                                     <button @click="showTrailer" class="trailer-btn secondary">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                            <path
-                                                d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0 2 2v8a2 2 0 0 0 2 2z"
-                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                                stroke-linejoin="round" />
-                                        </svg>
+                                        <Video stroke="currentColor" />
                                         Watch Trailer
                                     </button>
                                 </div>
@@ -171,6 +155,10 @@ import empty_movie_state from '../assets/img/empty-movie-state.png';
 import { getLastWatchedMetaData } from '../composables/useStream';
 import LoadingState from '../containers/LoadingState.vue';
 import ErrorState from '../containers/ErrorState.vue';
+import Play from '../components/svg/solid/play.vue';
+import Video from '../components/svg/outline/video.vue';
+import Clock from '../components/svg/outline/clock.vue';
+import OpenExternal from '../components/svg/outline/open-external.vue';
 
 export default defineComponent({
     name: "Movie",
@@ -183,7 +171,11 @@ export default defineComponent({
         SimilarMovie,
         MoviePicture,
         CastWrapper,
-        TrailerModal
+        TrailerModal,
+        Play,
+        Video,
+        Clock,
+        OpenExternal
     },
     setup() {
         const route = useRoute();

@@ -6,11 +6,7 @@
         <div class="episode-dialog-header">
           <h2>Season {{ seasonNumber }}</h2>
           <button class="episode-dialog-close" @click="closeDialog" aria-label="Close dialog">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
+            <X stroke="currentColor" />
           </button>
         </div>
         <div class="episode-dialog-body">
@@ -31,10 +27,7 @@
                   <span class="episode-name">{{ episode.name }}</span>
                 </div>
                 <button class="watch-button" @click="watchEpisode(episode)">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                  </svg>
+                  <Play stroke="currentColor" width="16" height="16" />
                   Watch
                 </button>
               </div>
@@ -51,9 +44,15 @@ import { defineComponent, PropType, onMounted, watch, ref, nextTick, ComponentPu
 import { useRouter, useRoute } from 'vue-router';
 import type { Episode } from '../../composables/useTvShows';
 import { useWebImage } from '../../utils/useWebImage';
+import X from '../svg/outline/x.vue';
+import Play from '../svg/solid/play.vue';
 
 export default defineComponent({
   name: 'EpisodeDialog',
+  components: {
+    X,
+    Play
+  },
   props: {
     episodes: {
       type: Array as PropType<Episode[]>,

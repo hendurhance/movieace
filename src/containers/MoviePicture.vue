@@ -11,12 +11,7 @@
                     class="view-toggle-btn"
                     :class="{ active: viewMode === 'masonry' }"
                 >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <rect x="3" y="3" width="7" height="7" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <rect x="14" y="3" width="7" height="7" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <rect x="3" y="14" width="7" height="7" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <rect x="14" y="14" width="7" height="7" stroke="currentColor" stroke-width="2" fill="none"/>
-                    </svg>
+                    <Grid stroke="currentColor" />
                     <span>{{ viewMode === 'grid' ? 'Masonry' : 'Grid' }}</span>
                 </button>
             </div>
@@ -53,12 +48,7 @@
                     />
                     <div class="picture-overlay">
                         <div class="zoom-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
-                                <path d="21 21l-4.35-4.35" stroke="currentColor" stroke-width="2"/>
-                                <line x1="11" y1="8" x2="11" y2="14" stroke="currentColor" stroke-width="2"/>
-                                <line x1="8" y1="11" x2="14" y2="11" stroke="currentColor" stroke-width="2"/>
-                            </svg>
+                            <ZoomIn stroke="currentColor" />
                         </div>
                         <div class="picture-info">
                             <span class="picture-number">{{ idx + 1 }} / {{ pictures.length }}</span>
@@ -72,16 +62,11 @@
         <div v-if="showLightbox" class="lightbox-overlay" @click="closeLightbox">
             <div class="lightbox-container">
                 <button class="lightbox-close" @click="closeLightbox">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
-                        <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
-                    </svg>
+                    <X stroke="currentColor" />
                 </button>
                 
                 <button class="lightbox-nav prev" @click="previousImage" :disabled="currentImageIndex === 0">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2"/>
-                    </svg>
+                    <ArrowLeft stroke="currentColor" />
                 </button>
                 
                 <div class="lightbox-content" @click.stop>
@@ -96,9 +81,7 @@
                 </div>
                 
                 <button class="lightbox-nav next" @click="nextImage" :disabled="currentImageIndex === pictures.length - 1">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2"/>
-                    </svg>
+                    <ArrowRight stroke="currentColor" />
                 </button>
             </div>
         </div>
@@ -109,9 +92,21 @@
 import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
 import { Image } from '../composables/useMovies';
 import { useWebImage } from '../utils/useWebImage';
+import Grid from '../components/svg/outline/grid.vue';
+import ZoomIn from '../components/svg/outline/zoom-in.vue';
+import X from '../components/svg/outline/x.vue';
+import ArrowLeft from '../components/svg/outline/arrow-left.vue';
+import ArrowRight from '../components/svg/outline/arrow-right.vue';
 
 export default defineComponent({
     name: 'MoviePicture',
+    components: {
+        Grid,
+        ZoomIn,
+        X,
+        ArrowLeft,
+        ArrowRight
+    },
     props: {
         pictures: {
             type: Array as () => Image[],

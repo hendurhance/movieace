@@ -1,13 +1,7 @@
 <template>
   <div>
     <div class="watch-party-button" @click="toggleWatchPartyModal" :class="{ disabled: isLoading }">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14v-4z" />
-        <rect x="3" y="6" width="12" height="12" rx="2" ry="2" />
-        <circle cx="8" cy="12" r="4" />
-        <path d="M18 22l-3-3m0 0l-3 3m3-3v-5" />
-      </svg>
+      <WatchPartyIcon stroke="currentColor" />
       <span>Watch Party</span>
     </div>
 
@@ -17,11 +11,7 @@
         <div class="modal-header">
           <h2>Start Watch Party</h2>
           <button class="close-button" @click="toggleWatchPartyModal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
+            <X stroke="currentColor" />
           </button>
         </div>
 
@@ -32,22 +22,13 @@
           </div>
 
           <div v-else-if="error" class="error-state">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
+            <Info stroke="currentColor" width="48" height="48" />
             <p>{{ error }}</p>
           </div>
 
           <div v-else-if="response" class="success-state">
             <div class="movie-confirmation">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
+              <CheckCircle stroke="currentColor" width="48" height="48" />
               <h3>{{ response.title }}</h3>
             </div>
 
@@ -62,15 +43,7 @@
 
             <div class="subtitle-info" v-if="response.has_subtitles">
               <p>
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="16 3 21 3 21 8 16 8 16 3"></polygon>
-                  <polygon points="8 3 3 3 3 8 8 8 8 3"></polygon>
-                  <polygon points="3 21 3 16 8 16 8 21 3 21"></polygon>
-                  <polygon points="21 16 16 16 16 21 21 21 21 16"></polygon>
-                  <line x1="12" y1="8" x2="12" y2="16"></line>
-                  <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
+                <Subtitle stroke="currentColor" width="18" height="18" />
                 Subtitles available ({{ response.subtitles.length }} languages)
               </p>
 
@@ -84,12 +57,7 @@
                     </option>
                   </select>
                   <a v-if="selectedSubtitle" :href="selectedSubtitle" download class="download-button subtitle">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
-                      <polyline points="7 10 12 15 17 10"></polyline>
-                      <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
+                    <Download stroke="currentColor" width="18" height="18" />
                     Download
                   </a>
                 </div>
@@ -98,21 +66,12 @@
 
             <div class="action-buttons">
               <button class="start-party-button" @click="startWatchParty">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
-                  <path d="M10 8l6 4-6 4V8z"></path>
-                </svg>
+                <PlayCircle stroke="currentColor" />
                 Start Watch Party
               </button>
 
               <a v-if="currentStreamUrl" :href="currentStreamUrl" download class="download-button video">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
+                <Download stroke="currentColor" />
                 Download Video
               </a>
             </div>
@@ -126,9 +85,25 @@
 <script lang="ts">
 import { defineComponent, ref, computed, watch, PropType } from 'vue';
 import { WatchPartyResponse } from '../composables/useWatchParty';
+import WatchPartyIcon from './svg/outline/watch-party.vue';
+import X from './svg/outline/x.vue';
+import Info from './svg/outline/info.vue';
+import CheckCircle from './svg/outline/check-circle.vue';
+import Subtitle from './svg/outline/subtitle.vue';
+import Download from './svg/outline/download.vue';
+import PlayCircle from './svg/outline/play-circle.vue';
 
 export default defineComponent({
   name: 'WatchParty',
+  components: {
+    WatchPartyIcon,
+    X,
+    Info,
+    CheckCircle,
+    Subtitle,
+    Download,
+    PlayCircle
+  },
   props: {
     isLoading: {
       type: Boolean,
