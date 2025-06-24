@@ -3,14 +3,12 @@
         <div class="genres-header">
             <h3 class="genres-title">Browse by Genre</h3>
             <p class="genres-subtitle">Discover {{ type }} by your favorite categories</p>
-            <button 
-                v-if="activeGenres.length > 0" 
+            <button
+                v-if="activeGenres.length > 0"
                 @click="clearAllGenres"
                 class="clear-all-btn"
             >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
+                <X stroke="currentColor" width="16" height="16" />
                 Clear All ({{ activeGenres.length }})
             </button>
         </div>
@@ -23,9 +21,7 @@
                 :class="{ 'visible': canScrollLeft }"
                 ref="scrollLeftBtn"
             >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <ArrowLeft stroke="currentColor" width="20" height="20" />
             </button>
             
             <div 
@@ -43,16 +39,13 @@
                     ]"
                 >
                     <span class="genre-name">{{ genre.name }}</span>
-                    <svg 
+                    <Check
                         v-if="isGenreActive(genre.id)"
-                        class="check-icon" 
-                        width="16" 
-                        height="16" 
-                        viewBox="0 0 24 24" 
-                        fill="none"
-                    >
-                        <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                        class="check-icon"
+                        stroke="currentColor"
+                        width="16"
+                        height="16"
+                    />
                 </button>
             </div>
             
@@ -62,9 +55,7 @@
                 :class="{ 'visible': canScrollRight }"
                 ref="scrollRightBtn"
             >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <ArrowRight stroke="currentColor" width="20" height="20" />
             </button>
         </div>
         
@@ -81,9 +72,7 @@
                         @click="removeGenre(genreId)"
                         class="remove-genre-btn"
                     >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
+                        <X stroke="currentColor" width="12" height="12" />
                     </button>
                 </span>
             </div>
@@ -94,9 +83,19 @@
 <script lang="ts">
 import { defineComponent, PropType, ref, onMounted, nextTick } from 'vue';
 import { Genre } from '../../composables/useGenre';
+import X from '../svg/outline/x.vue';
+import ArrowLeft from '../svg/outline/arrow-left.vue';
+import ArrowRight from '../svg/outline/arrow-right.vue';
+import Check from '../svg/outline/check.vue';
 
 export default defineComponent({
     name: 'GenreLists',
+    components: {
+        X,
+        ArrowLeft,
+        ArrowRight,
+        Check
+    },
     props: {
         genres: {
             type: Array as PropType<Genre[]>,

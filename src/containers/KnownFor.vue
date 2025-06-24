@@ -6,25 +6,21 @@
                 <span class="item-count">{{ movieItems.length }} credits</span>
             </div>
             <div class="navigation-controls">
-                <button 
-                    class="nav-button prev-button" 
+                <button
+                    class="nav-button prev-button"
                     @click="prevSlide"
                     :disabled="isBeginning"
                     :class="{ disabled: isBeginning }"
                 >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                    <ArrowLeft stroke="currentColor" width="20" height="20" />
                 </button>
-                <button 
-                    class="nav-button next-button" 
+                <button
+                    class="nav-button next-button"
                     @click="nextSlide"
                     :disabled="isEnd"
                     :class="{ disabled: isEnd }"
                 >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                    <ArrowRight stroke="currentColor" width="20" height="20" />
                 </button>
             </div>
         </div>
@@ -90,6 +86,8 @@ import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Movie } from '../composables/useHighlights';
 import { TVShowType } from '../composables/useTvShows';
 import 'swiper/css';
+import ArrowLeft from '../components/svg/outline/arrow-left.vue';
+import ArrowRight from '../components/svg/outline/arrow-right.vue';
 
 export default defineComponent({
     name: 'KnownFor',
@@ -97,6 +95,8 @@ export default defineComponent({
         MovieItem,
         Swiper,
         SwiperSlide,
+        ArrowLeft,
+        ArrowRight,
     },
     props: {
         movieItems: {
