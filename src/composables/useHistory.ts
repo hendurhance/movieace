@@ -7,6 +7,7 @@ export interface ViewedItem {
   adult: boolean;
   type: 'movie' | 'tv';
 }
+const MAX_HISTORY_LENGTH = 5;
 
 import { useStorage } from '@vueuse/core';
 
@@ -19,7 +20,7 @@ export function addSearchTerm(term: string): void {
   const index = searchHistory.value.indexOf(value);
   if (index !== -1) searchHistory.value.splice(index, 1);
   searchHistory.value.unshift(value);
-  if (searchHistory.value.length > 5) {
+  if (searchHistory.value.length > MAX_HISTORY_LENGTH) {
     searchHistory.value = searchHistory.value.slice(0, 5);
   }
 }
@@ -30,7 +31,7 @@ export function addViewedItem(item: ViewedItem): void {
   );
   if (index !== -1) viewHistory.value.splice(index, 1);
   viewHistory.value.unshift(item);
-  if (viewHistory.value.length > 5) {
+  if (viewHistory.value.length > MAX_HISTORY_LENGTH) {
     viewHistory.value = viewHistory.value.slice(0, 5);
   }
 }

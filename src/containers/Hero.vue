@@ -9,6 +9,8 @@
                 :placeholder="searchPlaceholder"
                 v-model="searchValue"
                 list="recent-searches"
+                aria-autocomplete="list"
+                :aria-label="searchPlaceholder"
                 @focus="showClearButton = true"
                 />
                 <datalist id="recent-searches">
