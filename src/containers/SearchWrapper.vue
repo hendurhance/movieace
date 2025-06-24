@@ -30,7 +30,7 @@
                     <!-- Main Search Input -->
                     <div class="search-input-wrapper">
                         <div class="search-icon-left">
-                            <Search stroke="currentColor" />
+                            <Search :stroke="'currentColor'" />
                         </div>
                         <input 
                             type="text" 
@@ -48,7 +48,7 @@
                             :disabled="!searchValue.trim()"
                         >
                             <span class="submit-text">Search</span>
-                            <ArrowRightLong class="submit-arrow" stroke="currentColor" />
+                            <ArrowRightLong class="submit-arrow" :stroke="'currentColor'" />
                         </button>
                     </div>
 
@@ -93,7 +93,7 @@
         <div class="scroll-indicator">
             <div class="scroll-text">Scroll to explore</div>
             <div class="scroll-arrow">
-                <ChevronDoubleDown stroke="currentColor" />
+                <ChevronDoubleDown :stroke="'currentColor'" />
             </div>
         </div>
     </div>
@@ -344,6 +344,15 @@ const quickSearch = (term: string) => {
         width: 24px;
         height: 24px;
     }
+    
+    @media (max-width: 375px) {
+        padding: 1rem 0 1rem 1rem;
+        
+        svg {
+            width: 20px;
+            height: 20px;
+        }
+    }
 }
 
 .search-input {
@@ -355,6 +364,7 @@ const quickSearch = (term: string) => {
     font-weight: 400;
     color: #333;
     outline: none;
+    min-width: 0; /* Allows input to shrink below its content width */
     
     &::placeholder {
         color: #999;
@@ -364,6 +374,11 @@ const quickSearch = (term: string) => {
     @media (max-width: 768px) {
         font-size: 1rem;
         padding: 1rem 0.5rem;
+    }
+    
+    @media (max-width: 375px) {
+        font-size: 0.9rem;
+        padding: 1rem 0.25rem;
     }
 }
 
@@ -382,6 +397,7 @@ const quickSearch = (term: string) => {
     transition: all 0.3s ease;
     transform: scale(0.95);
     opacity: 0.7;
+    flex-shrink: 0; /* Prevents button from shrinking */
     
     &.active {
         transform: scale(1);
@@ -411,6 +427,16 @@ const quickSearch = (term: string) => {
         
         .submit-text {
             display: none;
+        }
+    }
+    
+    @media (max-width: 375px) {
+        padding: 0.75rem 1rem;
+        min-width: 44px; /* Ensures button has minimum touch target */
+        
+        svg {
+            width: 18px;
+            height: 18px;
         }
     }
 }
@@ -464,6 +490,11 @@ const quickSearch = (term: string) => {
         background: rgba(241, 183, 34, 0.2);
         border-color: rgba(241, 183, 34, 0.4);
         transform: translateY(-2px);
+    }
+    
+    @media (max-width: 375px) {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
     }
 }
 

@@ -100,6 +100,13 @@ import ArrowRight from '../components/svg/outline/arrow-right.vue';
 
 export default defineComponent({
     name: 'MoviePicture',
+    components: {
+        Grid,
+        ZoomIn,
+        X,
+        ArrowLeft,
+        ArrowRight
+    },
     props: {
         pictures: {
             type: Array as () => Image[],
