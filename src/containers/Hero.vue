@@ -3,13 +3,17 @@
         <h1>{{ title }}</h1>
         <p>{{ subtitle }}</p>
         <div class="mini-search" v-if="search">
-            <form @submit.prevent="$emit('search', searchValue.trim())">
+            <form @submit.prevent="submitSearch">
                 <input
-                type="text" 
+                type="text"
                 :placeholder="searchPlaceholder"
-                 v-model="searchValue" 
+                v-model="searchValue"
+                list="recent-searches"
                 @focus="showClearButton = true"
                 />
+                <datalist id="recent-searches">
+                    <option v-for="term in searchHistory" :key="term" :value="term" />
+                </datalist>
                 <button
                     v-if="showClearButton && searchValue"
                     @click="clearInput"
@@ -26,8 +30,10 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import { searchHistory, addSearchTerm } from '../composables/useHistory';
 export default defineComponent({
     name: 'Hero',
+    emits: ['search'],
     props: {
         title: {
             type: String,
@@ -46,7 +52,7 @@ export default defineComponent({
             default: 'Search for a movie'
         }
     },
-    setup(props) {
+    setup(props, { emit }) {
         const searchValue = ref('');
         const showClearButton = ref(false);
 
@@ -59,6 +65,13 @@ export default defineComponent({
         const clearInput = () => {
             searchValue.value = '';
             showClearButton.value = false;
+        };
+
+        const submitSearch = () => {
+            const term = searchValue.value.trim();
+            if (!term) return;
+            addSearchTerm(term);
+            emit('search', term);
         };
         const route = useRoute();
         onMounted(() => {
@@ -76,6 +89,8 @@ export default defineComponent({
             showClearButton,
             // handleInput,
             clearInput,
+            submitSearch,
+            searchHistory
         }
     }
 });

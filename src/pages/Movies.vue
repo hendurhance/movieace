@@ -55,6 +55,7 @@ import ResultsHeader from '../components/layout/ResultsHeader.vue';
 import LoadingState from '../containers/LoadingState.vue';
 import EmptyState from '../containers/EmptyState.vue';
 import LoadMoreButton from '../components/layout/LoadMoreButton.vue';
+import { addSearchTerm } from '../composables/useHistory';
 
 export default defineComponent({
     name: 'Movies',
@@ -202,6 +203,7 @@ export default defineComponent({
 
             currentSearchTerm.value = searchValue;
             filteredGenres.value = [];
+            addSearchTerm(searchValue);
 
             const searchUrl = `https://api.themoviedb.org/3/search/movie?query=${searchValue}&language=en-US&page=1`;
             await searchMovies(searchUrl);

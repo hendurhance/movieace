@@ -171,6 +171,7 @@ import LoadMoreButton from '../components/layout/LoadMoreButton.vue';
 import EmptyState from '../containers/EmptyState.vue';
 import X from '../components/svg/outline/x.vue';
 import LoadingState from '../containers/LoadingState.vue';
+import { addSearchTerm } from '../composables/useHistory';
 
 const route = useRoute();
 const router = useRouter();
@@ -200,7 +201,9 @@ const handleSearch = (searchQuery: string) => {
         handleClearSearch();
         return;
     }
-    
+
+    addSearchTerm(searchQuery.trim());
+
     router.push({ query: { search: searchQuery.trim() } });
 };
 

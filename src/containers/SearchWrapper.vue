@@ -54,11 +54,25 @@
 
                     <!-- Quick Search Suggestions -->
                     <div class="quick-suggestions" :class="{ 'focused': isInputFocused }">
+                        <template v-if="searchHistory.length">
+                            <span class="suggestions-label">Recent searches:</span>
+                            <div class="suggestion-tags">
+                                <button
+                                    type="button"
+                                    v-for="recent in searchHistory"
+                                    :key="`recent-${recent}`"
+                                    @click="quickSearch(recent)"
+                                    class="suggestion-tag"
+                                >
+                                    {{ recent }}
+                                </button>
+                            </div>
+                        </template>
                         <span class="suggestions-label">Popular searches:</span>
                         <div class="suggestion-tags">
-                            <button 
+                            <button
                                 type="button"
-                                v-for="suggestion in popularSearches" 
+                                v-for="suggestion in popularSearches"
                                 :key="suggestion"
                                 @click="quickSearch(suggestion)"
                                 class="suggestion-tag"
@@ -101,6 +115,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { searchHistory, addSearchTerm } from '../composables/useHistory';
 import Search from '../components/svg/outline/search.vue';
 import ChevronDoubleDown from '../components/svg/outline/chevron-double-down.vue';
 import ArrowRightLong from '../components/svg/outline/arrow-right-long.vue';
@@ -115,14 +130,17 @@ const popularSearches = [
 ];
 
 const handleSearch = () => {
-    if (searchValue.value.trim()) {
-        emit('search', searchValue.value);
+    const term = searchValue.value.trim();
+    if (term) {
+        addSearchTerm(term);
+        emit('search', term);
         searchValue.value = '';
     }
 };
 
 const quickSearch = (term: string) => {
     searchValue.value = term;
+    addSearchTerm(term);
     emit('search', term);
     searchValue.value = '';
 };

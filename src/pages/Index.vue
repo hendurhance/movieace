@@ -4,6 +4,29 @@
         <section class="remove-padding">
             <!-- Search Section -->
             <SearchWrapper @search="handleSearchGlobal" />
+
+            <!-- Recently Viewed Section -->
+            <div v-if="viewHistory.length" class="container push-up">
+                <div class="new-releases-title-wrapper">
+                    <h1>Recently Viewed</h1>
+                </div>
+                <div class="new-releases-row">
+                    <div class="column">
+                        <MovieItem
+                            v-for="item in viewHistory"
+                            :key="`view-${item.type}-${item.id}`"
+                            :size="'small'"
+                            :title="item.title"
+                            :image="item.image"
+                            :movie-id="item.id"
+                            :rating="item.rating"
+                            :categories="item.categories"
+                            :type="item.type"
+                            :adult="item.adult"
+                        />
+                    </div>
+                </div>
+            </div>
             
             <!-- Highlights Section -->
             <div class="container">
@@ -113,6 +136,7 @@ import { handleMovieClick } from '../composables/useMovies';
 import { useRouter } from 'vue-router';
 import LoadingState from '../containers/LoadingState.vue';
 import ErrorState from '../containers/ErrorState.vue';
+import { viewHistory } from '../composables/useHistory';
 
 export default defineComponent({
     name: 'Index',
@@ -164,7 +188,8 @@ export default defineComponent({
             handleSearchGlobal,
             loading,
             error,
-            retryFetch
+            retryFetch,
+            viewHistory
         }
     }
 });
