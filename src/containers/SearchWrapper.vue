@@ -48,7 +48,7 @@
                             :disabled="!searchValue.trim()"
                         >
                             <span class="submit-text">Search</span>
-                            <ArrowRight class="submit-arrow" stroke="currentColor" />
+                            <ArrowRightLong class="submit-arrow" stroke="currentColor" />
                         </button>
                     </div>
 
@@ -104,6 +104,7 @@ import { ref } from 'vue';
 import Search from '../components/svg/outline/search.vue';
 import ArrowRight from '../components/svg/outline/arrow-right.vue';
 import ChevronDoubleDown from '../components/svg/outline/chevron-double-down.vue';
+import ArrowRightLong from '../components/svg/outline/arrow-right-long.vue';
 
 const emit = defineEmits(['search']);
 
