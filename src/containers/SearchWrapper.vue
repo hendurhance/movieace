@@ -102,7 +102,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import Search from '../components/svg/outline/search.vue';
-import ArrowRight from '../components/svg/outline/arrow-right.vue';
 import ChevronDoubleDown from '../components/svg/outline/chevron-double-down.vue';
 import ArrowRightLong from '../components/svg/outline/arrow-right-long.vue';
 
