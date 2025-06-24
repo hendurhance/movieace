@@ -55,7 +55,7 @@ import RatingStar from '../../containers/RatingStar.vue'
 import tag from '../svg/outline/tag.vue';
 import Star from '../svg/solid/star.vue';
 import XCircle from '../svg/outline/x-circle.vue';
-import Play from '../svg/outline/play-circle.vue';
+import Play from '../svg/outline/play.vue';
 import empty_movie_state from '../../assets/img/empty-movie-state.png';
 import votingToRating from '../../calculation/vote-to-rating';
 import { useGenresList } from '../../composables/useGenresList';
