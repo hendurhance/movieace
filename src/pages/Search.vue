@@ -22,10 +22,7 @@
                             Results for "{{ currentSearchParam }}"
                         </h2>
                         <button @click="handleClearSearch" class="clear-search-btn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
-                                <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
-                            </svg>
+                            <X stroke="currentColor" />
                             Clear Search
                         </button>
                     </div>
@@ -172,6 +169,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useSearch, discoveredMovies, discoveredTv, discoveredPeople, reqMetaData } from '../composables/useSearch';
 import LoadMoreButton from '../components/layout/LoadMoreButton.vue';
 import EmptyState from '../containers/EmptyState.vue';
+import X from '../components/svg/outline/x.vue';
 import LoadingState from '../containers/LoadingState.vue';
 
 const route = useRoute();

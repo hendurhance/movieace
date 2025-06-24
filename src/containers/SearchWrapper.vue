@@ -30,9 +30,7 @@
                     <!-- Main Search Input -->
                     <div class="search-input-wrapper">
                         <div class="search-icon-left">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M21 21L16.514 16.506M19 10.5A8.5 8.5 0 1 1 10.5 2a8.5 8.5 0 0 1 8.5 8.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
+                            <Search stroke="currentColor" />
                         </div>
                         <input 
                             type="text" 
@@ -50,9 +48,7 @@
                             :disabled="!searchValue.trim()"
                         >
                             <span class="submit-text">Search</span>
-                            <svg class="submit-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                <path d="M5 12h14m-7-7 7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                            <ArrowRight class="submit-arrow" stroke="currentColor" />
                         </button>
                     </div>
 
@@ -97,9 +93,7 @@
         <div class="scroll-indicator">
             <div class="scroll-text">Scroll to explore</div>
             <div class="scroll-arrow">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M7 13l5 5 5-5M7 6l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <ChevronDoubleDown stroke="currentColor" />
             </div>
         </div>
     </div>
@@ -107,6 +101,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import Search from '../components/svg/outline/search.vue';
+import ArrowRight from '../components/svg/outline/arrow-right.vue';
+import ChevronDoubleDown from '../components/svg/outline/chevron-double-down.vue';
 
 const emit = defineEmits(['search']);
 
