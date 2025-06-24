@@ -9,7 +9,7 @@ export default defineComponent({
   props: {
     stroke: {
       type: String,
-      default: '#fff'
+      default: 'currentColor'
     }
   }
 })
