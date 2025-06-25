@@ -92,6 +92,7 @@
                     :categories="topHighlight.genre_ids"
                     :rating="topHighlight.vote_average" 
                     :date="topHighlight.release_date" 
+                    :adult="topHighlight.adult"
                 />
             </div>
             

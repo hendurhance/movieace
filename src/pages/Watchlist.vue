@@ -87,7 +87,7 @@
         <div v-else-if="watchlist.length && !filteredWatchlist.length" class="empty-filter">
           <div class="empty-filter-content">
             <div class="empty-icon">🔍</div>
-            <h3>No {{ activeFilter === 'all' ? '' : activeFilter === 'movie' ? 'movies' : 'TV shows' }} found</h3>
+            <h3>No {{ activeFilter === 'all' ? 'items' : activeFilter === 'movie' ? 'movies' : 'TV shows' }} found</h3>
             <p>Try adjusting your filters</p>
             <button class="reset-filter-btn" @click="setFilter('all')">
               Show All Items

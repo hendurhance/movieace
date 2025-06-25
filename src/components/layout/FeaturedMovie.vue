@@ -132,6 +132,10 @@ export default defineComponent({
         date: {
             type: String,
             required: true
+        },
+        adult: {
+            type: Boolean,
+            default: false
         }
     },
     setup(props) {
@@ -168,7 +172,7 @@ export default defineComponent({
                 image: props.image,
                 rating: props.rating,
                 categories: props.categories,
-                adult: false,
+                adult: props.adult,
                 type: 'movie'
             });
         };
