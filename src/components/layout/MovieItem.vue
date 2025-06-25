@@ -16,7 +16,7 @@
                     </div>
                 </div>
                 <div class="watchlist-overlay">
-                    <button class="watchlist-btn" @click.stop="toggleWatchlist" :class="{ added: inWatchlist }">
+                    <button class="watchlist-btn" @click.stop.prevent="toggleWatchlist" :class="{ added: inWatchlist }">
                         <Bookmark stroke="currentColor" />
                     </button>
                 </div>
@@ -55,7 +55,7 @@
 </template>
 
 <script lang="ts">
-import { PropType, defineComponent, onMounted, ref } from 'vue';
+import { PropType, computed, defineComponent, onMounted, ref } from 'vue';
 import RatingStar from '../../containers/RatingStar.vue'
 import tag from '../svg/outline/tag.vue';
 import Star from '../svg/solid/star.vue';
@@ -126,14 +126,17 @@ export default defineComponent({
         const router = useRouter()
         const fullPathImage = props.image === null ? empty_movie_state : useWebImage(props.image, "large")
         const genres = ref<Genre[]>([])
-        const inWatchlist = ref(isInWatchlist(props.movieId, props.type))
+        const inWatchlist = computed(() => isInWatchlist(props.movieId, props.type))
 
         onMounted(async () => {
             const { getGenresList } = useGenresList(props.categories.slice(0, 2))
             genres.value = await getGenresList()
         })
 
-        const toggleWatchlist = () => {
+        const toggleWatchlist = (event: Event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
             toggleWatchlistItem({
                 id: props.movieId,
                 title: props.title,
@@ -143,7 +146,6 @@ export default defineComponent({
                 adult: props.adult,
                 type: props.type
             })
-            inWatchlist.value = isInWatchlist(props.movieId, props.type)
         }
 
         const handleMovieRouting = () => {
@@ -292,38 +294,6 @@ export default defineComponent({
                 }
             }
         }
-
-        .watchlist-overlay {
-            position: absolute;
-            bottom: 0.75rem;
-            right: 0.75rem;
-            z-index: 2;
-
-            .watchlist-btn {
-                width: 32px;
-                height: 32px;
-                border-radius: 50%;
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: #fff;
-                cursor: pointer;
-                transition: all 0.3s ease;
-
-                &.added {
-                    background: rgba(241, 183, 34, 0.95);
-                    border-color: rgba(241, 183, 34, 0.5);
-                    color: #000;
-                }
-
-                svg {
-                    width: 16px;
-                    height: 16px;
-                }
-            }
-        }
         
         .hover-overlay {
             position: absolute;
@@ -361,6 +331,50 @@ export default defineComponent({
             }
         }
     }
+
+        .watchlist-overlay {
+            position: absolute;
+            bottom: 0.75rem;
+            right: 0.75rem;
+            z-index: 10;
+
+            .watchlist-btn {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #fff;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(10px);
+
+                &:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                    border-color: rgba(255, 255, 255, 0.5);
+                    transform: scale(1.1);
+                }
+
+                &.added {
+                    background: rgba(241, 183, 34, 0.95);
+                    border-color: rgba(241, 183, 34, 0.5);
+                    color: #000;
+
+                    &:hover {
+                        background: rgba(241, 183, 34, 1);
+                        transform: scale(1.1);
+                    }
+                }
+
+                svg {
+                    width: 16px;
+                    height: 16px;
+                }
+            }
+        }
     
     .movie-content {
         padding: 1rem;
@@ -497,6 +511,11 @@ export default defineComponent({
                     }
                 }
             }
+        }
+
+        .watchlist-overlay {
+            bottom: 0.5rem;
+            right: 0.5rem;
         }
     }
 }
