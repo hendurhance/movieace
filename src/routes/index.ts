@@ -90,6 +90,15 @@ const routes: Array<RouteRecordRaw> = [
         }
     },
     {
+        path: '/watchlist',
+        name: 'Watchlist',
+        component: () => import('../pages/Watchlist.vue'),
+        meta: {
+            showInHeader: true,
+            title: 'Watchlist'
+        }
+    },
+    {
         'path': '/stream/movie/:id',
         'name': 'StreamMovie',
         'component': () => import('../pages/StreamMovie.vue'),
