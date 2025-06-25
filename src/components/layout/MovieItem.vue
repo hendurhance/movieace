@@ -15,6 +15,11 @@
                         18+
                     </div>
                 </div>
+                <div class="watchlist-overlay">
+                    <button class="watchlist-btn" @click.stop="toggleWatchlist" :class="{ added: inWatchlist }">
+                        <Bookmark stroke="currentColor" />
+                    </button>
+                </div>
                 <div class="hover-overlay">
                     <div class="play-icon">
                         <Play stroke="currentColor" />
@@ -56,12 +61,14 @@ import tag from '../svg/outline/tag.vue';
 import Star from '../svg/solid/star.vue';
 import XCircle from '../svg/outline/x-circle.vue';
 import Play from '../svg/outline/play.vue';
+import Bookmark from '../svg/outline/bookmark.vue';
 import empty_movie_state from '../../assets/img/empty-movie-state.png';
 import votingToRating from '../../calculation/vote-to-rating';
 import { useGenresList } from '../../composables/useGenresList';
 import { Genre } from '../../composables/useGenre';
 import { useRouter } from 'vue-router';
 import { useWebImage } from '../../utils/useWebImage';
+import { toggleWatchlistItem, isInWatchlist } from '../../composables/useWatchlist';
 
 export default defineComponent({
     name: 'MovieItem',
@@ -70,7 +77,8 @@ export default defineComponent({
         tag,
         Star,
         XCircle,
-        Play
+        Play,
+        Bookmark
     },
     props: {
         type: {
@@ -118,11 +126,25 @@ export default defineComponent({
         const router = useRouter()
         const fullPathImage = props.image === null ? empty_movie_state : useWebImage(props.image, "large")
         const genres = ref<Genre[]>([])
+        const inWatchlist = ref(isInWatchlist(props.movieId, props.type))
 
         onMounted(async () => {
             const { getGenresList } = useGenresList(props.categories.slice(0, 2))
             genres.value = await getGenresList()
         })
+
+        const toggleWatchlist = () => {
+            toggleWatchlistItem({
+                id: props.movieId,
+                title: props.title,
+                image: props.image,
+                rating: props.rating,
+                categories: props.categories,
+                adult: props.adult,
+                type: props.type
+            })
+            inWatchlist.value = isInWatchlist(props.movieId, props.type)
+        }
 
         const handleMovieRouting = () => {
             router.push(`/movie/${props.movieId}`)
@@ -137,7 +159,9 @@ export default defineComponent({
             votingToRating,
             genres,
             handleMovieRouting,
-            getReleaseYear
+            getReleaseYear,
+            toggleWatchlist,
+            inWatchlist
         }
     }
 })
@@ -265,6 +289,38 @@ export default defineComponent({
                     width: 10px;
                     height: 10px;
                     color: #fff;
+                }
+            }
+        }
+
+        .watchlist-overlay {
+            position: absolute;
+            bottom: 0.75rem;
+            right: 0.75rem;
+            z-index: 2;
+
+            .watchlist-btn {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #fff;
+                cursor: pointer;
+                transition: all 0.3s ease;
+
+                &.added {
+                    background: rgba(241, 183, 34, 0.95);
+                    border-color: rgba(241, 183, 34, 0.5);
+                    color: #000;
+                }
+
+                svg {
+                    width: 16px;
+                    height: 16px;
                 }
             }
         }

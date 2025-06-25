@@ -64,8 +64,8 @@
                         <span>Watch Now</span>
                     </router-link>
                     <button class="secondary-button" @click="toggleWatchlist">
-                        <Info :stroke="'currentColor'" />
-                        <span>More Info</span>
+                        <Bookmark :stroke="'currentColor'" />
+                        <span>{{ inWatchlist ? 'Remove' : 'Add to Watchlist' }}</span>
                     </button>
                 </div>
             </div>
@@ -84,10 +84,11 @@ import { PropType, computed, defineComponent, ref, onMounted } from 'vue';
 import Clock from '../../components/svg/outline/clock.vue';
 import Star from '../../components/svg/solid/star.vue';
 import Play from '../../components/svg/solid/play.vue';
-import Info from '../../components/svg/outline/info.vue';
+import Bookmark from '../../components/svg/outline/bookmark.vue';
 import ChevronDown from '../../components/svg/outline/chevron-down.vue';
 import RatingStar from '../../containers/RatingStar.vue';
 import { useGenresList } from '../../composables/useGenresList';
+import { toggleWatchlistItem, isInWatchlist } from '../../composables/useWatchlist';
 
 export default defineComponent({
     name: 'FeaturedMovie',
@@ -95,7 +96,7 @@ export default defineComponent({
         Clock,
         Star,
         Play,
-        Info,
+        Bookmark,
         ChevronDown,
         RatingStar
     },
@@ -158,9 +159,18 @@ export default defineComponent({
 
         const { getGenresList } = useGenresList(props.categories.slice(0, 3));
 
+        const inWatchlist = computed(() => isInWatchlist(props.movieId, 'movie'));
+
         const toggleWatchlist = () => {
-            // Implement watchlist functionality
-            console.log('Toggle watchlist for movie:', props.movieId);
+            toggleWatchlistItem({
+                id: props.movieId,
+                title: props.name,
+                image: props.image,
+                rating: props.rating,
+                categories: props.categories,
+                adult: false,
+                type: 'movie'
+            });
         };
 
         onMounted(async () => {
@@ -180,7 +190,8 @@ export default defineComponent({
             truncatedDetails,
             categoryNames,
             displayGenres,
-            toggleWatchlist
+            toggleWatchlist,
+            inWatchlist
         };
     }
 });
