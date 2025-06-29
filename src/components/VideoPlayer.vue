@@ -3,7 +3,6 @@
     <iframe
       v-if="embedUrl"
       :src="embedUrl"
-      sandbox="allow-same-origin allow-scripts allow-forms allow-presentation"
       allow="fullscreen"
       allowfullscreen
       frameborder="0"
