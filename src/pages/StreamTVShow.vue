@@ -6,17 +6,22 @@
       @back-click="goBack"
     >
       <WatchParty
-        :is-loading="watchPartyData.isLoading"
-        :error="watchPartyData.error"
-        :response="watchPartyData.response"
-        :show-modal="showWatchPartyModal"
-        @toggle-modal="toggleWatchPartyModal"
-        @start-party="startWatchParty"
-        @quality-change="setWatchPartyQuality"
+        :media-data="{
+          type: 'tv',
+          id: show?.id,
+          title: show?.name,
+          season: currentSeason,
+          episode: currentEpisode,
+          server_url: currentEmbedUrl
+        }"
       />
     </StreamHeader>
 
-    <VideoPlayer :embedUrl="currentEmbedUrl" />
+    <VideoPlayer 
+      :embedUrl="currentEmbedUrl"
+      :watch-party-room="currentWatchPartyRoom as any"
+      @playback-event="handlePlaybackEvent"
+    />
 
     <div class="stream-controls">
       <ServerSelection
@@ -25,32 +30,15 @@
         @server-change="changeServer"
       />
 
-      <div class="episode-navigation">
-        <div class="season-selector">
-          <h3>Season</h3>
-          <div class="season-dropdown">
-            <select v-model="selectedSeason" @change="onSeasonChange">
-              <option v-for="season in availableSeasons" :key="season.id" :value="season.season_number">
-                Season {{ season.season_number }}
-              </option>
-            </select>
-          </div>
-        </div>
-
-        <div class="episode-selector">
-          <h3>Episodes</h3>
-          <div class="episodes-grid">
-            <button
-              v-for="episode in seasonEpisodes"
-              :key="episode.id"
-              :class="{ active: currentEpisode === episode.episode_number }"
-              @click="changeEpisode(episode.episode_number)"
-            >
-              {{ episode.episode_number }}
-            </button>
-          </div>
-        </div>
-      </div>
+      <EpisodeNavigation
+        :available-seasons="availableSeasons"
+        :season-episodes="seasonEpisodes"
+        :current-season="currentSeason"
+        :current-episode="currentEpisode"
+        :is-loading-episodes="isLoadingEpisodes"
+        @season-change="onSeasonChange"
+        @episode-change="changeEpisode"
+      />
     </div>
 
     <Disclaimer />
@@ -96,18 +84,13 @@ import {
   getServers,
   buildStreamUrl,
 } from '../composables/useStream';
-import {
-  watchPartyData,
-  fetchWatchPartyTVShowData,
-  openWatchParty,
-  resetWatchPartyData,
-  setWatchPartyQuality,
-} from '../composables/useWatchParty';
+import { useWatchPartyRoom } from '../composables/useWatchPartyRoom';
 import StreamHeader from '../components/StreamHeader.vue';
 import ServerSelection from '../components/ServerSelection.vue';
 import VideoPlayer from '../components/VideoPlayer.vue';
 import WatchParty from '../components/WatchParty.vue';
 import Disclaimer from '../components/layout/Disclaimer.vue';
+import EpisodeNavigation from '../components/EpisodeNavigation.vue';
 
 export default defineComponent({
   name: 'StreamTVShow',
@@ -116,7 +99,8 @@ export default defineComponent({
     ServerSelection,
     VideoPlayer,
     WatchParty,
-    Disclaimer
+    Disclaimer,
+    EpisodeNavigation
   },
   setup() {
     const route = useRoute();
@@ -125,15 +109,17 @@ export default defineComponent({
     const show = ref<TVShowDetails | null>(null);
     const currentSeason = ref<number>(parseInt(route.params.season as string) || 1);
     const currentEpisode = ref<number>(parseInt(route.params.episode as string) || 1);
-    const selectedSeason = ref<number>(currentSeason.value);
     const seasons = ref<TVShowSeasonDetails[]>([]);
     const seasonEpisodes = ref<Episode[]>([]);
     const currentEpisodeDetails = ref<Episode | null>(null);
     const { fetchTvShow, fetchTvShowBySeason } = useTvShows();
     const externalId = ref<string>('');
     const isLoading = ref<boolean>(false);
+    const isLoadingEpisodes = ref<boolean>(false);
     const error = ref<string | null>(null);
-    const showWatchPartyModal = ref<boolean>(false);
+
+    // Watch Party Room
+    const { currentRoom: currentWatchPartyRoom, sendPlaybackEvent } = useWatchPartyRoom();
 
     const availableServers = computed(() => getServers('tv'));
 
@@ -151,6 +137,13 @@ export default defineComponent({
     const availableSeasons = computed(() => {
       return seasons.value.filter(season => season.season_number > 0);
     });
+
+    // Handle playback events from VideoPlayer
+    const handlePlaybackEvent = (event: any) => {
+      if (currentWatchPartyRoom.value) {
+        sendPlaybackEvent(event.type, event.data);
+      }
+    };
 
     const loadShowDetails = async () => {
       if (!showId.value) {
@@ -182,7 +175,6 @@ export default defineComponent({
           savePreferredServer(showId.value, 0, 'tv');
         } else {
           currentSeason.value = preferredData.season > 0 ? preferredData.season : 1;
-          selectedSeason.value = currentSeason.value;
           currentEpisode.value = preferredData.episode > 0 ? preferredData.episode : 1;
         }
 
@@ -201,7 +193,7 @@ export default defineComponent({
         return;
       }
 
-      isLoading.value = true;
+      isLoadingEpisodes.value = true;
 
       try {
         const { data } = await fetchTvShowBySeason(showId.value, currentSeason.value);
@@ -226,7 +218,7 @@ export default defineComponent({
         error.value = err instanceof Error ? err.message : 'Failed to load season details';
         console.error('Error loading season details:', err);
       } finally {
-        isLoading.value = false;
+        isLoadingEpisodes.value = false;
       }
     };
 
@@ -236,10 +228,10 @@ export default defineComponent({
       }
     };
 
-    const onSeasonChange = async () => {
-      if (currentSeason.value === selectedSeason.value) return;
+    const onSeasonChange = async (newSeason: number) => {
+      if (currentSeason.value === newSeason) return;
 
-      currentSeason.value = selectedSeason.value;
+      currentSeason.value = newSeason;
       currentEpisode.value = 1;
 
       await updateRouteAndSave();
@@ -288,18 +280,6 @@ export default defineComponent({
       router.push(`/tv-show/${showId.value}?season=${currentSeason.value}&episode=${currentEpisode.value}`);
     };
 
-    const toggleWatchPartyModal = async () => {
-      if (!showWatchPartyModal.value && show.value) {
-        await fetchWatchPartyTVShowData(show.value, currentSeason.value, currentEpisode.value);
-      }
-      showWatchPartyModal.value = !showWatchPartyModal.value;
-    };
-
-    const startWatchParty = () => {
-      openWatchParty();
-      showWatchPartyModal.value = false;
-    };
-
     watch(
       () => route.params,
       async (newParams) => {
@@ -308,13 +288,10 @@ export default defineComponent({
 
         if (newParams.id !== showId.value) {
           showId.value = newParams.id as string;
-          resetWatchPartyData();
           await loadShowDetails();
         } else if (newSeason !== currentSeason.value || newEpisode !== currentEpisode.value) {
           currentSeason.value = newSeason || 1;
-          selectedSeason.value = currentSeason.value;
           currentEpisode.value = newEpisode || 1;
-          resetWatchPartyData();
           await loadSeasonDetails();
         }
       },
@@ -322,7 +299,6 @@ export default defineComponent({
     );
 
     onMounted(() => {
-      resetWatchPartyData();
       loadShowDetails();
     });
 
@@ -332,21 +308,18 @@ export default defineComponent({
       availableServers,
       currentSeason,
       currentEpisode,
-      selectedSeason,
       availableSeasons,
       seasonEpisodes,
       currentEpisodeDetails,
+      currentWatchPartyRoom,
       isLoading,
+      isLoadingEpisodes,
       error,
-      showWatchPartyModal,
-      watchPartyData,
       changeServer,
       changeEpisode,
       onSeasonChange,
       goBack,
-      toggleWatchPartyModal,
-      startWatchParty,
-      setWatchPartyQuality,
+      handlePlaybackEvent,
       getMovieImageUrl,
       currentStreamData
     };
@@ -358,150 +331,57 @@ export default defineComponent({
 .stream-container {
   width: 100%;
   min-height: 100vh;
-  background-color: #081b27;
+  background: linear-gradient(135deg, #0f1016 0%, #1a1b26 100%);
   color: #fff;
   padding-bottom: 2rem;
 }
 
 .stream-controls {
-  padding: 1.5rem 2rem;
-}
-
-.episode-navigation {
-  display: grid;
-  grid-template-columns: 1fr 3fr;
-  gap: 2rem;
-  margin-top: 1.5rem;
-
-  h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    font-weight: 500;
-    font-size: 1.2rem;
-  }
-
-  .season-selector {
-    .season-dropdown {
-      position: relative;
-
-      &::after {
-        content: '';
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 0;
-        height: 0;
-        border-left: 6px solid transparent;
-        border-right: 6px solid transparent;
-        border-top: 6px solid #f1b722;
-        pointer-events: none;
-      }
-
-      select {
-        width: 100%;
-        padding: 0.75rem;
-        background-color: #1f2130;
-        color: #fff;
-        border: 1px solid #2c2f45;
-        border-radius: 6px;
-        font-size: 1rem;
-        cursor: pointer;
-        appearance: none;
-        padding-right: 30px;
-
-        &:focus {
-          outline: none;
-          border-color: #ff5252;
-        }
-
-        option {
-          background-color: #1f2130;
-          color: #fff;
-        }
-      }
-    }
-  }
-
-  .episodes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-    gap: 0.75rem;
-
-    button {
-      padding: 0.75rem 0;
-      background-color: #1f2130;
-      border: none;
-      border-radius: 6px;
-      color: #e1e1e1;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-weight: 500;
-      position: relative;
-
-      &:hover {
-        background-color: #2c2f45;
-      }
-
-      &.active {
-        background-color: #f1b722;
-        color: #040d13;
-      }
-
-      &::before {
-        content: attr(title);
-        position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: rgba(15, 16, 22, 0.9);
-        color: #fff;
-        text-align: center;
-        padding: 5px 10px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        white-space: nowrap;
-        visibility: hidden;
-        opacity: 0;
-        transition: opacity 0.3s;
-        pointer-events: none;
-        z-index: 10;
-      }
-
-      &:hover::before {
-        visibility: visible;
-        opacity: 1;
-      }
-    }
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .episode-info {
   width: 100%;
-  padding: 2rem 0;
+  padding: 3rem 0;
+  background: linear-gradient(135deg, rgba(31, 33, 48, 0.3) 0%, rgba(44, 47, 69, 0.2) 100%);
+  margin-top: 2rem;
 
   .episode-info-container {
     max-width: 1200px;
-    display: flex;
-    gap: 2rem;
-    padding: 0 1.5rem;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 3rem;
+    padding: 0 2rem;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      text-align: center;
+    }
 
     @media (max-width: 768px) {
-      flex-direction: column;
+      padding: 0 1rem;
       gap: 1.5rem;
     }
   }
 
   .movie-poster {
     position: relative;
-    flex-shrink: 0;
-    width: 300px;
-    height: auto;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
     overflow: hidden;
-    border-radius: 8px;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s ease;
 
-    @media (max-width: 768px) {
-      width: 200px;
+    &:hover {
+      transform: translateY(-5px);
     }
 
     img {
@@ -513,28 +393,49 @@ export default defineComponent({
 
     .rating {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      background-color: rgba(0, 0, 0, 0.7);
-      color: white;
+      top: 1rem;
+      left: 1rem;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.7) 100%);
+      color: #fff;
       font-weight: 700;
-      padding: 0.25rem 0.75rem;
-      border-radius: 4px;
-      font-size: 1.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      font-size: 1.25rem;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+
+      &::before {
+        content: '⭐';
+        font-size: 0.875rem;
+      }
     }
   }
 
   .episode-details {
-    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 
     h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin: 0 0 0.5rem 0;
-      color: #ffffff;
+      font-size: 2.75rem;
+      font-weight: 800;
+      margin: 0 0 1rem 0;
+      color: #fff;
       line-height: 1.2;
+      background: linear-gradient(135deg, #fff 0%, #e1e1e1 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 
       @media (max-width: 768px) {
+        font-size: 2rem;
+      }
+
+      @media (max-width: 480px) {
         font-size: 1.75rem;
       }
     }
@@ -543,44 +444,194 @@ export default defineComponent({
       display: flex;
       align-items: center;
       flex-wrap: wrap;
-      gap: 0.5rem;
-      color: #b0b0b0;
-      margin-bottom: 1.5rem;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
       font-size: 1rem;
 
+      @media (max-width: 1024px) {
+        justify-content: center;
+      }
+
+      @media (max-width: 480px) {
+        gap: 1rem;
+        font-size: 0.9rem;
+      }
+
       .separator {
-        color: #666;
+        color: rgba(255, 255, 255, 0.3);
+        font-weight: 300;
       }
 
       .year,
       .runtime,
       .rating {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
         font-weight: 500;
+        color: #b0b0b0;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: #fff;
+        }
+
+        &::before {
+          font-size: 0.875rem;
+        }
+
+        &.year::before {
+          content: '📅';
+        }
+
+        &.runtime::before {
+          content: '⏱️';
+        }
+
+        &.rating::before {
+          content: '⭐';
+        }
       }
     }
 
     .overview {
-      font-size: 1.125rem;
-      line-height: 1.6;
-      color: #e1e1e1;
+      font-size: 1.25rem;
+      line-height: 1.7;
+      color: #c1c7d0;
       margin: 0;
       max-width: 800px;
 
+      @media (max-width: 1024px) {
+        text-align: left;
+        margin: 0 auto;
+      }
+
       @media (max-width: 768px) {
+        font-size: 1.125rem;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 480px) {
         font-size: 1rem;
       }
     }
   }
 }
 
-@media (max-width: 768px) {
-  .episode-navigation {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+// Loading states
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 16, 22, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+
+  .loading-content {
+    text-align: center;
+    color: #e1e1e1;
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid #ff5252;
+      animation: spin 1.5s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    p {
+      font-size: 1.125rem;
+      margin: 0;
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Error states
+.error-state {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #e74c3c;
+
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
   }
 
-  .episodes-grid {
-    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  p {
+    font-size: 1.125rem;
+    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
   }
+
+  button {
+    background: linear-gradient(135deg, #ff5252 0%, #ff7979 100%);
+    color: #fff;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+
+    &:hover {
+      background: linear-gradient(135deg, #ff3333 0%, #ff5252 100%);
+      transform: translateY(-2px);
+    }
+  }
+}
+
+// Accessibility improvements
+@media (prefers-reduced-motion: reduce) {
+  .movie-poster,
+  .loading-overlay .spinner,
+  .error-state button {
+    transition: none;
+    animation: none;
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  .stream-container {
+    background: #000;
+  }
+
+  .episode-info {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #fff;
+  }
+
+  .episode-details h1 {
+    background: #fff;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+// Focus management for keyboard navigation
+.stream-controls :focus-visible,
+.episode-info :focus-visible {
+  outline: 2px solid #ff5252;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 </style>
