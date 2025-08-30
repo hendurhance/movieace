@@ -225,7 +225,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, onUnmounted } from 'vue';
+import { defineComponent, ref, computed, onMounted } from 'vue';
+import { useWatchPartySync, type MediaInfo } from '../composables/useWatchPartySync';
 import { useWatchPartyRoom } from '../composables/useWatchPartyRoom';
 
 // Import icons
@@ -256,27 +257,40 @@ export default defineComponent({
   },
   props: {
     mediaData: {
-      type: Object,
+      type: Object as () => MediaInfo | null,
       default: null,
     },
+    enableSync: {
+      type: Boolean,
+      default: false,
+    },
   },
-  setup(props) {
-    // Watch Party Room composable
+  emits: ['sync-request', 'media-change'],
+  setup(props, { emit }) {
+    // Watch Party Sync composable
+    const watchPartySync = useWatchPartySync();
     const {
       currentRoom,
       members,
-      currentMember,
       isConnected,
-      isLoading,
-      error,
       isHost,
-      roomCode,
       memberCount,
+      currentMedia,
       createRoom,
       joinRoom,
       leaveRoom,
-      generateShareableLink,
-    } = useWatchPartyRoom();
+      getRoomShareLink,
+      checkAutoJoin,
+      handleSyncRequest,
+      setCurrentMedia,
+    } = watchPartySync;
+
+    // Get current member from the original composable
+    const { currentMember } = useWatchPartyRoom();
+
+    // Local state
+    const isLoading = ref(false);
+    const error = ref<string | null>(null);
 
     // Modal state
     const showModal = ref(false);
@@ -290,7 +304,23 @@ export default defineComponent({
     const joinCode = ref('');
 
     // Computed
-    const shareableLink = computed(() => generateShareableLink());
+    const roomCode = computed(() => currentRoom.value?.room_code || '');
+    const shareableLink = computed(() => getRoomShareLink());
+
+    // Sync handler - proxy to parent component
+    const onSyncRequest = (syncData: any) => {
+      handleSyncRequest(syncData);
+      emit('sync-request', syncData);
+    };
+
+    // Watch media data changes
+    const updateMediaData = () => {
+      if (props.mediaData) {
+        console.log('Updating media data in WatchParty:', props.mediaData);
+        setCurrentMedia(props.mediaData);
+        emit('media-change', props.mediaData);
+      }
+    };
 
     // Methods
     function openModal() {
@@ -307,29 +337,70 @@ export default defineComponent({
         hostName.value = '';
         memberName.value = '';
         joinCode.value = '';
+        error.value = null;
       }
     }
 
     async function createWatchParty() {
       if (!hostName.value.trim()) return;
+      if (!props.mediaData) {
+        error.value = 'No media data available';
+        return;
+      }
 
-      const roomCode = await createRoom(hostName.value.trim(), props.mediaData);
-      if (roomCode) {
-        // Reset form
-        hostName.value = '';
-        mode.value = null;
+      isLoading.value = true;
+      error.value = null;
+
+      try {
+        const roomCode = await createRoom(hostName.value.trim(), {
+          type: props.mediaData.type,
+          id: props.mediaData.id,
+          title: props.mediaData.title,
+          season: props.mediaData.season,
+          episode: props.mediaData.episode,
+          server_url: props.mediaData.streamUrl
+        });
+
+        if (roomCode) {
+          console.log('Watch party room created:', roomCode);
+          // Reset form
+          hostName.value = '';
+          mode.value = null;
+        }
+      } catch (err) {
+        error.value = err instanceof Error ? err.message : 'Failed to create room';
+      } finally {
+        isLoading.value = false;
       }
     }
 
     async function joinWatchParty() {
       if (!memberName.value.trim() || !joinCode.value.trim()) return;
+      if (!props.mediaData) {
+        error.value = 'No media data available';
+        return;
+      }
 
-      const success = await joinRoom(joinCode.value.trim(), memberName.value.trim());
-      if (success) {
-        // Reset form
-        memberName.value = '';
-        joinCode.value = '';
-        mode.value = null;
+      isLoading.value = true;
+      error.value = null;
+
+      try {
+        const success = await joinRoom(
+          joinCode.value.trim(),
+          memberName.value.trim(),
+        );
+
+        if (success) {
+          console.log('Successfully joined watch party');
+          // Reset form
+          memberName.value = '';
+          joinCode.value = '';
+          mode.value = null;
+        }
+      } catch (err) {
+        error.value = err instanceof Error ? err.message : 'Failed to join room';
+      } finally {
+        isLoading.value = false;
       }
     }
 
@@ -351,6 +422,7 @@ export default defineComponent({
       try {
         await navigator.clipboard.writeText(roomCode.value);
         // You could add a toast notification here
+        console.log('Room code copied to clipboard');
       } catch (err) {
         console.error('Failed to copy code:', err);
       }
@@ -360,6 +432,7 @@ export default defineComponent({
       try {
         await navigator.clipboard.writeText(shareableLink.value);
         // You could add a toast notification here
+        console.log('Share link copied to clipboard');
       } catch (err) {
         console.error('Failed to copy link:', err);
       }
@@ -367,17 +440,23 @@ export default defineComponent({
 
     // Check for room code in URL on mount
     onMounted(() => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const roomParam = urlParams.get('room');
-      if (roomParam) {
-        joinCode.value = roomParam;
+      updateMediaData();
+
+      const autoJoinCode = checkAutoJoin();
+      if (autoJoinCode) {
+        joinCode.value = autoJoinCode;
         mode.value = 'join';
         showModal.value = true;
       }
     });
 
+    // Update media data when props change
+    onMounted(() => {
+      updateMediaData();
+    });
+
     return {
-      // Watch Party Room
+      // Watch Party State
       currentRoom,
       members,
       currentMember,
@@ -387,6 +466,7 @@ export default defineComponent({
       isHost,
       roomCode,
       memberCount,
+      currentMedia,
 
       // Modal State
       showModal,
@@ -412,6 +492,8 @@ export default defineComponent({
       leaveWatchParty,
       copyCode,
       copyLink,
+      onSyncRequest,
+      updateMediaData,
     };
   },
 });
