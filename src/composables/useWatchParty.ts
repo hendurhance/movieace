@@ -141,13 +141,6 @@ const realtimeStatus = ref({
 // Sync watch party room state with existing stream data system
 function syncWithStreamData(roomData: WatchPartyRoom) {
   if (!roomData) return;
-  
-  console.log('🔄 Syncing watch party state with stream data:', {
-    roomServer: roomData.current_server_index,
-    roomSeason: roomData.current_season,
-    roomEpisode: roomData.current_episode,
-    currentStreamServer: currentStreamData.value.currentServer
-  });
 
   // Update the current stream data to match watch party state
   currentStreamData.value = {
@@ -176,8 +169,6 @@ function syncWithStreamData(roomData: WatchPartyRoom) {
         }
       );
     }
-    
-    console.log('✅ Successfully synced watch party state with stream data');
   } catch (error) {
     console.error('❌ Failed to sync with stream data:', error);
   }
@@ -220,7 +211,6 @@ function debouncedFetchRoomMembers(roomId: string, delay = 500, eventType?: 'INS
           source: 'realtime-subscription'
         }
       }));
-      console.log(`✅ Dispatched ${eventName} event from real-time after debounced refresh`);
     }
   }, delay);
 }
@@ -272,18 +262,9 @@ export async function createRoom(request: CreateRoomRequest): Promise<CreateRoom
         is_online: true
       };
 
-      console.log('Setting room data:', roomData);
-      console.log('Setting member data:', memberData);
-
       currentRoom.value = roomData;
       currentMember.value = memberData;
       roomMembers.value = [memberData];
-
-      console.log('Stored data after assignment:', {
-        room: currentRoom.value,
-        member: currentMember.value,
-        members: roomMembers.value
-      });
 
       // Sync with existing stream data system
       if (currentRoom.value) {
@@ -352,21 +333,6 @@ export async function joinRoom(request: JoinRoomRequest): Promise<JoinRoomRespon
       currentMember.value = transformedMembers.find(m => m.id === response.data!.memberId) || null;
       roomMembers.value = transformedMembers;
 
-      console.log('Setting initial room members:', {
-        totalMembers: transformedMembers.length,
-        rawMembersFromAPI: rawMembers,
-        transformedMembers: transformedMembers,
-        membersAfterAssignment: roomMembers.value,
-        currentMemberSet: currentMember.value,
-        members: transformedMembers.map(m => ({
-          id: m?.id,
-          name: m?.member_name,
-          isHost: m?.is_host,
-          isOnline: m?.is_online,
-          fullObject: m
-        }))
-      });
-
       // Sync with existing stream data system
       if (currentRoom.value) {
         syncWithStreamData(currentRoom.value);
@@ -374,21 +340,6 @@ export async function joinRoom(request: JoinRoomRequest): Promise<JoinRoomRespon
 
       // Set up realtime subscriptions
       await setupRealtimeSubscriptions(response.data.roomId);
-      
-      console.log('Successfully joined room:', {
-        roomCode: request.roomCode,
-        memberCount: roomMembers.value.length,
-        currentMember: currentMember.value?.member_name,
-        allMembers: roomMembers.value.map(m => ({ name: m.member_name, isHost: m.is_host }))
-      });
-
-      // Force a member refresh after a longer delay to ensure real-time subscriptions are working
-      // This also helps test if the subscription is properly established
-      setTimeout(async () => {
-        console.log('⏰ Triggering member refresh after join to verify subscription...');
-        await fetchRoomMembers(response.data!.roomId);
-        console.log('🔄 Post-join member refresh completed. Member count:', roomMembers.value.length);
-      }, 2000); // Increased delay to ensure subscriptions are established
     }
 
     return response;
@@ -401,15 +352,33 @@ export async function joinRoom(request: JoinRoomRequest): Promise<JoinRoomRespon
   }
 }
 
+// Clean up realtime subscriptions
+async function cleanupSubscriptions() {
+  if (roomChannel) {
+    await supabase.removeChannel(roomChannel);
+    roomChannel = null;
+  }
+  if (memberChannel) {
+    await supabase.removeChannel(memberChannel);
+    memberChannel = null;
+  }
+  if (eventChannel) {
+    await supabase.removeChannel(eventChannel);
+    eventChannel = null;
+  }
+  
+  if (memberPollingInterval) {
+    clearInterval(memberPollingInterval);
+    memberPollingInterval = null;
+  }
+}
+
 // Set up realtime subscriptions for room updates
 async function setupRealtimeSubscriptions(roomId: string) {
-  console.log('Setting up real-time subscriptions for room:', roomId);
-  
   // Clean up existing subscriptions
   await cleanupSubscriptions();
 
   // Subscribe to room state changes
-  console.log('Creating room channel subscription...');
   roomChannel = supabase
     .channel(`watch_party_room_${roomId}`)
     .on(
@@ -421,7 +390,6 @@ async function setupRealtimeSubscriptions(roomId: string) {
         filter: `id=eq.${roomId}`
       },
       (payload) => {
-        console.log('Room update received:', payload);
         if (payload.new && currentRoom.value) {
           // Update room state
           const updatedRoom = { ...currentRoom.value, ...payload.new };
@@ -433,7 +401,6 @@ async function setupRealtimeSubscriptions(roomId: string) {
       }
     )
     .subscribe((status, err) => {
-      console.log('Room channel subscription status:', status, err);
       realtimeStatus.value.roomChannel = status;
       if (err) {
         console.error('Room channel subscription error:', err);
@@ -441,10 +408,7 @@ async function setupRealtimeSubscriptions(roomId: string) {
     });
 
   // Subscribe to member changes
-  console.log('Creating member channel subscription...');
-  // Use a more unique channel name to avoid conflicts
   const memberChannelName = `watch_party_members_${roomId}_${Date.now()}`;
-  console.log('Member channel name:', memberChannelName);
   
   memberChannel = supabase
     .channel(memberChannelName)
@@ -457,28 +421,14 @@ async function setupRealtimeSubscriptions(roomId: string) {
         filter: `room_id=eq.${roomId}`
       },
       async (payload) => {
-        console.log('🔥 Member update received:', {
-          eventType: payload.eventType,
-          payload: payload,
-          timestamp: new Date().toISOString(),
-          roomId: roomId,
-          payloadRoomId: (payload.new as any)?.room_id || (payload.old as any)?.room_id,
-          channelName: memberChannelName
-        });
-        console.log('Event type:', payload.eventType);
-        console.log('Current member count before update:', roomMembers.value.length);
-        
         // Verify the event is for our room
         const eventRoomId = (payload.new as any)?.room_id || (payload.old as any)?.room_id;
         if (eventRoomId !== roomId) {
-          console.log('🚫 Event not for our room, ignoring:', { eventRoomId, expectedRoomId: roomId });
           return;
         }
         
         // Handle different member events
         if (payload.eventType === 'INSERT') {
-          console.log('🎉 New member joined:', payload.new);
-          
           // Mark real-time as working
           realtimeWorking.value.memberEvents = true;
           realtimeWorking.value.lastEventTime = new Date();
@@ -486,8 +436,6 @@ async function setupRealtimeSubscriptions(roomId: string) {
           // Refresh member list and dispatch event (debounced to prevent rapid calls)
           debouncedFetchRoomMembers(roomId, 200, 'INSERT', payload.new);
         } else if (payload.eventType === 'DELETE') {
-          console.log('👋 Member left:', payload.old);
-          
           // Mark real-time as working
           realtimeWorking.value.memberEvents = true;
           realtimeWorking.value.lastEventTime = new Date();
@@ -495,8 +443,6 @@ async function setupRealtimeSubscriptions(roomId: string) {
           // Refresh member list and dispatch event (debounced to prevent rapid calls)
           debouncedFetchRoomMembers(roomId, 200, 'DELETE', payload.old);
         } else if (payload.eventType === 'UPDATE') {
-          console.log('🔄 Member updated:', payload.new);
-          
           // Mark real-time as working
           realtimeWorking.value.memberEvents = true;
           realtimeWorking.value.lastEventTime = new Date();
@@ -512,31 +458,17 @@ async function setupRealtimeSubscriptions(roomId: string) {
               source: 'realtime-subscription'
             }
           }));
-          console.log('✅ Dispatched member-updated event from real-time');
         }
-        
-        // Log the update for debugging
-        console.log('Updated member count after refresh:', roomMembers.value.length);
-        console.log('Current members:', roomMembers.value.map(m => ({
-          name: m.member_name,
-          isHost: m.is_host,
-          isOnline: m.is_online
-        })));
       }
     )
     .subscribe((status, err) => {
-      console.log('Member channel subscription status:', status, err);
       realtimeStatus.value.memberChannel = status;
       if (err) {
         console.error('❌ Member channel subscription error:', err);
-        console.error('🛠️ Fix: Enable Realtime for watch_party_members table in Supabase Dashboard → Database → Replication');
-      } else if (status === 'SUBSCRIBED') {
-        console.log('✅ Successfully subscribed to member changes for room:', roomId);
       }
     });
 
   // Subscribe to sync events
-  console.log('Creating event channel subscription...');
   eventChannel = supabase
     .channel(`watch_party_events_${roomId}`)
     .on(
@@ -548,35 +480,27 @@ async function setupRealtimeSubscriptions(roomId: string) {
         filter: `room_id=eq.${roomId}`
       },
       (payload) => {
-        console.log('Sync event received:', payload);
         handleSyncEvent(payload.new as WatchPartyEvent);
       }
     )
     .subscribe((status, err) => {
-      console.log('Event channel subscription status:', status, err);
       realtimeStatus.value.eventChannel = status;
       if (err) {
         console.error('❌ Event channel subscription error:', err);
-        console.error('🛠️ Fix: Enable Realtime for watch_party_events table in Supabase Dashboard → Database → Replication');
       }
     });
 
-  console.log('✅ All real-time subscriptions set up for room:', roomId);
-  
   // Wait a moment for subscriptions to be fully established
   await new Promise(resolve => setTimeout(resolve, 500));
-  console.log('🎯 Real-time subscriptions should now be ready to receive events');
 
-  // Set up fallback polling as backup (every 10 seconds)
+  // Set up fallback polling as backup
   if (memberPollingInterval) {
     clearInterval(memberPollingInterval);
   }
   
-  // More aggressive polling for better UX - 5 seconds
   memberPollingInterval = setInterval(async () => {
     // Skip polling if real-time is actually working
     if (isRealtimeActuallyWorking.value) {
-      console.log('🚀 Real-time working, skipping fallback polling');
       return;
     }
 
@@ -585,12 +509,7 @@ async function setupRealtimeSubscriptions(roomId: string) {
     const afterCount = roomMembers.value.length;
     
     if (beforeCount !== afterCount) {
-      console.log('🔄 Fallback polling detected member count change:', {
-        before: beforeCount,
-        after: afterCount,
-        timestamp: new Date().toISOString(),
-        reason: 'Real-time subscription failed - using polling backup'
-      });
+      console.log('🔄 Fallback polling detected member count change - real-time may be failing');
       
       // Emit events as if they came from real-time
       if (afterCount > beforeCount) {
@@ -609,9 +528,7 @@ async function setupRealtimeSubscriptions(roomId: string) {
         }));
       }
     }
-  }, 5000); // Poll every 5 seconds for better responsiveness
-  
-  console.log('🛡️ Fallback polling mechanism activated (5s interval - faster backup until realtime is fixed)');
+  }, 5000);
 }
 
 // Handle incoming sync events
@@ -650,7 +567,8 @@ function handleSyncEvent(event: WatchPartyEvent) {
     case 'pause':
     case 'seek':
       // These will be implemented in Phase 2
-      console.log(`Sync event ${event.event_type} received, will be implemented in Phase 2`);
+      default:
+      // Future sync events can be implemented here
       break;
   }
 }
@@ -670,10 +588,7 @@ async function fetchRoomMembers(roomId: string) {
 
     if (error) throw error;
     
-    const previousCount = roomMembers.value.length;
     roomMembers.value = data || [];
-    
-    console.log(`Member list updated: ${previousCount} → ${roomMembers.value.length} members`);
   } catch (error) {
     console.error('Error fetching room members:', error);
   } finally {
@@ -686,14 +601,11 @@ export async function getRoomData(): Promise<{ success: boolean; error?: string 
   try {
     // We need the room code, not room ID for the get-room API
     if (!currentRoom.value?.room_code) {
-      console.warn('getRoomData called without room code');
       return {
         success: false,
         error: 'No room code available'
       };
     }
-
-    console.log('Getting room data for code:', currentRoom.value.room_code);
 
     const { data, error } = await supabase.functions.invoke('get-room', {
       body: { roomCode: currentRoom.value.room_code }
@@ -704,20 +616,7 @@ export async function getRoomData(): Promise<{ success: boolean; error?: string 
       throw error;
     }
 
-    console.log('getRoomData API response:', data);
-
     if (data.success && data.data) {
-      console.log('API response data.data:', data.data);
-      console.log('API response data.data.members:', data.data.members);
-      
-      // Log each member object structure
-      if (data.data.members && Array.isArray(data.data.members)) {
-        data.data.members.forEach((member: any, index: number) => {
-          console.log(`Member ${index}:`, member);
-          console.log(`Member ${index} keys:`, Object.keys(member || {}));
-        });
-      }
-
       // Update room data
       if (currentRoom.value) {
         const updatedRoomData = {
@@ -731,19 +630,6 @@ export async function getRoomData(): Promise<{ success: boolean; error?: string 
           is_playing: data.data.room.isPlaying,
           last_activity: new Date().toISOString()
         };
-        
-        console.log('Updating room data:', {
-          before: {
-            server: currentRoom.value.current_server_index,
-            season: currentRoom.value.current_season,
-            episode: currentRoom.value.current_episode
-          },
-          after: {
-            server: updatedRoomData.current_server_index,
-            season: updatedRoomData.current_season,
-            episode: updatedRoomData.current_episode
-          }
-        });
         
         currentRoom.value = updatedRoomData;
         
@@ -763,7 +649,6 @@ export async function getRoomData(): Promise<{ success: boolean; error?: string 
       }));
 
       // Update members
-      const previousMemberCount = roomMembers.value.length;
       // Filter out any null or undefined members and validate structure  
       const validMembers = transformedMembers.filter((member: WatchPartyMember) => {
         const isValid = member && 
@@ -781,24 +666,9 @@ export async function getRoomData(): Promise<{ success: boolean; error?: string 
       });
       
       roomMembers.value = validMembers;
-      
-      console.log('Room data refreshed:', {
-        roomCode: currentRoom.value?.room_code,
-        memberCount: roomMembers.value.length,
-        previousCount: previousMemberCount,
-        rawMembersCount: (data.data.members || []).length,
-        validMembersCount: validMembers.length,
-        transformedMembers: transformedMembers,
-        members: roomMembers.value.map(m => ({ 
-          id: m?.id,
-          name: m?.member_name, 
-          isHost: m?.is_host,
-          fullObject: m
-        }))
-      });
     }
 
-    return data;
+    return { success: data.success };
   } catch (error) {
     console.error('Error getting room data:', error);
     return {
@@ -810,50 +680,21 @@ export async function getRoomData(): Promise<{ success: boolean; error?: string 
 
 // Initialize persistent connection on page load
 export async function initializeWatchParty(): Promise<void> {
-  // Check if we have stored connection data
-  console.log('Initializing watch party. Checking stored data...', {
-    hasRoom: !!currentRoom.value,
-    hasMember: !!currentMember.value,
-    roomData: currentRoom.value,
-    memberData: currentMember.value,
-    memberCount: roomMembers.value.length
-  });
-
   if (currentRoom.value && currentMember.value) {
-    console.log('Restoring watch party connection:', {
-      roomCode: currentRoom.value.room_code,
-      memberName: currentMember.value.member_name,
-      roomId: currentRoom.value.id
-    });
-
     try {
       // Refresh room data to get latest state
       const result = await getRoomData();
       if (!result.success) {
-        console.warn('Failed to refresh room data, clearing stored data:', result.error);
         await disconnect();
         return;
       }
       
       // Re-establish real-time subscriptions
       await setupRealtimeSubscriptions(currentRoom.value.id);
-      
-      console.log('Watch party connection restored successfully:', {
-        memberCount: roomMembers.value.length,
-        members: roomMembers.value.map(m => ({
-          id: m?.id,
-          name: m?.member_name,
-          isHost: m?.is_host,
-          isOnline: m?.is_online,
-          fullMemberObject: m
-        }))
-      });
     } catch (error) {
       console.error('Failed to restore watch party connection:', error);
       await disconnect();
     }
-  } else {
-    console.log('No stored watch party connection found');
   }
 }
 
@@ -901,13 +742,8 @@ export async function leaveRoom(): Promise<void> {
     return;
   }
 
-  console.log('Leaving room with parameters:', {
-    roomId: currentRoom.value.id,
-    memberId: currentMember.value.id
-  });
-
   try {
-    const { data, error } = await supabase.functions.invoke('leave-room', {
+    const { error } = await supabase.functions.invoke('leave-room', {
       body: {
         roomId: currentRoom.value.id,
         memberId: currentMember.value.id
@@ -918,8 +754,6 @@ export async function leaveRoom(): Promise<void> {
       console.error('Leave room API error:', error);
       throw error;
     }
-
-    console.log('Leave room response:', data);
   } catch (error) {
     console.error('Error leaving room:', error);
     throw error; // Re-throw to allow UI to handle the error
@@ -934,35 +768,6 @@ export async function disconnect(): Promise<void> {
   currentRoom.value = null;
   currentMember.value = null;
   roomMembers.value = [];
-}
-
-// Clean up realtime subscriptions
-async function cleanupSubscriptions() {
-  console.log('🧹 Cleaning up existing real-time subscriptions...');
-  
-  if (roomChannel) {
-    console.log('Removing room channel...');
-    await supabase.removeChannel(roomChannel);
-    roomChannel = null;
-  }
-  if (memberChannel) {
-    console.log('Removing member channel...');
-    await supabase.removeChannel(memberChannel);
-    memberChannel = null;
-  }
-  if (eventChannel) {
-    console.log('Removing event channel...');
-    await supabase.removeChannel(eventChannel);
-    eventChannel = null;
-  }
-  
-  if (memberPollingInterval) {
-    console.log('Clearing member polling interval...');
-    clearInterval(memberPollingInterval);
-    memberPollingInterval = null;
-  }
-  
-  console.log('✅ All subscriptions and polling cleaned up');
 }
 
 // Debug function for console access
