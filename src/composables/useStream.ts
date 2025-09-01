@@ -25,6 +25,7 @@ export const streamData = useStorage<StreamData>('streamData', defaultStreamData
 
 export const movieServers = ref<Server[]>([
   { name: 'VidEasy', urlTemplate: 'https://player.videasy.net/movie/{tmdbId}?color=#4eb5ff' },
+  { name: 'Cinemaos', urlTemplate: 'https://cinemaos.tech/player/{tmdbId}' },
   { name: 'VidSrc CC', urlTemplate: 'https://vidsrc.cc/v2/embed/movie/{tmdbId}' },
   { name: 'VidSrc XYZ', urlTemplate: 'https://vidsrc.xyz/embed/movie?tmdb={tmdbId}' },
   { name: 'VidSrc In', urlTemplate: 'https://vidsrc.in/embed/movie?tmdb={tmdbId}' },
@@ -40,6 +41,7 @@ export const movieServers = ref<Server[]>([
 
 export const tvServers = ref<Server[]>([
   { name: 'VidEasy', urlTemplate: 'https://player.videasy.net/tv/{externalId}/{season}/{episode}?color=#4eb5ff&nextEpisode=true&autoplayNextEpisode=true&episodeSelector=true' },
+  { name: 'Cinemaos', urlTemplate: 'https://cinemaos.tech/player/{externalId}/{season}/{episode}' },
   { name: 'VidSrc CC', urlTemplate: 'https://vidsrc.cc/v2/embed/tv/{externalId}/{season}/{episode}' },
   { name: 'VidSrc XYZ', urlTemplate: 'https://vidsrc.xyz/embed/tv?tmdb={externalId}&season={season}&episode={episode}' },
   { name: 'VidSrc In', urlTemplate: 'https://vidsrc.in/embed/tv?tmdb={externalId}&season={season}&episode={episode}' },
@@ -148,12 +150,20 @@ export function getServers(type: 'movie' | 'tv' = 'movie'): Server[] {
   return type === 'movie' ? movieServers.value : tvServers.value;
 }
 
+// Watch party enabled server indices (VidLink, VidFast, 111Movies)
+export const WATCH_PARTY_ENABLED_SERVERS = [7, 9, 10];
+
+export function isWatchPartyEnabledServer(serverIndex: number): boolean {
+  return WATCH_PARTY_ENABLED_SERVERS.includes(serverIndex);
+}
+
 export function buildStreamUrl(
   mediaId: string | number,
   type: 'movie' | 'tv' = 'movie',
   serverIndex: number = 0,
   season: number = 1,
-  episode: number = 1
+  episode: number = 1,
+  timestamp?: number
 ): string {
   const id = String(mediaId);
   const servers = getServers(type);
@@ -164,13 +174,29 @@ export function buildStreamUrl(
   }
 
   const server = servers[serverIndex] || servers[0];
+  let url: string;
 
   if (type === 'movie') {
-    return server.urlTemplate.replace('{tmdbId}', id);
+    url = server.urlTemplate.replace('{tmdbId}', id);
+  } else {
+    url = server.urlTemplate
+      .replace('{externalId}', id)
+      .replace('{season}', String(Math.max(1, season)))
+      .replace('{episode}', String(Math.max(1, episode)));
   }
 
-  return server.urlTemplate
-    .replace('{externalId}', id)
-    .replace('{season}', String(Math.max(1, season)))
-    .replace('{episode}', String(Math.max(1, episode)));
+  // Add timestamp parameter for sync functionality
+  if (timestamp !== undefined && timestamp > 0) {
+    const timestampSeconds = Math.floor(timestamp);
+    const serverName = server.name.toLowerCase();
+    
+    // Different servers use different timestamp parameters
+    if (serverName.includes('111movies')) {
+      url += `?progress=${timestampSeconds}`;
+    } else if (serverName.includes('vidlink') || serverName.includes('vidfast')) {
+      url += `?startAt=${timestampSeconds}`;
+    }
+  }
+
+  return url;
 }

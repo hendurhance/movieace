@@ -5,51 +5,56 @@
       back-text="Back to movie"
       @back-click="goBack"
     >
-      <WatchParty
-        :is-loading="watchPartyData.isLoading"
-        :error="watchPartyData.error"
-        :response="watchPartyData.response"
-        :show-modal="showWatchPartyModal"
-        @toggle-modal="toggleWatchPartyModal"
-        @start-party="startWatchParty"
-        @quality-change="setWatchPartyQuality"
-      />
+      <div class="header-actions">
+        <ShareScreen />
+        <WatchParty 
+          :media-id="movieId" 
+          media-type="movie"
+        />
+      </div>
     </StreamHeader>
 
-    <VideoPlayer :embedUrl="currentEmbedUrl" />
-
-    <ServerSelection
-      :servers="availableServers"
-      :active-server-index="currentStreamData.currentServer"
-      @server-change="changeServer"
+    <VideoPlayer 
+      :embedUrl="currentEmbedUrl"
+      @player-event="handlePlayerEvent"
     />
+
+    <div class="stream-controls">
+      <ServerSelection
+        :servers="availableServers"
+        :active-server-index="currentStreamData.currentServer"
+        @server-change="changeServer"
+      />
+    </div>
 
     <Disclaimer />
 
     <div class="movie-info" v-if="movie">
-      <div class="movie-poster">
-        <div class="rating-number">{{ movie?.vote_average?.toFixed(1) || '0.0' }}</div>
-        <img
-          :src="getMovieImageUrl(movie).poster"
-          :alt="movie?.title"
-          loading="lazy"
-        />
-      </div>
-      <div class="movie-sub-texts">
-        <h2>{{ movie.title }}</h2>
-        <div class="info-details">
-          <span v-if="movie.release_date">{{ new Date(movie.release_date).getFullYear() }}</span>
-          <span v-if="movie.runtime">{{ Math.floor(movie.runtime / 60) }}h {{ movie.runtime % 60 }}m</span>
-          <span v-if="movie.vote_average">Rating: {{ movie.vote_average.toFixed(1) }}/10</span>
+      <div class="movie-info-container">
+        <div class="movie-poster">
+          <div class="rating-number">{{ movie?.vote_average?.toFixed(1) || '0.0' }}</div>
+          <img
+            :src="getMovieImageUrl(movie).poster"
+            :alt="movie?.title"
+            loading="lazy"
+          />
         </div>
-        <p class="overview">{{ movie.overview }}</p>
+        <div class="movie-sub-texts">
+          <h2>{{ movie.title }}</h2>
+          <div class="info-details">
+            <span v-if="movie.release_date">{{ new Date(movie.release_date).getFullYear() }}</span>
+            <span v-if="movie.runtime">{{ Math.floor(movie.runtime / 60) }}h {{ movie.runtime % 60 }}m</span>
+            <span v-if="movie.vote_average">Rating: {{ movie.vote_average.toFixed(1) }}/10</span>
+          </div>
+          <p class="overview">{{ movie.overview }}</p>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, watch } from 'vue';
+import { defineComponent, ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMovies, MovieDetails } from '../composables/useMovies';
 import { getMovieImageUrl } from '../utils/useWebImage';
@@ -60,16 +65,11 @@ import {
   getServers,
   buildStreamUrl,
 } from '../composables/useStream';
-import {
-  watchPartyData,
-  fetchWatchPartyMovieData,
-  openWatchParty,
-  resetWatchPartyData,
-  setWatchPartyQuality,
-} from '../composables/useWatchParty';
+import { useWatchParty } from '../composables/useWatchParty';
 import StreamHeader from '../components/StreamHeader.vue';
 import ServerSelection from '../components/ServerSelection.vue';
 import VideoPlayer from '../components/VideoPlayer.vue';
+import ShareScreen from '../components/ShareScreen.vue';
 import WatchParty from '../components/WatchParty.vue';
 import Disclaimer from '../components/layout/Disclaimer.vue';
 
@@ -79,6 +79,7 @@ export default defineComponent({
     StreamHeader,
     ServerSelection,
     VideoPlayer,
+    ShareScreen,
     WatchParty,
     Disclaimer
   },
@@ -88,20 +89,52 @@ export default defineComponent({
     const movieId = ref<string>(route.params.id as string);
     const movie = ref<MovieDetails | null>(null);
     const { fetchMovie } = useMovies();
+    const { sendSyncEvent, isHost } = useWatchParty();
     const isLoading = ref<boolean>(false);
     const error = ref<string | null>(null);
-    const showWatchPartyModal = ref<boolean>(false);
 
     const availableServers = computed(() => getServers('movie'));
 
+    // Track sync URL for force sync functionality
+    const syncUrl = ref<string | null>(null);
+    const forceReloadKey = ref(0);
+
     const currentEmbedUrl = computed(() => {
       if (!movieId.value) return '';
-      return buildStreamUrl(
+      
+      // Use sync URL if available, otherwise build normal URL
+      if (syncUrl.value) {
+        return syncUrl.value;
+      }
+      
+      const baseUrl = buildStreamUrl(
         movieId.value,
         'movie',
         currentStreamData.value.currentServer
       );
+      
+      // Add cache busting parameter when force reload is triggered
+      return forceReloadKey.value > 0 ? `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}t=${forceReloadKey.value}` : baseUrl;
     });
+
+    // Handle player events (from iframe messages)
+    const handlePlayerEvent = () => {
+      // Additional handling if needed
+    };
+
+    // Handle force sync events
+    const handleForceSync = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { syncUrl: newSyncUrl, mediaId } = customEvent.detail;
+      
+      // Only apply sync if it's for this movie
+      if (String(mediaId) === String(movieId.value)) {
+        // Dispatch force sync event to VideoPlayer for complete iframe reload
+        window.dispatchEvent(new CustomEvent('watchparty:force-sync', {
+          detail: { syncUrl: newSyncUrl }
+        }));
+      }
+    };
 
     const loadMovieDetails = async () => {
       if (!movieId.value) {
@@ -123,11 +156,13 @@ export default defineComponent({
           document.title = `Stream ${movie.value.title}`;
         }
 
+        // Set up preferred server
         const preferredData = getPreferredStreamData(movieId.value, 'movie');
         if (!preferredData) {
           savePreferredServer(movieId.value, 0, 'movie');
           getPreferredStreamData(movieId.value, 'movie');
         }
+
       } catch (err) {
         error.value = err instanceof Error ? err.message : 'Failed to load movie details';
         console.error('Error loading movie details:', err);
@@ -141,24 +176,38 @@ export default defineComponent({
         console.warn('Invalid server index');
         return;
       }
+      
       savePreferredServer(movieId.value, serverIndex, 'movie');
       getPreferredStreamData(movieId.value, 'movie');
+
+      // If user is host in a watch party, sync server change
+      if (isHost.value) {
+        sendSyncEvent('server_change', { serverIndex });
+      }
+    };
+
+    // Watch party event handlers
+    const handleWatchPartyServerChange = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { serverIndex } = customEvent.detail;
+      if (typeof serverIndex === 'number' && serverIndex >= 0 && serverIndex < availableServers.value.length) {
+        savePreferredServer(movieId.value, serverIndex, 'movie');
+        getPreferredStreamData(movieId.value, 'movie');
+      }
+    };
+
+    const handleWatchPartyJoined = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const roomData = customEvent.detail;
+      // Update server to match room
+      if (roomData.currentServerIndex !== undefined) {
+        savePreferredServer(movieId.value, roomData.currentServerIndex, 'movie');
+        getPreferredStreamData(movieId.value, 'movie');
+      }
     };
 
     const goBack = () => {
       router.push(`/movie/${movieId.value}`);
-    };
-
-    const toggleWatchPartyModal = async () => {
-      if (!showWatchPartyModal.value && movie.value) {
-        await fetchWatchPartyMovieData(movie.value);
-      }
-      showWatchPartyModal.value = !showWatchPartyModal.value;
-    };
-
-    const startWatchParty = () => {
-      openWatchParty();
-      showWatchPartyModal.value = false;
     };
 
     watch(
@@ -166,18 +215,29 @@ export default defineComponent({
       (newId, oldId) => {
         if (newId !== oldId) {
           movieId.value = newId as string;
-          resetWatchPartyData();
           loadMovieDetails();
         }
       }
     );
 
     onMounted(() => {
-      resetWatchPartyData();
       loadMovieDetails();
+      
+      // Listen for watch party events
+      window.addEventListener('watchparty:server-change', handleWatchPartyServerChange);
+      window.addEventListener('watchparty:joined', handleWatchPartyJoined);
+      window.addEventListener('watchparty:force-sync', handleForceSync);
+    });
+
+    onUnmounted(() => {
+      // Clean up event listeners
+      window.removeEventListener('watchparty:server-change', handleWatchPartyServerChange);
+      window.removeEventListener('watchparty:joined', handleWatchPartyJoined);
+      window.removeEventListener('watchparty:force-sync', handleForceSync);
     });
 
     return {
+      movieId,
       movie,
       currentEmbedUrl,
       availableServers,
@@ -187,11 +247,7 @@ export default defineComponent({
       currentStreamData,
       isLoading,
       error,
-      watchPartyData,
-      showWatchPartyModal,
-      toggleWatchPartyModal,
-      startWatchParty,
-      setWatchPartyQuality
+      handlePlayerEvent
     };
   }
 });
@@ -201,73 +257,312 @@ export default defineComponent({
 .stream-container {
   width: 100%;
   min-height: 100vh;
-  background-color: #0f1016;
+  background: linear-gradient(135deg, #0f1016 0%, #1a1b26 100%);
   color: #fff;
   padding-bottom: 2rem;
 }
 
-.movie-info {
-  margin-top: 3rem;
-  padding: 1rem 2rem;
-  max-width: 960px;
+.stream-controls {
   display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+}
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 1.5rem;
+.movie-info {
+  width: 100%;
+  padding: 3rem 0;
+  background: linear-gradient(135deg, rgba(31, 33, 48, 0.3) 0%, rgba(44, 47, 69, 0.2) 100%);
+  margin-top: 2rem;
+
+  .movie-info-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 3rem;
+    padding: 0 2rem;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      padding: 0 1rem;
+      gap: 1.5rem;
+    }
   }
 
   .movie-poster {
     position: relative;
-    width: 200px;
-    height: 300px;
-    margin-right: 1.5rem;
-    flex-shrink: 0;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: translateY(-5px);
+    }
 
     img {
       width: 100%;
-      height: 100%;
-      border-radius: 8px;
+      height: auto;
+      display: block;
       object-fit: cover;
     }
 
     .rating-number {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      background-color: rgba(0, 0, 0, 0.7);
+      top: 1rem;
+      left: 1rem;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.7) 100%);
       color: #fff;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 1rem;
+      font-weight: 700;
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      font-size: 1.25rem;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+
+      &::before {
+        content: '⭐';
+        font-size: 0.875rem;
+      }
     }
   }
+
+  .movie-sub-texts {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    h2 {
+      font-size: 2.75rem;
+      font-weight: 800;
+      margin: 0 0 1rem 0;
+      color: #fff;
+      line-height: 1.2;
+      background: linear-gradient(135deg, #fff 0%, #e1e1e1 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+
+      @media (max-width: 768px) {
+        font-size: 2rem;
+      }
+
+      @media (max-width: 480px) {
+        font-size: 1.75rem;
+      }
+    }
+
+    .info-details {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      font-size: 1rem;
+
+      @media (max-width: 1024px) {
+        justify-content: center;
+      }
+
+      @media (max-width: 480px) {
+        gap: 1rem;
+        font-size: 0.9rem;
+      }
+
+      span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        color: #b0b0b0;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: #fff;
+        }
+
+        &:first-child::before {
+          content: '📅';
+          font-size: 0.875rem;
+        }
+
+        &:nth-child(2)::before {
+          content: '⏱️';
+          font-size: 0.875rem;
+        }
+
+        &:last-child::before {
+          content: '⭐';
+          font-size: 0.875rem;
+        }
+      }
+    }
+
+    .overview {
+      font-size: 1.25rem;
+      line-height: 1.7;
+      color: #c1c7d0;
+      margin: 0;
+      max-width: 800px;
+
+      @media (max-width: 1024px) {
+        text-align: left;
+        margin: 0 auto;
+      }
+
+      @media (max-width: 768px) {
+        font-size: 1.125rem;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 480px) {
+        font-size: 1rem;
+      }
+    }
+  }
+}
+
+// Loading states
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 16, 22, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+
+  .loading-content {
+    text-align: center;
+    color: #e1e1e1;
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid #ff5252;
+      animation: spin 1.5s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    p {
+      font-size: 1.125rem;
+      margin: 0;
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Error states
+.error-state {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #e74c3c;
 
   h2 {
-    margin-top: 0;
-    font-size: 1.75rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-  }
-
-  .info-details {
-    display: flex;
-    gap: 1.5rem;
+    font-size: 1.5rem;
     margin-bottom: 1rem;
-    color: #b0b0b0;
-    font-size: 0.95rem;
   }
 
-  .overview {
-    line-height: 1.6;
-    color: #e1e1e1;
-    margin-top: 1rem;
+  p {
+    font-size: 1.125rem;
+    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
-  @media (max-width: 768px) {
-    h2 {
-      font-size: 1.5rem;
+  button {
+    background: linear-gradient(135deg, #ff5252 0%, #ff7979 100%);
+    color: #fff;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+
+    &:hover {
+      background: linear-gradient(135deg, #ff3333 0%, #ff5252 100%);
+      transform: translateY(-2px);
     }
+  }
+}
+
+// Accessibility improvements
+@media (prefers-reduced-motion: reduce) {
+  .movie-poster,
+  .loading-overlay .spinner,
+  .error-state button {
+    transition: none;
+    animation: none;
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  .stream-container {
+    background: #000;
+  }
+
+  .movie-info {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #fff;
+  }
+
+  .movie-sub-texts h2 {
+    background: #fff;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+// Focus management for keyboard navigation
+.stream-controls :focus-visible,
+.movie-info :focus-visible {
+  outline: 2px solid #ff5252;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+// Header actions
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .header-actions {
+    gap: 0.5rem;
   }
 }
 </style>
