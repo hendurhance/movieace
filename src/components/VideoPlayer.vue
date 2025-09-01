@@ -381,11 +381,34 @@ export default defineComponent({
         sendCommandToPlayer('seek', currentTime);
       };
 
+      const handleForceSync = (event: Event) => {
+        const customEvent = event as CustomEvent;
+        const { syncUrl } = customEvent.detail;
+        
+        if (playerIframe.value && syncUrl) {
+          // Force complete iframe reload by clearing src first
+          playerIframe.value.src = 'about:blank';
+          
+          // Small delay to ensure iframe is cleared, then set new URL
+          setTimeout(() => {
+            if (playerIframe.value) {
+              playerIframe.value.src = syncUrl;
+              
+              // Reset loading state to show loading indicator during reload
+              isLoading.value = true;
+              hasError.value = false;
+              startLoadingAnimation();
+            }
+          }, 100);
+        }
+      };
+
       // Add message and watchparty event listeners
       window.addEventListener("message", handlePlayerMessage);
       window.addEventListener("watchparty:play", handleWatchPartyPlay);
       window.addEventListener("watchparty:pause", handleWatchPartyPause);
       window.addEventListener("watchparty:seek", handleWatchPartySeek);
+      window.addEventListener("watchparty:force-sync", handleForceSync);
 
       // Cleanup on unmount
       onUnmounted(() => {
@@ -393,6 +416,7 @@ export default defineComponent({
         window.removeEventListener("watchparty:play", handleWatchPartyPlay);
         window.removeEventListener("watchparty:pause", handleWatchPartyPause);
         window.removeEventListener("watchparty:seek", handleWatchPartySeek);
+        window.removeEventListener("watchparty:force-sync", handleForceSync);
       });
     });
 

@@ -162,7 +162,8 @@ export function buildStreamUrl(
   type: 'movie' | 'tv' = 'movie',
   serverIndex: number = 0,
   season: number = 1,
-  episode: number = 1
+  episode: number = 1,
+  timestamp?: number
 ): string {
   const id = String(mediaId);
   const servers = getServers(type);
@@ -173,13 +174,29 @@ export function buildStreamUrl(
   }
 
   const server = servers[serverIndex] || servers[0];
+  let url: string;
 
   if (type === 'movie') {
-    return server.urlTemplate.replace('{tmdbId}', id);
+    url = server.urlTemplate.replace('{tmdbId}', id);
+  } else {
+    url = server.urlTemplate
+      .replace('{externalId}', id)
+      .replace('{season}', String(Math.max(1, season)))
+      .replace('{episode}', String(Math.max(1, episode)));
   }
 
-  return server.urlTemplate
-    .replace('{externalId}', id)
-    .replace('{season}', String(Math.max(1, season)))
-    .replace('{episode}', String(Math.max(1, episode)));
+  // Add timestamp parameter for sync functionality
+  if (timestamp !== undefined && timestamp > 0) {
+    const timestampSeconds = Math.floor(timestamp);
+    const serverName = server.name.toLowerCase();
+    
+    // Different servers use different timestamp parameters
+    if (serverName.includes('111movies')) {
+      url += `?progress=${timestampSeconds}`;
+    } else if (serverName.includes('vidlink') || serverName.includes('vidfast')) {
+      url += `?startAt=${timestampSeconds}`;
+    }
+  }
+
+  return url;
 }

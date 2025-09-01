@@ -95,18 +95,45 @@ export default defineComponent({
 
     const availableServers = computed(() => getServers('movie'));
 
+    // Track sync URL for force sync functionality
+    const syncUrl = ref<string | null>(null);
+    const forceReloadKey = ref(0);
+
     const currentEmbedUrl = computed(() => {
       if (!movieId.value) return '';
-      return buildStreamUrl(
+      
+      // Use sync URL if available, otherwise build normal URL
+      if (syncUrl.value) {
+        return syncUrl.value;
+      }
+      
+      const baseUrl = buildStreamUrl(
         movieId.value,
         'movie',
         currentStreamData.value.currentServer
       );
+      
+      // Add cache busting parameter when force reload is triggered
+      return forceReloadKey.value > 0 ? `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}t=${forceReloadKey.value}` : baseUrl;
     });
 
     // Handle player events (from iframe messages)
     const handlePlayerEvent = () => {
       // Additional handling if needed
+    };
+
+    // Handle force sync events
+    const handleForceSync = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { syncUrl: newSyncUrl, mediaId } = customEvent.detail;
+      
+      // Only apply sync if it's for this movie
+      if (String(mediaId) === String(movieId.value)) {
+        // Dispatch force sync event to VideoPlayer for complete iframe reload
+        window.dispatchEvent(new CustomEvent('watchparty:force-sync', {
+          detail: { syncUrl: newSyncUrl }
+        }));
+      }
     };
 
     const loadMovieDetails = async () => {
@@ -199,12 +226,14 @@ export default defineComponent({
       // Listen for watch party events
       window.addEventListener('watchparty:server-change', handleWatchPartyServerChange);
       window.addEventListener('watchparty:joined', handleWatchPartyJoined);
+      window.addEventListener('watchparty:force-sync', handleForceSync);
     });
 
     onUnmounted(() => {
       // Clean up event listeners
       window.removeEventListener('watchparty:server-change', handleWatchPartyServerChange);
       window.removeEventListener('watchparty:joined', handleWatchPartyJoined);
+      window.removeEventListener('watchparty:force-sync', handleForceSync);
     });
 
     return {

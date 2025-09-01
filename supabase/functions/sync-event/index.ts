@@ -28,7 +28,7 @@ serve(async (req) => {
       )
     }
 
-    const validEventTypes = ['play', 'pause', 'seek', 'server_change', 'episode_change'];
+    const validEventTypes = ['play', 'pause', 'seek', 'server_change', 'episode_change', 'force_sync'];
     if (!validEventTypes.includes(eventType)) {
       return new Response(
         JSON.stringify({ 
@@ -153,6 +153,21 @@ serve(async (req) => {
       case 'seek':
         if (typeof eventData.currentTime === 'number') {
           updateData.current_time = eventData.currentTime;
+        }
+        break;
+      
+      case 'force_sync':
+        if (typeof eventData.currentTime === 'number') {
+          updateData.current_time = eventData.currentTime;
+        }
+        if (typeof eventData.serverIndex === 'number') {
+          updateData.current_server_index = eventData.serverIndex;
+        }
+        if (typeof eventData.season === 'number') {
+          updateData.current_season = eventData.season;
+        }
+        if (typeof eventData.episode === 'number') {
+          updateData.current_episode = eventData.episode;
         }
         break;
     }

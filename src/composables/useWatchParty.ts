@@ -2,7 +2,7 @@ import { computed, ref } from 'vue';
 import { useStorage } from '@vueuse/core';
 import { supabase } from '../utils/supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import { currentStreamData, savePreferredServer, saveLastWatchedMetaData } from './useStream';
+import { currentStreamData, savePreferredServer, saveLastWatchedMetaData, buildStreamUrl } from './useStream';
 import { useToast } from './useToast';
 import { debounce } from 'lodash';
 
@@ -38,7 +38,7 @@ export interface WatchPartyEvent {
   id: string;
   room_id: string;
   member_id: string;
-  event_type: 'play' | 'pause' | 'seek' | 'server_change' | 'episode_change';
+  event_type: 'play' | 'pause' | 'seek' | 'server_change' | 'episode_change' | 'force_sync';
   event_data: {
     currentTime?: number;
     serverIndex?: number;
@@ -181,6 +181,68 @@ const debouncedTimestampBroadcast = debounce((memberId: string, currentTime: num
     }
   }));
 }, 1000); // Update timestamps every 1 second max
+
+// Force sync function - reloads player with current room timestamp
+export async function forceSync(): Promise<boolean> {
+  if (!currentRoom.value || !currentMember.value) {
+    addToast('Not connected to a watch party', 'error', 5000);
+    return false;
+  }
+
+  const currentTime = currentRoom.value.current_time;
+  const mediaId = currentRoom.value.media_id;
+  const mediaType = currentRoom.value.media_type;
+  const serverIndex = currentRoom.value.current_server_index;
+  const season = currentRoom.value.current_season;
+  const episode = currentRoom.value.current_episode;
+
+  // Build new URL with timestamp for local use
+  const syncUrl = buildStreamUrl(
+    mediaId,
+    mediaType,
+    serverIndex,
+    season,
+    episode,
+    currentTime
+  );
+
+  // Emit local event to reload our own player
+  window.dispatchEvent(new CustomEvent('watchparty:force-sync', {
+    detail: { 
+      syncUrl,
+      currentTime,
+      mediaId,
+      mediaType,
+      serverIndex,
+      season,
+      episode
+    }
+  }));
+
+  // Send force_sync event to other members via websocket
+  const syncSuccess = await sendSyncEvent('force_sync', {
+    currentTime,
+    serverIndex,
+    season,
+    episode
+  });
+
+  if (syncSuccess) {
+    addToast(
+      `Force synced all members to ${formatTimestamp(currentTime)}`,
+      'success',
+      5000
+    );
+  } else {
+    addToast(
+      `Local sync to ${formatTimestamp(currentTime)} - websocket sync failed`,
+      'warning',
+      5000
+    );
+  }
+
+  return syncSuccess;
+}
 
 // Sync watch party room state with existing stream data system
 function syncWithStreamData(roomData: WatchPartyRoom) {
@@ -641,11 +703,12 @@ function handleSyncEvent(event: WatchPartyEvent) {
         currentRoom.value.current_time = event.event_data.currentTime;
         currentRoom.value.is_playing = true;
         
-        // Show toast notification for play event
+        // Show toast notification for play event (with unique key to prevent duplicates)
+        const playToastMessage = `${memberName} resumed playback at ${formatTimestamp(event.event_data.currentTime)}`;
         addToast(
-          `${memberName} resumed playback at ${formatTimestamp(event.event_data.currentTime)}`,
+          playToastMessage,
           'info',
-          10000
+          8000
         );
         
         // Emit event for video player to handle
@@ -664,11 +727,12 @@ function handleSyncEvent(event: WatchPartyEvent) {
         currentRoom.value.current_time = event.event_data.currentTime;
         currentRoom.value.is_playing = false;
         
-        // Show toast notification for pause event
+        // Show toast notification for pause event (with unique key to prevent duplicates)
+        const pauseToastMessage = `${memberName} paused playback at ${formatTimestamp(event.event_data.currentTime)}`;
         addToast(
-          `${memberName} paused playback at ${formatTimestamp(event.event_data.currentTime)}`,
+          pauseToastMessage,
           'warning',
-          10000
+          8000
         );
         
         // Emit event for video player to handle
@@ -686,11 +750,12 @@ function handleSyncEvent(event: WatchPartyEvent) {
       if (event.event_data.currentTime !== undefined) {
         currentRoom.value.current_time = event.event_data.currentTime;
         
-        // Show toast notification for seek event
+        // Show toast notification for seek event (with unique key to prevent duplicates)
+        const seekToastMessage = `${memberName} jumped to ${formatTimestamp(event.event_data.currentTime)}`;
         addToast(
-          `${memberName} jumped to ${formatTimestamp(event.event_data.currentTime)}`,
+          seekToastMessage,
           'info',
-          10000
+          8000
         );
         
         // Emit event for video player to handle
@@ -699,6 +764,42 @@ function handleSyncEvent(event: WatchPartyEvent) {
             currentTime: event.event_data.currentTime,
             duration: event.event_data.duration,
             memberName
+          }
+        }));
+      }
+      break;
+
+    case 'force_sync':
+      if (event.event_data.currentTime !== undefined) {
+        currentRoom.value.current_time = event.event_data.currentTime;
+        
+        // Show toast notification for force sync
+        addToast(
+          `${memberName} force synced to ${formatTimestamp(event.event_data.currentTime)}`,
+          'success',
+          10000
+        );
+        
+        // Build sync URL for this member
+        const syncUrl = buildStreamUrl(
+          currentRoom.value.media_id,
+          currentRoom.value.media_type,
+          event.event_data.serverIndex || currentRoom.value.current_server_index,
+          event.event_data.season || currentRoom.value.current_season,
+          event.event_data.episode || currentRoom.value.current_episode,
+          event.event_data.currentTime
+        );
+        
+        // Emit event to reload player with sync URL
+        window.dispatchEvent(new CustomEvent('watchparty:force-sync', {
+          detail: { 
+            syncUrl,
+            currentTime: event.event_data.currentTime,
+            mediaId: currentRoom.value.media_id,
+            mediaType: currentRoom.value.media_type,
+            serverIndex: event.event_data.serverIndex || currentRoom.value.current_server_index,
+            season: event.event_data.season || currentRoom.value.current_season,
+            episode: event.event_data.episode || currentRoom.value.current_episode
           }
         }));
       }
@@ -720,12 +821,12 @@ function handlePlayerEvent(event: Event) {
   const customEvent = event as CustomEvent;
   const { event: eventType, currentTime, duration } = customEvent.detail;
   
-  // Debounce rapid events (prevent duplicate events within 500ms at same time)
+  // Debounce rapid events (prevent duplicate events within 1000ms at same time)
   const now = Date.now();
   if (lastPlayerEvent && 
       lastPlayerEvent.type === eventType && 
-      Math.abs(lastPlayerEvent.time - currentTime) < 0.5 && // Less than 0.5 second difference
-      (now - lastPlayerEvent.timestamp) < 500) { // Less than 500ms ago
+      Math.abs(lastPlayerEvent.time - currentTime) < 1.0 && // Less than 1 second difference
+      (now - lastPlayerEvent.timestamp) < 1000) { // Less than 1000ms ago
     return; // Skip this duplicate event
   }
 
@@ -747,12 +848,13 @@ function handlePlayerEvent(event: Event) {
       duration 
     });
     
-    // Show toast for our own action
+    // Show toast for our own action (reduced frequency)
     const action = eventType === 'play' ? 'resumed' : 'paused';
+    const toastMessage = `You ${action} playback at ${formatTimestamp(currentTime)}`;
     addToast(
-      `You ${action} playback at ${formatTimestamp(currentTime)}`,
+      toastMessage,
       eventType === 'play' ? 'success' : 'warning',
-      10000
+      8000
     );
     
     // Update local room state
@@ -929,7 +1031,7 @@ export async function initializeWatchParty(): Promise<void> {
 
 // Send sync event to other room members
 export async function sendSyncEvent(
-  eventType: 'server_change' | 'episode_change' | 'play' | 'pause' | 'seek',
+  eventType: 'server_change' | 'episode_change' | 'play' | 'pause' | 'seek' | 'force_sync',
   eventData: {
     serverIndex?: number;
     season?: number;
@@ -1155,6 +1257,7 @@ export function useWatchParty() {
     sendSyncEvent,
     getMemberTimestamp,
     formatTimestamp,
-    memberTimestamps: computed(() => memberTimestamps.value)
+    memberTimestamps: computed(() => memberTimestamps.value),
+    forceSync
   };
 }

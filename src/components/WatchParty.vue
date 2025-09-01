@@ -109,6 +109,15 @@
             </div>
 
             <div class="connected-actions">
+              <button class="sync-btn" @click="handleForceSync" :disabled="!isCurrentServerSupported">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 4v6h-6"/>
+                  <path d="M1 20v-6h6"/>
+                  <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10"/>
+                  <path d="M3.51 15A9 9 0 0 0 18.36 18.36L23 14"/>
+                </svg>
+                Force Sync
+              </button>
               <button class="leave-room-btn" @click="handleLeaveRoom">
                 Leave Room
               </button>
@@ -271,7 +280,8 @@ export default defineComponent({
       joinRoom,
       leaveRoom,
       getMemberTimestamp,
-      formatTimestamp
+      formatTimestamp,
+      forceSync
     } = useWatchParty();
 
     // Local state
@@ -408,6 +418,10 @@ export default defineComponent({
       }
     }
 
+    async function handleForceSync() {
+      await forceSync();
+    }
+
     async function copyRoomLink() {
       try {
         await navigator.clipboard.writeText(shareableLink.value);
@@ -433,6 +447,12 @@ export default defineComponent({
       }
     }
 
+    // Handle timestamp updates for live display
+    function handleTimestampUpdate() {
+      // Force reactivity update by triggering a re-render
+      // The timestamps are already stored in the composable, just need to trigger updates
+    }
+
     // Initialize URL params check and restore connection
     onMounted(async () => {
       await initializeWatchParty();
@@ -442,6 +462,7 @@ export default defineComponent({
       window.addEventListener('watchparty:member-joined', handleMemberJoined);
       window.addEventListener('watchparty:member-left', handleMemberLeft);
       window.addEventListener('watchparty:member-updated', handleMemberUpdated);
+      window.addEventListener('watchparty:timestamp-update', handleTimestampUpdate);
     });
 
     // Add onUnmounted to clean up event listeners
@@ -449,6 +470,7 @@ export default defineComponent({
       window.removeEventListener('watchparty:member-joined', handleMemberJoined);
       window.removeEventListener('watchparty:member-left', handleMemberLeft);
       window.removeEventListener('watchparty:member-updated', handleMemberUpdated);
+      window.removeEventListener('watchparty:timestamp-update', handleTimestampUpdate);
     });
 
     // Handle member join events
@@ -514,6 +536,7 @@ export default defineComponent({
       createWatchParty,
       joinWatchParty,
       handleLeaveRoom,
+      handleForceSync,
       copyRoomLink
     };
   }
@@ -1327,6 +1350,39 @@ export default defineComponent({
   .connected-actions {
     display: flex;
     gap: 0.75rem;
+
+    .sync-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.875rem 1.5rem;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 8px;
+      color: #3b82f6;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.875rem;
+      transition: all 0.3s;
+
+      &:hover:not(:disabled) {
+        background: rgba(59, 130, 246, 0.25);
+        border-color: rgba(59, 130, 246, 0.5);
+        transform: translateY(-1px);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+    }
 
     .leave-room-btn {
       flex: 1;
