@@ -498,7 +498,7 @@ async function setupRealtimeSubscriptions(roomId: string) {
         table: 'watch_party_rooms',
         filter: `id=eq.${roomId}`
       },
-      (payload) => {
+      (payload: any) => {
         if (payload.new && currentRoom.value) {
           // Update room state
           const updatedRoom = { ...currentRoom.value, ...payload.new };
@@ -509,7 +509,7 @@ async function setupRealtimeSubscriptions(roomId: string) {
         }
       }
     )
-    .subscribe((status, err) => {
+    .subscribe((status: any, err: any) => {
       realtimeStatus.value.roomChannel = status;
       if (err) {
         console.error('Room channel subscription error:', err);
@@ -529,7 +529,7 @@ async function setupRealtimeSubscriptions(roomId: string) {
         table: 'watch_party_members',
         filter: `room_id=eq.${roomId}`
       },
-      async (payload) => {
+      async (payload: any) => {
         // Verify the event is for our room
         const eventRoomId = (payload.new as any)?.room_id || (payload.old as any)?.room_id;
         if (eventRoomId !== roomId) {
@@ -570,7 +570,7 @@ async function setupRealtimeSubscriptions(roomId: string) {
         }
       }
     )
-    .subscribe((status, err) => {
+    .subscribe((status: any, err: any) => {
       realtimeStatus.value.memberChannel = status;
       if (err) {
         console.error('❌ Member channel subscription error:', err);
@@ -588,11 +588,11 @@ async function setupRealtimeSubscriptions(roomId: string) {
         table: 'watch_party_events',
         filter: `room_id=eq.${roomId}`
       },
-      (payload) => {
+      (payload: any) => {
         handleSyncEvent(payload.new as WatchPartyEvent);
       }
     )
-    .subscribe((status, err) => {
+    .subscribe((status: any, err: any) => {
       realtimeStatus.value.eventChannel = status;
       if (err) {
         console.error('❌ Event channel subscription error:', err);
