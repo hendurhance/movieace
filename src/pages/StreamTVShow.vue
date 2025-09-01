@@ -119,8 +119,17 @@ export default defineComponent({
 
     const availableServers = computed(() => getServers('tv'));
 
+    // Track sync URL for force sync functionality
+    const syncUrl = ref<string | null>(null);
+
     const currentEmbedUrl = computed(() => {
       if (!externalId.value) return '';
+      
+      // Use sync URL if available, otherwise build normal URL
+      if (syncUrl.value) {
+        return syncUrl.value;
+      }
+      
       return buildStreamUrl(
         externalId.value,
         'tv',
@@ -135,9 +144,22 @@ export default defineComponent({
     });
 
     // Handle player events (from iframe messages)
-    const handlePlayerEvent = (event: any) => {
-      console.log('StreamTVShow received player event:', event);
+    const handlePlayerEvent = () => {
       // Additional handling if needed
+    };
+
+    // Handle force sync events
+    const handleForceSync = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { syncUrl: newSyncUrl, mediaId, mediaType } = customEvent.detail;
+      
+      // Only apply sync if it's for this TV show
+      if (mediaType === 'tv' && String(mediaId) === String(externalId.value)) {
+        // Dispatch force sync event to VideoPlayer for complete iframe reload
+        window.dispatchEvent(new CustomEvent('watchparty:force-sync', {
+          detail: { syncUrl: newSyncUrl }
+        }));
+      }
     };
 
     const loadShowDetails = async () => {
@@ -378,6 +400,7 @@ export default defineComponent({
       window.addEventListener('watchparty:server-change', handleWatchPartyServerChange);
       window.addEventListener('watchparty:episode-change', handleWatchPartyEpisodeChange);
       window.addEventListener('watchparty:joined', handleWatchPartyJoined);
+      window.addEventListener('watchparty:force-sync', handleForceSync);
     });
 
     onUnmounted(() => {
@@ -385,6 +408,7 @@ export default defineComponent({
       window.removeEventListener('watchparty:server-change', handleWatchPartyServerChange);
       window.removeEventListener('watchparty:episode-change', handleWatchPartyEpisodeChange);
       window.removeEventListener('watchparty:joined', handleWatchPartyJoined);
+      window.removeEventListener('watchparty:force-sync', handleForceSync);
     });
 
     return {
