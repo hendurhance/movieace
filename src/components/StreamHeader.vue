@@ -91,6 +91,7 @@ export default defineComponent({
     max-width: 1400px;
     margin: 0 auto;
     min-height: 70px;
+    gap: 1rem;
 
     .back-button {
       display: flex;
@@ -105,12 +106,36 @@ export default defineComponent({
       font-size: 0.95rem;
       font-weight: 500;
       white-space: nowrap;
+      flex-shrink: 0;
+      padding: 0.75rem 1.25rem;
+      color: #e1e1e1;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-size: 0.95rem;
+      font-weight: 500;
+      white-space: nowrap;
 
       &:hover {
         background: rgba(255, 82, 82, 0.1);
         border-color: rgba(255, 82, 82, 0.3);
         color: #ff5252;
         transform: translateX(-2px);
+      }
+
+      // Better touch feedback on mobile
+      &:active {
+        transform: translateX(-1px) scale(0.98);
+        background: rgba(255, 82, 82, 0.15);
+      }
+
+      // Remove hover effects on touch devices
+      @media (hover: none) and (pointer: coarse) {
+        &:hover {
+          transform: none;
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(255, 255, 255, 0.1);
+          color: #e1e1e1;
+        }
       }
 
       svg {
@@ -134,7 +159,8 @@ export default defineComponent({
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: 0 2rem;
+      margin: 0 1rem;
+      min-width: 0; // Allow flex item to shrink below its content size
 
       .stream-title {
         margin: 0;
@@ -148,7 +174,7 @@ export default defineComponent({
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        max-width: 600px;
+        max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -186,7 +212,58 @@ export default defineComponent({
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
+      flex-shrink: 0;
+
+      // Ensure action buttons are properly sized
+      :deep(.watch-party-button),
+      :deep(.share-screen-button),
+      :deep(button) {
+        white-space: nowrap;
+        min-height: 44px; // Better touch targets on mobile
+        position: relative;
+        
+        // Add focus styles for keyboard navigation
+        &:focus-visible {
+          outline: 2px solid #ff5252;
+          outline-offset: 2px;
+          border-radius: 8px;
+        }
+      }
+
+      // Add tooltips for icon-only buttons on mobile
+      :deep(.watch-party-button),
+      :deep(.share-screen-button) {
+        &::after {
+          content: attr(title);
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(0, 0, 0, 0.9);
+          color: white;
+          padding: 0.25rem 0.5rem;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          white-space: nowrap;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.2s;
+          z-index: 1000;
+          
+          @media (max-width: 768px) {
+            display: none; // Hide tooltips on mobile to avoid conflicts
+          }
+        }
+
+        &:hover::after {
+          opacity: 1;
+          
+          @media (hover: none) and (pointer: coarse) {
+            opacity: 0;
+          }
+        }
+      }
     }
   }
 
@@ -217,12 +294,14 @@ export default defineComponent({
 @media (max-width: 768px) {
   .stream-header {
     .header-content {
-      padding: 1rem;
-      gap: 0.5rem;
+      padding: 0.875rem 1rem;
+      gap: 0.75rem;
+      min-height: 64px;
 
       .back-button {
-        padding: 0.625rem 1rem;
+        padding: 0.625rem 0.875rem;
         font-size: 0.875rem;
+        border-radius: 10px;
 
         .back-text {
           display: none;
@@ -230,29 +309,212 @@ export default defineComponent({
 
         svg {
           margin-right: 0;
-          width: 18px;
-          height: 18px;
+          width: 20px;
+          height: 20px;
         }
       }
-
-      .title-section {
-        margin: 0 1rem;
-      }
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .stream-header {
-    .header-content {
-      padding: 0.875rem;
 
       .title-section {
         margin: 0 0.5rem;
 
         .stream-title {
-          font-size: 1.25rem;
-          max-width: 200px;
+          font-size: 1.375rem;
+        }
+
+        .title-loading .loading-shimmer {
+          width: 180px;
+          height: 26px;
+        }
+      }
+
+      .header-actions {
+        gap: 0.5rem;
+
+        // Make action buttons more compact on mobile
+        :deep(.watch-party-button),
+        :deep(.share-screen-button) {
+          padding: 0.625rem 0.875rem !important;
+          font-size: 0.875rem !important;
+          border-radius: 10px !important;
+          
+          span {
+            display: none !important; // Hide text, show only icons
+          }
+          
+          svg {
+            margin-right: 0 !important;
+            width: 20px !important;
+            height: 20px !important;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .stream-header {
+    .header-content {
+      padding: 0.875rem 1rem;
+      gap: 0.75rem;
+      min-height: 60px;
+
+      .title-section {
+        margin: 0 0.5rem;
+
+        .stream-title {
+          font-size: 1.125rem;
+          // Ensure better truncation on small screens
+          max-width: 100%;
+        }
+
+        .title-loading .loading-shimmer {
+          width: 100px;
+          height: 22px;
+        }
+      }
+
+      .header-actions {
+        gap: 0.375rem;
+
+        :deep(.watch-party-button),
+        :deep(.share-screen-button) {
+          padding: 0.5rem !important;
+          min-width: 44px !important;
+          
+          svg {
+            width: 18px !important;
+            height: 18px !important;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Very small screens - keep inline layout with truncation
+@media (max-width: 480px) {
+  .stream-header {
+    .header-content {
+      padding: 0.75rem;
+      gap: 0.5rem;
+      min-height: 56px;
+      // Keep flex layout, don't wrap
+
+      .back-button {
+        flex: 0 0 auto;
+        padding: 0.5rem;
+        min-width: 40px;
+        justify-content: center;
+
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+      }
+
+      .title-section {
+        flex: 1;
+        margin: 0;
+        min-width: 0; // Allow shrinking
+        justify-content: center;
+
+        .stream-title {
+          font-size: 1rem;
+          text-align: center;
+          max-width: 100%;
+          // Ensure ellipsis works
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .title-loading .loading-shimmer {
+          width: 80px;
+          height: 20px;
+        }
+      }
+
+      .header-actions {
+        flex: 0 0 auto;
+        gap: 0.25rem;
+
+        :deep(.watch-party-button),
+        :deep(.share-screen-button) {
+          padding: 0.5rem !important;
+          min-width: 40px !important;
+          
+          svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Landscape orientation on mobile
+@media (max-width: 896px) and (orientation: landscape) {
+  .stream-header {
+    .header-content {
+      min-height: 56px;
+      padding: 0.625rem 1rem;
+
+      .title-section .stream-title {
+        font-size: 1.125rem;
+      }
+
+      .back-button,
+      .header-actions :deep(button) {
+        padding: 0.5rem 0.75rem;
+      }
+    }
+  }
+}
+
+// Extra small screens (very narrow phones)
+@media (max-width: 360px) {
+  .stream-header {
+    .header-content {
+      padding: 0.625rem 0.5rem;
+      gap: 0.375rem;
+
+      .back-button {
+        min-width: 36px;
+        padding: 0.4rem;
+
+        svg {
+          width: 14px;
+          height: 14px;
+        }
+      }
+
+      .title-section {
+        .stream-title {
+          font-size: 0.875rem;
+          // Very aggressive truncation for tiny screens
+          max-width: 120px;
+        }
+
+        .title-loading .loading-shimmer {
+          width: 60px;
+          height: 18px;
+        }
+      }
+
+      .header-actions {
+        gap: 0.25rem;
+
+        :deep(.watch-party-button),
+        :deep(.share-screen-button) {
+          padding: 0.4rem !important;
+          min-width: 36px !important;
+          
+          svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
         }
       }
     }

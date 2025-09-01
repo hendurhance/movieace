@@ -1,17 +1,20 @@
 <template>
   <div>
     <!-- Watch Party Button -->
-    <div 
+    <button 
       class="watch-party-button" 
       :class="{ connected: isConnected }"
       @click="openModal"
+      type="button"
+      :title="isConnected ? `Connected to watch party (${roomMembers.length} members)` : 'Start or join a watch party'"
+      :aria-label="isConnected ? `Connected to watch party with ${roomMembers.length} members. Click to manage.` : 'Start or join a watch party'"
     >
       <UsersIcon />
-      <span :class="{ 'count-updated': memberCountUpdated }">
+      <span class="button-text" :class="{ 'count-updated': memberCountUpdated }">
         {{ isConnected ? `Connected (${roomMembers.length})` : 'Watch Party' }}
       </span>
-      <div v-if="isConnected" class="connection-indicator"></div>
-    </div>
+      <div v-if="isConnected" class="connection-indicator" aria-hidden="true"></div>
+    </button>
 
     <!-- Watch Party Modal -->
     <Teleport to="body">
@@ -87,6 +90,9 @@
                     <div class="member-badges">
                       <span v-if="member.id === currentMember?.id" class="you-badge">You</span>
                       <span v-if="member.is_host" class="host-badge">Host</span>
+                      <span v-if="getMemberTimestamp(member.id) !== null" class="timestamp-badge">
+                        {{ formatTimestamp(getMemberTimestamp(member.id)!) }}
+                      </span>
                       <div 
                         class="online-indicator"
                         :class="{ online: member.is_online }"
@@ -276,10 +282,32 @@ export default defineComponent({
     const copySuccess = ref(false);
     const memberCountUpdated = ref(false); // For visual feedback when count changes
 
+    // Timestamp tracking for members
+    const memberTimestamps = ref<Map<string, { time: number; timestamp: Date }>>(new Map());
+
     // Form data
     const hostName = ref('');
     const memberName = ref('');
     const joinCode = ref('');
+
+    // Member timestamp functions
+    const getMemberTimestamp = (memberId: string): number | null => {
+      const data = memberTimestamps.value.get(memberId);
+      return data ? data.time : null;
+    };
+
+    const formatTimestamp = (seconds: number): string => {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.floor(seconds % 60);
+      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    };
+
+    const updateMemberTimestamp = (memberId: string, currentTime: number) => {
+      memberTimestamps.value.set(memberId, {
+        time: currentTime,
+        timestamp: new Date()
+      });
+    };
 
     // Check if current server supports watch party
     const isCurrentServerSupported = computed(() => {
@@ -523,6 +551,32 @@ export default defineComponent({
       }, 1000); // Remove the class after 1 second
     }
 
+    // Set up event listeners for sync events to track timestamps
+    onMounted(() => {
+      const handleSyncEvent = (event: Event) => {
+        const customEvent = event as CustomEvent;
+        const { memberId, currentTime, eventType } = customEvent.detail;
+        
+        if (memberId && typeof currentTime === 'number') {
+          updateMemberTimestamp(memberId, currentTime);
+          console.log(`📊 Updated timestamp for member ${memberId}: ${formatTimestamp(currentTime)} (${eventType})`);
+        }
+      };
+
+      // Listen for sync events from the watch party system
+      window.addEventListener('watchparty:sync', handleSyncEvent);
+      window.addEventListener('watchparty:play', handleSyncEvent);
+      window.addEventListener('watchparty:pause', handleSyncEvent);
+      window.addEventListener('watchparty:seek', handleSyncEvent);
+
+      onUnmounted(() => {
+        window.removeEventListener('watchparty:sync', handleSyncEvent);
+        window.removeEventListener('watchparty:play', handleSyncEvent);
+        window.removeEventListener('watchparty:pause', handleSyncEvent);
+        window.removeEventListener('watchparty:seek', handleSyncEvent);
+      });
+    });
+
     return {
       // State
       showModal,
@@ -549,6 +603,10 @@ export default defineComponent({
       isConnected,
       isHost,
       
+      // Timestamp functions
+      getMemberTimestamp,
+      formatTimestamp,
+      
       // Methods
       openModal,
       closeModal,
@@ -574,13 +632,37 @@ export default defineComponent({
   color: #ff5252;
   cursor: pointer;
   font-weight: 500;
+  font-size: 0.875rem;
   transition: all 0.3s ease;
   position: relative;
+  white-space: nowrap;
+  min-height: 44px; // Better touch targets
 
   &:hover {
     background: rgba(255, 82, 82, 0.2);
     border-color: rgba(255, 82, 82, 0.5);
-    transform: translateY(-2px);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 82, 82, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.98);
+    background: rgba(255, 82, 82, 0.25);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #ff5252;
+    outline-offset: 2px;
+  }
+
+  // Remove hover effects on touch devices
+  @media (hover: none) and (pointer: coarse) {
+    &:hover {
+      transform: none;
+      background: rgba(255, 82, 82, 0.1);
+      border-color: rgba(255, 82, 82, 0.3);
+      box-shadow: none;
+    }
   }
 
   &.connected {
@@ -592,6 +674,20 @@ export default defineComponent({
     &:hover {
       background: rgba(76, 175, 80, 0.25);
       border-color: rgba(76, 175, 80, 0.6);
+      box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+    }
+
+    &:active {
+      background: rgba(76, 175, 80, 0.3);
+    }
+
+    // Remove connected hover effects on touch devices
+    @media (hover: none) and (pointer: coarse) {
+      &:hover {
+        background: rgba(76, 175, 80, 0.15);
+        border-color: rgba(76, 175, 80, 0.4);
+        box-shadow: none;
+      }
     }
   }
 
@@ -601,19 +697,65 @@ export default defineComponent({
     background: #4caf50;
     border-radius: 50%;
     animation: pulse 2s infinite;
+    flex-shrink: 0;
   }
 
   svg {
     width: 18px;
     height: 18px;
+    flex-shrink: 0;
   }
 
-  span {
+  .button-text {
     transition: all 0.3s ease;
+    font-weight: 500;
     
     &.count-updated {
       color: #4caf50;
       animation: buttonCountPulse 1s ease;
+    }
+  }
+
+  // Mobile responsive adjustments
+  @media (max-width: 768px) {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    border-radius: 10px;
+    gap: 0.375rem;
+
+    .button-text {
+      display: none; // Hide text on mobile, controlled by parent
+    }
+    
+    svg {
+      margin-right: 0;
+      width: 20px;
+      height: 20px;
+    }
+
+    .connection-indicator {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(15, 16, 22, 0.8);
+    }
+  }
+
+  @media (max-width: 640px) {
+    padding: 0.5rem;
+    min-width: 44px;
+    justify-content: center;
+    
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .connection-indicator {
+      width: 10px;
+      height: 10px;
     }
   }
 }
@@ -1249,6 +1391,19 @@ export default defineComponent({
             text-transform: uppercase;
             letter-spacing: 0.05em;
             border: 1px solid rgba(76, 175, 80, 0.3);
+          }
+
+          .timestamp-badge {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            font-family: monospace;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            min-width: 38px;
+            text-align: center;
           }
 
           .online-indicator {

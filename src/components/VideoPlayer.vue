@@ -74,7 +74,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, watch } from 'vue';
+import { defineComponent, ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import AlertTriangleIcon from './svg/outline/alert-triangle.vue';
 import PlayIcon from './svg/outline/play.vue';
 import ZoomInIcon from './svg/outline/zoom-in.vue';
@@ -124,7 +124,7 @@ export default defineComponent({
 
     const statusText = computed(() => {
       if (hasError.value) return 'Error';
-      if (isLoading.value) return 'Loading';
+      if (isLoading.value) return 'Loading...';
       return 'Ready';
     });
 
@@ -133,6 +133,13 @@ export default defineComponent({
       if (isLoading.value) return 'loading';
       return 'ready';
     });
+
+    // Format time for display
+    const formatTime = (seconds: number): string => {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.floor(seconds % 60);
+      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    };
 
     // Cycle through loading messages
     const startLoadingAnimation = () => {
@@ -216,6 +223,48 @@ export default defineComponent({
       }
     });
 
+    // Normalize player events from different servers
+    const normalizePlayerEvent = (rawEvent: any) => {
+      let eventType: string | null = null;
+      let currentTime: number | null = null;
+      let duration: number | null = null;
+
+      // 111Movies format: { event: "play/pause/timeupdate", data: { currentTime, duration } }
+      if (rawEvent.event && rawEvent.data) {
+        eventType = rawEvent.event;
+        currentTime = rawEvent.data.currentTime;
+        duration = rawEvent.data.duration;
+      }
+      // VidLink/VidFast format: { type: "PLAYER_EVENT", data: { event, currentTime, duration, ... } }
+      else if (rawEvent.type === "PLAYER_EVENT" && rawEvent.data) {
+        eventType = rawEvent.data.event;
+        currentTime = rawEvent.data.currentTime;
+        duration = rawEvent.data.duration;
+      }
+
+      // Handle play, pause, and seek-like events (be more flexible with event names)
+      if (eventType && typeof currentTime === 'number') {
+        // Normalize event names
+        const normalizedEventType = eventType.toLowerCase();
+        if (normalizedEventType.includes('play') || 
+            normalizedEventType.includes('pause') || 
+            normalizedEventType === 'seeking' ||
+            normalizedEventType === 'seeked' ||
+            normalizedEventType === 'seek') {
+          
+          const result = {
+            event: normalizedEventType.includes('play') ? 'play' : 
+                   normalizedEventType.includes('pause') ? 'pause' : 'seek',
+            currentTime,
+            duration: duration || 0
+          };
+          return result;
+        }
+      }
+
+      return null;
+    };
+
     // Initialize loading animation when component mounts
     onMounted(() => {
       if (props.embedUrl) {
@@ -231,6 +280,109 @@ export default defineComponent({
       }
     });
 
+    // Setup iframe communication on mount
+    onMounted(() => {
+      startLoadingAnimation();
+
+      // Send commands to the player iframe for watch party synchronization
+      const sendCommandToPlayer = (command: string, currentTime?: number) => {
+        if (!playerIframe.value?.contentWindow) {
+          return;
+        }
+        
+        // Send basic postMessage commands
+        const commands = [
+          { action: command, time: currentTime },
+          { type: 'PLAYER_COMMAND', command, currentTime },
+          { event: command, currentTime },
+          command === 'play' ? 'play' : command === 'pause' ? 'pause' : `seek:${currentTime}`,
+        ];
+
+        commands.forEach((cmd) => {
+          try {
+            playerIframe.value?.contentWindow?.postMessage(cmd, '*');
+            if (typeof cmd === 'object') {
+              playerIframe.value?.contentWindow?.postMessage(JSON.stringify(cmd), '*');
+            }
+          } catch (error) {
+            // Ignore postMessage errors
+          }
+        });
+      };
+
+      const handlePlayerMessage = (event: MessageEvent) => {
+        // Skip processing during loading to reduce noise
+        if (isLoading.value) return;
+
+        // Only accept messages from iframe origin
+        if (playerIframe.value && event.source !== playerIframe.value.contentWindow) {
+          return;
+        }
+
+        try {
+          let parsed = event.data;
+
+          // Handle string messages (try to parse as JSON)
+          if (typeof event.data === "string") {
+            try {
+              parsed = JSON.parse(event.data);
+            } catch (err) {
+              return;
+            }
+          }
+
+          // Only process relevant player events
+          if (!parsed || typeof parsed !== 'object') {
+            return;
+          }
+
+          // Normalize different server event formats
+          const normalizedEvent = normalizePlayerEvent(parsed);
+          if (normalizedEvent) {
+            // Emit custom event for watch party system
+            window.dispatchEvent(new CustomEvent('player:event', {
+              detail: normalizedEvent
+            }));
+          }
+        } catch (error) {
+          // Silently ignore parsing errors
+        }
+      };
+
+      // Set up watchparty event listeners for receiving sync commands
+      const handleWatchPartyPlay = (event: Event) => {
+        const customEvent = event as CustomEvent;
+        const { currentTime } = customEvent.detail;
+        sendCommandToPlayer('play', currentTime);
+      };
+
+      const handleWatchPartyPause = (event: Event) => {
+        const customEvent = event as CustomEvent;
+        const { currentTime } = customEvent.detail;
+        sendCommandToPlayer('pause', currentTime);
+      };
+
+      const handleWatchPartySeek = (event: Event) => {
+        const customEvent = event as CustomEvent;
+        const { currentTime } = customEvent.detail;
+        sendCommandToPlayer('seek', currentTime);
+      };
+
+      // Add message and watchparty event listeners
+      window.addEventListener("message", handlePlayerMessage);
+      window.addEventListener("watchparty:play", handleWatchPartyPlay);
+      window.addEventListener("watchparty:pause", handleWatchPartyPause);
+      window.addEventListener("watchparty:seek", handleWatchPartySeek);
+
+      // Cleanup on unmount
+      onUnmounted(() => {
+        window.removeEventListener("message", handlePlayerMessage);
+        window.removeEventListener("watchparty:play", handleWatchPartyPlay);
+        window.removeEventListener("watchparty:pause", handleWatchPartyPause);
+        window.removeEventListener("watchparty:seek", handleWatchPartySeek);
+      });
+    });
+
     return {
       playerIframe,
       isLoading,
@@ -239,10 +391,12 @@ export default defineComponent({
       loadingText,
       statusText,
       statusClass,
+      formatTime,
       onPlayerLoad,
       onPlayerError,
       retryLoad,
       toggleFullscreen,
+      embedUrl: computed(() => props.embedUrl),
     };
   },
 });

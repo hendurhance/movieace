@@ -371,6 +371,9 @@ async function cleanupSubscriptions() {
     clearInterval(memberPollingInterval);
     memberPollingInterval = null;
   }
+
+  // Clean up player event listeners
+  cleanupPlayerEventListeners();
 }
 
 // Set up realtime subscriptions for room updates
@@ -493,6 +496,9 @@ async function setupRealtimeSubscriptions(roomId: string) {
   // Wait a moment for subscriptions to be fully established
   await new Promise(resolve => setTimeout(resolve, 500));
 
+  // Set up player event listeners for Phase 2
+  setupPlayerEventListeners();
+
   // Set up fallback polling as backup
   if (memberPollingInterval) {
     clearInterval(memberPollingInterval);
@@ -533,10 +539,26 @@ async function setupRealtimeSubscriptions(roomId: string) {
 
 // Handle incoming sync events
 function handleSyncEvent(event: WatchPartyEvent) {
-  if (!currentRoom.value || !currentMember.value) return;
+  if (!currentRoom.value || !currentMember.value) {
+    return;
+  }
   
   // Don't process our own events
-  if (event.member_id === currentMember.value.id) return;
+  if (event.member_id === currentMember.value.id) {
+    return;
+  }
+
+  // Emit a general sync event for timestamp tracking
+  if (event.event_data.currentTime !== undefined) {
+    window.dispatchEvent(new CustomEvent('watchparty:sync', {
+      detail: { 
+        memberId: event.member_id,
+        currentTime: event.event_data.currentTime,
+        eventType: event.event_type,
+        duration: event.event_data.duration 
+      }
+    }));
+  }
 
   switch (event.event_type) {
     case 'server_change':
@@ -564,13 +586,110 @@ function handleSyncEvent(event: WatchPartyEvent) {
       break;
 
     case 'play':
+      if (event.event_data.currentTime !== undefined) {
+        currentRoom.value.current_time = event.event_data.currentTime;
+        currentRoom.value.is_playing = true;
+        // Emit event for video player to handle
+        window.dispatchEvent(new CustomEvent('watchparty:play', {
+          detail: { 
+            currentTime: event.event_data.currentTime,
+            duration: event.event_data.duration 
+          }
+        }));
+      }
+      break;
+
     case 'pause':
+      if (event.event_data.currentTime !== undefined) {
+        currentRoom.value.current_time = event.event_data.currentTime;
+        currentRoom.value.is_playing = false;
+        // Emit event for video player to handle
+        window.dispatchEvent(new CustomEvent('watchparty:pause', {
+          detail: { 
+            currentTime: event.event_data.currentTime,
+            duration: event.event_data.duration 
+          }
+        }));
+      }
+      break;
+
     case 'seek':
-      // These will be implemented in Phase 2
-      default:
+      if (event.event_data.currentTime !== undefined) {
+        currentRoom.value.current_time = event.event_data.currentTime;
+        // Emit event for video player to handle
+        window.dispatchEvent(new CustomEvent('watchparty:seek', {
+          detail: { 
+            currentTime: event.event_data.currentTime,
+            duration: event.event_data.duration 
+          }
+        }));
+      }
+      break;
+
+    default:
       // Future sync events can be implemented here
       break;
   }
+}
+
+// Handle player events and sync with other members
+function handlePlayerEvent(event: Event) {
+  if (!currentRoom.value || !currentMember.value) {
+    // Not in a room, don't sync
+    return;
+  }
+
+  const customEvent = event as CustomEvent;
+  const { event: eventType, currentTime, duration } = customEvent.detail;
+  
+  // Debounce rapid events (prevent duplicate events within 500ms at same time)
+  const now = Date.now();
+  if (lastPlayerEvent && 
+      lastPlayerEvent.type === eventType && 
+      Math.abs(lastPlayerEvent.time - currentTime) < 0.5 && // Less than 0.5 second difference
+      (now - lastPlayerEvent.timestamp) < 500) { // Less than 500ms ago
+    return; // Skip this duplicate event
+  }
+
+  // Update last event tracking
+  lastPlayerEvent = {
+    type: eventType,
+    time: currentTime,
+    timestamp: now
+  };
+  
+  // Only sync if we're connected to a watch party
+  if (eventType === 'play' || eventType === 'pause') {
+    // Send sync event to other members
+    sendSyncEvent(eventType, { 
+      currentTime, 
+      duration 
+    });
+    
+    // Update local room state
+    currentRoom.value.current_time = currentTime;
+    currentRoom.value.is_playing = eventType === 'play';
+  }
+}
+
+let playerEventListenersSetup = false;
+let lastPlayerEvent: { type: string; time: number; timestamp: number } | null = null;
+
+// Set up player event listeners
+function setupPlayerEventListeners() {
+  if (playerEventListenersSetup) {
+    return;
+  }
+  
+  // Listen for player events from VideoPlayer component
+  window.addEventListener('player:event', handlePlayerEvent);
+  playerEventListenersSetup = true;
+}
+
+// Clean up player event listeners  
+function cleanupPlayerEventListeners() {
+  window.removeEventListener('player:event', handlePlayerEvent);
+  playerEventListenersSetup = false;
 }
 
 // Fetch room members
@@ -700,15 +819,24 @@ export async function initializeWatchParty(): Promise<void> {
 
 // Send sync event to other room members
 export async function sendSyncEvent(
-  eventType: 'server_change' | 'episode_change',
+  eventType: 'server_change' | 'episode_change' | 'play' | 'pause' | 'seek',
   eventData: {
     serverIndex?: number;
     season?: number;
     episode?: number;
+    currentTime?: number;
+    duration?: number;
   }
 ): Promise<boolean> {
-  if (!currentRoom.value || !currentMember.value || !isHost.value) {
-    console.warn('Cannot send sync event: not host or not in room');
+  if (!currentRoom.value || !currentMember.value) {
+    console.warn('Cannot send sync event: not in room');
+    return false;
+  }
+
+  // Only host can trigger server and episode changes
+  const hostOnlyEvents = ['server_change', 'episode_change'];
+  if (hostOnlyEvents.includes(eventType) && !isHost.value) {
+    console.warn('Cannot send sync event: not host');
     return false;
   }
 
@@ -722,7 +850,23 @@ export async function sendSyncEvent(
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase sync event error:', error);
+      throw error;
+    }
+    
+    // Emit event for our own timestamp tracking
+    if (eventData.currentTime !== undefined) {
+      window.dispatchEvent(new CustomEvent('watchparty:sync', {
+        detail: { 
+          memberId: currentMember.value.id,
+          currentTime: eventData.currentTime,
+          eventType,
+          duration: eventData.duration 
+        }
+      }));
+    }
+    
     return data?.success || false;
   } catch (error) {
     console.error('Error sending sync event:', error);
@@ -981,6 +1125,10 @@ if (typeof window !== 'undefined') {
 
 // Export reactive state
 export function useWatchParty() {
+  // Set up player event listeners as soon as composable is used
+  // This ensures player events are captured even if not in a room yet
+  setupPlayerEventListeners();
+  
   return {
     currentRoom: computed(() => currentRoom.value),
     currentMember: computed(() => currentMember.value),
