@@ -4,7 +4,7 @@ import { supabase } from '../utils/supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { currentStreamData, savePreferredServer, saveLastWatchedMetaData, buildStreamUrl } from './useStream';
 import { useToast } from './useToast';
-import { debounce } from 'lodash';
+import debounce from 'lodash.debounce';
 
 export interface WatchPartyRoom {
   id: string;
@@ -1174,8 +1174,8 @@ export async function testSimpleSubscription() {
       // Subscription status updated
     });
   
-  // Store for cleanup
-  if (typeof window !== 'undefined') {
+  // Store for cleanup (development only)
+  if (typeof window !== 'undefined' && import.meta.env.DEV) {
     (window as any).testChannel = testChannel;
   }
   
@@ -1219,16 +1219,16 @@ export async function diagnoseMemberUpdates() {
       // Diagnostic subscription status updated
     });
 
-  // Store for cleanup
-  if (typeof window !== 'undefined') {
+  // Store for cleanup (development only)
+  if (typeof window !== 'undefined' && import.meta.env.DEV) {
     (window as any).diagChannel = diagChannel;
   }
 
   return { diagChannel, currentCount: roomMembers.value.length };
 }
 
-// Make debug function globally available
-if (typeof window !== 'undefined') {
+// Make debug function globally available (development only)
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).debugWatchParty = debugWatchParty;
   (window as any).testMemberRefresh = testMemberRefresh;
   (window as any).testSimpleSubscription = testSimpleSubscription;
