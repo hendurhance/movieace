@@ -150,6 +150,13 @@ export function getServers(type: 'movie' | 'tv' = 'movie'): Server[] {
   return type === 'movie' ? movieServers.value : tvServers.value;
 }
 
+// Watch party enabled server indices (VidLink, VidFast, 111Movies)
+export const WATCH_PARTY_ENABLED_SERVERS = [7, 9, 10];
+
+export function isWatchPartyEnabledServer(serverIndex: number): boolean {
+  return WATCH_PARTY_ENABLED_SERVERS.includes(serverIndex);
+}
+
 export function buildStreamUrl(
   mediaId: string | number,
   type: 'movie' | 'tv' = 'movie',

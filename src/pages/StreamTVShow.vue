@@ -7,7 +7,10 @@
     >
       <div class="header-actions">
         <ShareScreen />
-        <WatchParty />
+        <WatchParty 
+          :media-id="externalId || showId" 
+          media-type="tv"
+        />
       </div>
     </StreamHeader>
 
@@ -65,18 +68,19 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, watch, onMounted } from 'vue';
+import { defineComponent, ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTvShows, TVShowDetails, Episode, TVShowSeasonDetails } from '../composables/useTvShows';
 import { getMovieImageUrl } from '../utils/useWebImage';
 import {
   currentStreamData,
   getPreferredStreamData,
-  saveLastWatchedMetaData,
   savePreferredServer,
+  saveLastWatchedMetaData,
   getServers,
   buildStreamUrl,
 } from '../composables/useStream';
+import { useWatchParty } from '../composables/useWatchParty';
 import StreamHeader from '../components/StreamHeader.vue';
 import ServerSelection from '../components/ServerSelection.vue';
 import VideoPlayer from '../components/VideoPlayer.vue';
@@ -107,6 +111,7 @@ export default defineComponent({
     const seasonEpisodes = ref<Episode[]>([]);
     const currentEpisodeDetails = ref<Episode | null>(null);
     const { fetchTvShow, fetchTvShowBySeason } = useTvShows();
+    const { sendSyncEvent, isHost } = useWatchParty();
     const externalId = ref<string>('');
     const isLoading = ref<boolean>(false);
     const isLoadingEpisodes = ref<boolean>(false);
@@ -227,6 +232,14 @@ export default defineComponent({
 
       await updateRouteAndSave();
       await loadSeasonDetails();
+
+      // If user is host in a watch party, sync episode change
+      if (isHost.value) {
+        sendSyncEvent('episode_change', { 
+          season: currentSeason.value, 
+          episode: currentEpisode.value 
+        });
+      }
     };
 
     const changeEpisode = async (episodeNumber: number) => {
@@ -238,6 +251,14 @@ export default defineComponent({
       ) || null;
 
       await updateRouteAndSave();
+
+      // If user is host in a watch party, sync episode change
+      if (isHost.value) {
+        sendSyncEvent('episode_change', { 
+          season: currentSeason.value, 
+          episode: currentEpisode.value 
+        });
+      }
     };
 
     const updateRouteAndSave = async () => {
@@ -265,6 +286,11 @@ export default defineComponent({
     const changeServer = (serverIndex: number) => {
       savePreferredServer(showId.value, serverIndex, 'tv');
       getPreferredStreamData(showId.value, 'tv');
+
+      // If user is host in a watch party, sync server change
+      if (isHost.value) {
+        sendSyncEvent('server_change', { serverIndex });
+      }
     };
 
     const goBack = () => {
@@ -289,11 +315,81 @@ export default defineComponent({
       { deep: true }
     );
 
+    // Watch party event handlers
+    const handleWatchPartyServerChange = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { serverIndex } = customEvent.detail;
+      if (typeof serverIndex === 'number' && serverIndex >= 0 && serverIndex < availableServers.value.length) {
+        savePreferredServer(showId.value, serverIndex, 'tv');
+        getPreferredStreamData(showId.value, 'tv');
+      }
+    };
+
+    const handleWatchPartyEpisodeChange = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { season, episode } = customEvent.detail;
+      if (typeof season === 'number' && typeof episode === 'number' && season > 0 && episode > 0) {
+        // Update current season and episode
+        currentSeason.value = season;
+        currentEpisode.value = episode;
+        
+        // Navigate to new episode without triggering watch party sync
+        router.replace({
+          name: 'StreamTVShow',
+          params: {
+            id: showId.value,
+            season: season.toString(),
+            episode: episode.toString()
+          }
+        });
+      }
+    };
+
+    const handleWatchPartyJoined = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const roomData = customEvent.detail;
+      
+      // Update server to match room
+      if (roomData.currentServerIndex !== undefined) {
+        savePreferredServer(showId.value, roomData.currentServerIndex, 'tv');
+        getPreferredStreamData(showId.value, 'tv');
+      }
+
+      // Update episode to match room
+      if (roomData.currentSeason && roomData.currentEpisode) {
+        currentSeason.value = roomData.currentSeason;
+        currentEpisode.value = roomData.currentEpisode;
+        
+        router.replace({
+          name: 'StreamTVShow',
+          params: {
+            id: showId.value,
+            season: roomData.currentSeason.toString(),
+            episode: roomData.currentEpisode.toString()
+          }
+        });
+      }
+    };
+
     onMounted(() => {
       loadShowDetails();
+      
+      // Listen for watch party events
+      window.addEventListener('watchparty:server-change', handleWatchPartyServerChange);
+      window.addEventListener('watchparty:episode-change', handleWatchPartyEpisodeChange);
+      window.addEventListener('watchparty:joined', handleWatchPartyJoined);
+    });
+
+    onUnmounted(() => {
+      // Clean up event listeners
+      window.removeEventListener('watchparty:server-change', handleWatchPartyServerChange);
+      window.removeEventListener('watchparty:episode-change', handleWatchPartyEpisodeChange);
+      window.removeEventListener('watchparty:joined', handleWatchPartyJoined);
     });
 
     return {
+      showId,
+      externalId,
       show,
       currentEmbedUrl,
       availableServers,

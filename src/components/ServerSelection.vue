@@ -21,16 +21,26 @@
         <div 
           v-for="(server, index) in servers" 
           :key="index"
-          :class="['server-card', { active: activeServerIndex === index, loading: loadingServer === index }]" 
+          :class="[
+            'server-card', 
+            { 
+              active: activeServerIndex === index, 
+              loading: loadingServer === index,
+              disabled: isConnected && !isWatchPartyEnabled(index)
+            }
+          ]" 
           @click="changeServer(index)"
-          :title="`Server ${index + 1}: ${server.name}`"
+          :title="getServerTitle(index, server.name)"
         >
           <div class="server-indicator">
             <div :class="['status-dot', getServerStatus(index)]"></div>
           </div>
           
           <div class="server-info">
-            <div class="server-name">{{ server.name }}</div>
+            <div class="server-name">
+              {{ server.name }}
+              <WatchPartyIcon v-if="isWatchPartyEnabled(index)" class="watch-party-icon" title="Watch Party Enabled" />
+            </div>
             <div class="server-label">Server {{ index + 1 }}</div>
           </div>
           
@@ -45,7 +55,8 @@
       </div>
       
       <div class="server-tips">
-        <p>💡 Try switching servers if video doesn't load or buffers frequently</p>
+        <p v-if="isConnected">🔒 Connected to watch party - only watch party enabled servers available</p>
+        <p v-else>💡 Try switching servers if video doesn't load or buffers frequently</p>
       </div>
     </div>
   </div>
@@ -55,6 +66,9 @@
 import { defineComponent, PropType, ref, onMounted, onUnmounted } from 'vue';
 import CheckIcon from './svg/outline/check.vue';
 import ChevronDown from './svg/outline/chevron-down.vue';
+import WatchPartyIcon from './svg/outline/watch-party.vue';
+import { isWatchPartyEnabledServer } from '../composables/useStream';
+import { useWatchParty } from '../composables/useWatchParty';
 
 interface Server {
   name: string;
@@ -64,7 +78,8 @@ export default defineComponent({
   name: 'ServerSelection',
   components: {
     CheckIcon,
-    ChevronDown
+    ChevronDown,
+    WatchPartyIcon
   },
   props: {
     servers: {
@@ -78,6 +93,8 @@ export default defineComponent({
   },
   emits: ['server-change'],
   setup(props, { emit }) {
+    const { isConnected } = useWatchParty();
+    
     const loadingServer = ref<number | null>(null);
     const isMobileExpanded = ref<boolean>(false);
     const isMobile = ref<boolean>(false);
@@ -101,6 +118,16 @@ export default defineComponent({
     const changeServer = async (serverIndex: number) => {
       if (serverIndex === props.activeServerIndex) return;
       
+      // Check if connected to watch party and trying to switch to non-watch-party server
+      if (isConnected.value && !isWatchPartyEnabledServer(serverIndex)) {
+        // Create a better notification instead of alert
+        console.warn('Cannot switch to server without watch party support while connected');
+        
+        // You could emit an event here for parent component to show a proper modal
+        // emit('show-warning', 'Cannot switch to servers without watch party support while connected to a room.');
+        return;
+      }
+      
       loadingServer.value = serverIndex;
       emit('server-change', serverIndex);
       
@@ -123,6 +150,17 @@ export default defineComponent({
       return 'available';
     };
 
+    const isWatchPartyEnabled = (serverIndex: number): boolean => {
+      return isWatchPartyEnabledServer(serverIndex);
+    };
+
+    const getServerTitle = (index: number, serverName: string): string => {
+      if (isConnected.value && !isWatchPartyEnabledServer(index)) {
+        return `${serverName} (Disabled - No watch party support)`;
+      }
+      return `Server ${index + 1}: ${serverName}`;
+    };
+
     onMounted(() => {
       checkMobile();
       window.addEventListener('resize', checkMobile);
@@ -136,9 +174,12 @@ export default defineComponent({
       loadingServer,
       isMobileExpanded,
       isMobile,
+      isConnected,
       toggleMobileCollapse,
       changeServer,
-      getServerStatus
+      getServerStatus,
+      isWatchPartyEnabled,
+      getServerTitle
     };
   }
 });
@@ -352,6 +393,38 @@ export default defineComponent({
       }
     }
 
+    &.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+
+      &:hover {
+        transform: none;
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: none;
+
+        &::before {
+          transform: translateX(-100%);
+        }
+
+        .server-name {
+          color: #888;
+        }
+      }
+
+      .server-name {
+        color: #666 !important;
+      }
+
+      .server-label {
+        color: #666 !important;
+      }
+
+      .status-dot {
+        background: #666 !important;
+        box-shadow: none !important;
+      }
+    }
+
     .server-indicator {
       margin-right: 1rem;
 
@@ -388,6 +461,21 @@ export default defineComponent({
         color: #e1e1e1;
         margin-bottom: 0.25rem;
         transition: color 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .watch-party-icon {
+          width: 16px;
+          height: 16px;
+          color: #4eb5ff;
+          opacity: 0.8;
+          transition: opacity 0.3s;
+
+          &:hover {
+            opacity: 1;
+          }
+        }
       }
 
       .server-label {

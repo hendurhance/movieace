@@ -7,7 +7,10 @@
     >
       <div class="header-actions">
         <ShareScreen />
-        <WatchParty />
+        <WatchParty 
+          :media-id="movieId" 
+          media-type="movie"
+        />
       </div>
     </StreamHeader>
 
@@ -51,7 +54,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, watch } from 'vue';
+import { defineComponent, ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMovies, MovieDetails } from '../composables/useMovies';
 import { getMovieImageUrl } from '../utils/useWebImage';
@@ -62,6 +65,7 @@ import {
   getServers,
   buildStreamUrl,
 } from '../composables/useStream';
+import { useWatchParty } from '../composables/useWatchParty';
 import StreamHeader from '../components/StreamHeader.vue';
 import ServerSelection from '../components/ServerSelection.vue';
 import VideoPlayer from '../components/VideoPlayer.vue';
@@ -85,6 +89,7 @@ export default defineComponent({
     const movieId = ref<string>(route.params.id as string);
     const movie = ref<MovieDetails | null>(null);
     const { fetchMovie } = useMovies();
+    const { sendSyncEvent, isHost } = useWatchParty();
     const isLoading = ref<boolean>(false);
     const error = ref<string | null>(null);
 
@@ -148,6 +153,31 @@ export default defineComponent({
       
       savePreferredServer(movieId.value, serverIndex, 'movie');
       getPreferredStreamData(movieId.value, 'movie');
+
+      // If user is host in a watch party, sync server change
+      if (isHost.value) {
+        sendSyncEvent('server_change', { serverIndex });
+      }
+    };
+
+    // Watch party event handlers
+    const handleWatchPartyServerChange = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { serverIndex } = customEvent.detail;
+      if (typeof serverIndex === 'number' && serverIndex >= 0 && serverIndex < availableServers.value.length) {
+        savePreferredServer(movieId.value, serverIndex, 'movie');
+        getPreferredStreamData(movieId.value, 'movie');
+      }
+    };
+
+    const handleWatchPartyJoined = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const roomData = customEvent.detail;
+      // Update server to match room
+      if (roomData.currentServerIndex !== undefined) {
+        savePreferredServer(movieId.value, roomData.currentServerIndex, 'movie');
+        getPreferredStreamData(movieId.value, 'movie');
+      }
     };
 
     const goBack = () => {
@@ -166,9 +196,20 @@ export default defineComponent({
 
     onMounted(() => {
       loadMovieDetails();
+      
+      // Listen for watch party events
+      window.addEventListener('watchparty:server-change', handleWatchPartyServerChange);
+      window.addEventListener('watchparty:joined', handleWatchPartyJoined);
+    });
+
+    onUnmounted(() => {
+      // Clean up event listeners
+      window.removeEventListener('watchparty:server-change', handleWatchPartyServerChange);
+      window.removeEventListener('watchparty:joined', handleWatchPartyJoined);
     });
 
     return {
+      movieId,
       movie,
       currentEmbedUrl,
       availableServers,
