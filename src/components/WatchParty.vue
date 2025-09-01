@@ -266,12 +266,12 @@ export default defineComponent({
       roomMembers, 
       isLoadingMembers,
       isConnected, 
-      isRealtimeConnected,
-      realtimeStatus,
       isHost,
       createRoom,
       joinRoom,
-      leaveRoom
+      leaveRoom,
+      getMemberTimestamp,
+      formatTimestamp
     } = useWatchParty();
 
     // Local state
@@ -282,32 +282,10 @@ export default defineComponent({
     const copySuccess = ref(false);
     const memberCountUpdated = ref(false); // For visual feedback when count changes
 
-    // Timestamp tracking for members
-    const memberTimestamps = ref<Map<string, { time: number; timestamp: Date }>>(new Map());
-
     // Form data
     const hostName = ref('');
     const memberName = ref('');
     const joinCode = ref('');
-
-    // Member timestamp functions
-    const getMemberTimestamp = (memberId: string): number | null => {
-      const data = memberTimestamps.value.get(memberId);
-      return data ? data.time : null;
-    };
-
-    const formatTimestamp = (seconds: number): string => {
-      const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = Math.floor(seconds % 60);
-      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    };
-
-    const updateMemberTimestamp = (memberId: string, currentTime: number) => {
-      memberTimestamps.value.set(memberId, {
-        time: currentTime,
-        timestamp: new Date()
-      });
-    };
 
     // Check if current server supports watch party
     const isCurrentServerSupported = computed(() => {
@@ -376,9 +354,7 @@ export default defineComponent({
           
           // Small delay to allow real-time subscriptions to fully establish
           setTimeout(() => {
-            if (response.data) {
-              console.log('Successfully connected to watch party room:', response.data.roomCode);
-            }
+            // Room connection established
           }, 500);
         } else {
           error.value = response.error || 'Failed to create room';
@@ -408,7 +384,6 @@ export default defineComponent({
           joinCode.value = '';
           
           // Stream data sync is now handled automatically by the useWatchParty sync system
-          console.log('Successfully joined room - server/season/episode sync handled by useWatchParty');
 
           // Emit event for stream pages to update
           window.dispatchEvent(new CustomEvent('watchparty:joined', {
@@ -440,7 +415,6 @@ export default defineComponent({
         setTimeout(() => {
           copySuccess.value = false;
         }, 2000);
-        console.log('Room link copied to clipboard');
       } catch (err) {
         console.error('Failed to copy to clipboard:', err);
         error.value = 'Failed to copy link to clipboard';
@@ -478,70 +452,22 @@ export default defineComponent({
     });
 
     // Handle member join events
-    function handleMemberJoined(event: any) {
-      console.log('Member joined event:', event.detail);
+    function handleMemberJoined() {
       // Trigger visual feedback for member count update
       triggerMemberCountUpdate();
-      
-      if (event.detail.member) {
-        console.log(`New member joined: ${event.detail.member.member_name || 'Unknown'}`);
-        console.log(`Total members now: ${event.detail.totalMembers}`);
-      }
     }
 
     // Handle member leave events
-    function handleMemberLeft(event: any) {
-      console.log('Member left event:', event.detail);
+    function handleMemberLeft() {
       // Trigger visual feedback for member count update
       triggerMemberCountUpdate();
-      
-      if (event.detail.member) {
-        console.log(`Member left: ${event.detail.member.member_name || 'Unknown'}`);
-        console.log(`Total members now: ${event.detail.totalMembers}`);
-      }
     }
 
     // Handle member status updates
-    function handleMemberUpdated(event: any) {
-      console.log('Member updated event:', event.detail);
+    function handleMemberUpdated() {
       // No count change for status updates, so no visual feedback needed
-      
-      if (event.detail.member) {
-        console.log(`Member updated: ${event.detail.member.member_name || 'Unknown'}`);
-        console.log(`Total members: ${event.detail.totalMembers}`);
-      }
     }
 
-    // Debug function to check real-time connection status
-    function checkRealtimeStatus() {
-      console.log('=== Real-time Connection Status ===');
-      console.log('Is Connected:', isConnected.value);
-      console.log('Is Realtime Connected:', isRealtimeConnected.value);
-      console.log('Realtime Status:', realtimeStatus.value);
-      console.log('Current Room ID:', currentRoom.value?.id);
-      console.log('Current Member ID:', currentMember.value?.id);
-      console.log('Member Count:', roomMembers.value.length);
-      
-      // Trigger a test refresh
-      if (currentRoom.value?.id) {
-        console.log('Triggering manual member refresh...');
-        // Call getRoomData to test API connectivity
-        setTimeout(async () => {
-          try {
-            const { getRoomData } = await import('../composables/useWatchParty');
-            const result = await getRoomData();
-            console.log('Manual refresh result:', result);
-          } catch (error) {
-            console.error('Manual refresh failed:', error);
-          }
-        }, 100);
-      }
-    }
-
-    // Make debug function available globally for console testing
-    if (typeof window !== 'undefined') {
-      (window as any).checkRealtimeStatus = checkRealtimeStatus;
-    }
 
     // Trigger visual feedback for member count changes
     function triggerMemberCountUpdate() {
@@ -551,31 +477,6 @@ export default defineComponent({
       }, 1000); // Remove the class after 1 second
     }
 
-    // Set up event listeners for sync events to track timestamps
-    onMounted(() => {
-      const handleSyncEvent = (event: Event) => {
-        const customEvent = event as CustomEvent;
-        const { memberId, currentTime, eventType } = customEvent.detail;
-        
-        if (memberId && typeof currentTime === 'number') {
-          updateMemberTimestamp(memberId, currentTime);
-          console.log(`📊 Updated timestamp for member ${memberId}: ${formatTimestamp(currentTime)} (${eventType})`);
-        }
-      };
-
-      // Listen for sync events from the watch party system
-      window.addEventListener('watchparty:sync', handleSyncEvent);
-      window.addEventListener('watchparty:play', handleSyncEvent);
-      window.addEventListener('watchparty:pause', handleSyncEvent);
-      window.addEventListener('watchparty:seek', handleSyncEvent);
-
-      onUnmounted(() => {
-        window.removeEventListener('watchparty:sync', handleSyncEvent);
-        window.removeEventListener('watchparty:play', handleSyncEvent);
-        window.removeEventListener('watchparty:pause', handleSyncEvent);
-        window.removeEventListener('watchparty:seek', handleSyncEvent);
-      });
-    });
 
     return {
       // State

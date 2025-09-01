@@ -242,7 +242,7 @@ export default defineComponent({
         duration = rawEvent.data.duration;
       }
 
-      // Handle play, pause, and seek-like events (be more flexible with event names)
+      // Handle play, pause, seek, and timeupdate events (be more flexible with event names)
       if (eventType && typeof currentTime === 'number') {
         // Normalize event names
         const normalizedEventType = eventType.toLowerCase();
@@ -250,11 +250,14 @@ export default defineComponent({
             normalizedEventType.includes('pause') || 
             normalizedEventType === 'seeking' ||
             normalizedEventType === 'seeked' ||
-            normalizedEventType === 'seek') {
+            normalizedEventType === 'seek' ||
+            normalizedEventType === 'timeupdate') {
           
           const result = {
             event: normalizedEventType.includes('play') ? 'play' : 
-                   normalizedEventType.includes('pause') ? 'pause' : 'seek',
+                   normalizedEventType.includes('pause') ? 'pause' : 
+                   normalizedEventType === 'timeupdate' ? 'timeupdate' :
+                   'seek',
             currentTime,
             duration: duration || 0
           };
@@ -343,6 +346,16 @@ export default defineComponent({
             window.dispatchEvent(new CustomEvent('player:event', {
               detail: normalizedEvent
             }));
+            
+            // Also emit timestamp update for continuous tracking
+            if (normalizedEvent.event === 'timeupdate' || normalizedEvent.currentTime) {
+              window.dispatchEvent(new CustomEvent('watchparty:timeupdate', {
+                detail: {
+                  currentTime: normalizedEvent.currentTime,
+                  duration: normalizedEvent.duration
+                }
+              }));
+            }
           }
         } catch (error) {
           // Silently ignore parsing errors

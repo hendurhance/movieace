@@ -105,8 +105,7 @@ export default defineComponent({
     });
 
     // Handle player events (from iframe messages)
-    const handlePlayerEvent = (event: any) => {
-      console.log('StreamMovie received player event:', event);
+    const handlePlayerEvent = () => {
       // Additional handling if needed
     };
 

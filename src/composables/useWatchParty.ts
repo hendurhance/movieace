@@ -3,6 +3,8 @@ import { useStorage } from '@vueuse/core';
 import { supabase } from '../utils/supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { currentStreamData, savePreferredServer, saveLastWatchedMetaData } from './useStream';
+import { useToast } from './useToast';
+import { debounce } from 'lodash';
 
 export interface WatchPartyRoom {
   id: string;
@@ -28,6 +30,8 @@ export interface WatchPartyMember {
   joined_at: string;
   last_seen: string;
   is_online: boolean;
+  current_time?: number;
+  timestamp_updated_at?: string;
 }
 
 export interface WatchPartyEvent {
@@ -137,6 +141,46 @@ const realtimeStatus = ref({
   memberChannel: 'disconnected',
   eventChannel: 'disconnected'
 });
+
+// Member timestamp tracking
+const memberTimestamps = ref<Map<string, { time: number; updatedAt: Date }>>(new Map());
+
+// Toast notifications
+const { addToast } = useToast();
+
+// Timestamp tracking functions
+const updateMemberTimestamp = (memberId: string, currentTime: number) => {
+  memberTimestamps.value.set(memberId, {
+    time: currentTime,
+    updatedAt: new Date()
+  });
+};
+
+const getMemberTimestamp = (memberId: string): number | null => {
+  const data = memberTimestamps.value.get(memberId);
+  return data ? data.time : null;
+};
+
+const formatTimestamp = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
+
+// Debounced timestamp broadcast to avoid too many updates
+const debouncedTimestampBroadcast = debounce((memberId: string, currentTime: number, eventType: string) => {
+  updateMemberTimestamp(memberId, currentTime);
+  
+  // Emit timestamp update event
+  window.dispatchEvent(new CustomEvent('watchparty:timestamp-update', {
+    detail: { 
+      memberId,
+      currentTime,
+      eventType,
+      formattedTime: formatTimestamp(currentTime)
+    }
+  }));
+}, 1000); // Update timestamps every 1 second max
 
 // Sync watch party room state with existing stream data system
 function syncWithStreamData(roomData: WatchPartyRoom) {
@@ -515,8 +559,6 @@ async function setupRealtimeSubscriptions(roomId: string) {
     const afterCount = roomMembers.value.length;
     
     if (beforeCount !== afterCount) {
-      console.log('🔄 Fallback polling detected member count change - real-time may be failing');
-      
       // Emit events as if they came from real-time
       if (afterCount > beforeCount) {
         window.dispatchEvent(new CustomEvent('watchparty:member-joined', {
@@ -546,6 +588,15 @@ function handleSyncEvent(event: WatchPartyEvent) {
   // Don't process our own events
   if (event.member_id === currentMember.value.id) {
     return;
+  }
+
+  // Find the member who sent this event
+  const sendingMember = roomMembers.value.find(m => m.id === event.member_id);
+  const memberName = sendingMember?.member_name || 'A member';
+
+  // Update timestamp for the member who sent the event
+  if (event.event_data.currentTime !== undefined) {
+    debouncedTimestampBroadcast(event.member_id, event.event_data.currentTime, event.event_type);
   }
 
   // Emit a general sync event for timestamp tracking
@@ -589,11 +640,20 @@ function handleSyncEvent(event: WatchPartyEvent) {
       if (event.event_data.currentTime !== undefined) {
         currentRoom.value.current_time = event.event_data.currentTime;
         currentRoom.value.is_playing = true;
+        
+        // Show toast notification for play event
+        addToast(
+          `${memberName} resumed playback at ${formatTimestamp(event.event_data.currentTime)}`,
+          'info',
+          10000
+        );
+        
         // Emit event for video player to handle
         window.dispatchEvent(new CustomEvent('watchparty:play', {
           detail: { 
             currentTime: event.event_data.currentTime,
-            duration: event.event_data.duration 
+            duration: event.event_data.duration,
+            memberName
           }
         }));
       }
@@ -603,11 +663,20 @@ function handleSyncEvent(event: WatchPartyEvent) {
       if (event.event_data.currentTime !== undefined) {
         currentRoom.value.current_time = event.event_data.currentTime;
         currentRoom.value.is_playing = false;
+        
+        // Show toast notification for pause event
+        addToast(
+          `${memberName} paused playback at ${formatTimestamp(event.event_data.currentTime)}`,
+          'warning',
+          10000
+        );
+        
         // Emit event for video player to handle
         window.dispatchEvent(new CustomEvent('watchparty:pause', {
           detail: { 
             currentTime: event.event_data.currentTime,
-            duration: event.event_data.duration 
+            duration: event.event_data.duration,
+            memberName
           }
         }));
       }
@@ -616,11 +685,20 @@ function handleSyncEvent(event: WatchPartyEvent) {
     case 'seek':
       if (event.event_data.currentTime !== undefined) {
         currentRoom.value.current_time = event.event_data.currentTime;
+        
+        // Show toast notification for seek event
+        addToast(
+          `${memberName} jumped to ${formatTimestamp(event.event_data.currentTime)}`,
+          'info',
+          10000
+        );
+        
         // Emit event for video player to handle
         window.dispatchEvent(new CustomEvent('watchparty:seek', {
           detail: { 
             currentTime: event.event_data.currentTime,
-            duration: event.event_data.duration 
+            duration: event.event_data.duration,
+            memberName
           }
         }));
       }
@@ -660,20 +738,35 @@ function handlePlayerEvent(event: Event) {
   
   // Only sync if we're connected to a watch party
   if (eventType === 'play' || eventType === 'pause') {
+    // Update our own timestamp
+    updateMemberTimestamp(currentMember.value.id, currentTime);
+    
     // Send sync event to other members
     sendSyncEvent(eventType, { 
       currentTime, 
       duration 
     });
     
+    // Show toast for our own action
+    const action = eventType === 'play' ? 'resumed' : 'paused';
+    addToast(
+      `You ${action} playback at ${formatTimestamp(currentTime)}`,
+      eventType === 'play' ? 'success' : 'warning',
+      10000
+    );
+    
     // Update local room state
     currentRoom.value.current_time = currentTime;
     currentRoom.value.is_playing = eventType === 'play';
+  } else if (eventType === 'timeupdate') {
+    // Update our own timestamp for continuous tracking (debounced)
+    debouncedTimestampBroadcast(currentMember.value.id, currentTime, eventType);
   }
 }
 
 let playerEventListenersSetup = false;
 let lastPlayerEvent: { type: string; time: number; timestamp: number } | null = null;
+let handleTimeUpdate: ((event: Event) => void) | null = null;
 
 // Set up player event listeners
 function setupPlayerEventListeners() {
@@ -681,14 +774,31 @@ function setupPlayerEventListeners() {
     return;
   }
   
+  // Handle timeupdate events for continuous timestamp tracking
+  handleTimeUpdate = (event: Event) => {
+    if (!currentRoom.value || !currentMember.value) return;
+    
+    const customEvent = event as CustomEvent;
+    const { currentTime } = customEvent.detail;
+    
+    if (typeof currentTime === 'number') {
+      debouncedTimestampBroadcast(currentMember.value.id, currentTime, 'timeupdate');
+    }
+  };
+  
   // Listen for player events from VideoPlayer component
   window.addEventListener('player:event', handlePlayerEvent);
+  window.addEventListener('watchparty:timeupdate', handleTimeUpdate);
   playerEventListenersSetup = true;
 }
 
 // Clean up player event listeners  
 function cleanupPlayerEventListeners() {
   window.removeEventListener('player:event', handlePlayerEvent);
+  if (handleTimeUpdate) {
+    window.removeEventListener('watchparty:timeupdate', handleTimeUpdate);
+    handleTimeUpdate = null;
+  }
   playerEventListenersSetup = false;
 }
 
@@ -916,62 +1026,6 @@ export async function disconnect(): Promise<void> {
 
 // Debug function for console access
 export function debugWatchParty() {
-  console.log('=== Watch Party Debug Info ===');
-  console.log('Current Room:', currentRoom.value);
-  console.log('Current Member:', currentMember.value);
-  console.log('Room Members Count:', roomMembers.value.length);
-  console.log('Room Members:', roomMembers.value);
-  
-  // Check each member individually
-  roomMembers.value.forEach((member, index) => {
-    console.log(`Member ${index}:`, {
-      id: member?.id,
-      name: member?.member_name,
-      isHost: member?.is_host,
-      isOnline: member?.is_online,
-      isCurrentUser: member?.id === currentMember.value?.id,
-      fullObject: member
-    });
-  });
-  
-  console.log('Is Connected:', isConnected.value);
-  console.log('Is Host:', isHost.value);
-  console.log('Loading Members:', isLoadingMembers.value);
-  console.log('Realtime Status:', realtimeStatus.value);
-  
-  // Check localStorage directly
-  console.log('=== LocalStorage Direct Check ===');
-  const rawRoom = localStorage.getItem('watchparty_current_room');
-  const rawMember = localStorage.getItem('watchparty_current_member');  
-  const rawMembers = localStorage.getItem('watchparty_room_members');
-  
-  console.log('watchparty_current_room (raw):', rawRoom);
-  console.log('watchparty_current_member (raw):', rawMember);
-  console.log('watchparty_room_members (raw):', rawMembers);
-  
-  // Try to parse localStorage data
-  try {
-    if (rawRoom) console.log('Parsed room:', JSON.parse(rawRoom));
-  } catch (e) {
-    console.error('Failed to parse room from localStorage:', e);
-  }
-  
-  try {
-    if (rawMember) console.log('Parsed member:', JSON.parse(rawMember));
-  } catch (e) {
-    console.error('Failed to parse member from localStorage:', e);
-  }
-  
-  try {
-    if (rawMembers) {
-      const parsedMembers = JSON.parse(rawMembers);
-      console.log('Parsed members:', parsedMembers);
-      console.log('Parsed members count:', parsedMembers?.length);
-    }
-  } catch (e) {
-    console.error('Failed to parse members from localStorage:', e);
-  }
-  
   return {
     room: currentRoom.value,
     member: currentMember.value,
@@ -985,27 +1039,21 @@ export function debugWatchParty() {
 // Test function to manually trigger a member refresh
 export async function testMemberRefresh() {
   if (!currentRoom.value?.id) {
-    console.error('No current room to refresh');
     return;
   }
   
-  console.log('🧪 Testing manual member refresh...');
   const beforeCount = roomMembers.value.length;
   await fetchRoomMembers(currentRoom.value.id);
   const afterCount = roomMembers.value.length;
   
-  console.log(`Member refresh test: ${beforeCount} → ${afterCount} members`);
   return { beforeCount, afterCount, members: roomMembers.value };
 }
 
 // Test function to create a simple subscription to all member events (for debugging)
 export async function testSimpleSubscription() {
   if (!currentRoom.value?.id) {
-    console.error('No current room for test subscription');
     return;
   }
-  
-  console.log('🧪 Creating test subscription to all member events...');
   
   const testChannel = supabase
     .channel(`test_member_subscription_${Date.now()}`)
@@ -1015,19 +1063,13 @@ export async function testSimpleSubscription() {
         event: '*',
         schema: 'public',
         table: 'watch_party_members'
-        // No filter - listen to all events
       },
-      (payload) => {
-        console.log('🧪 TEST SUBSCRIPTION - Any member event received:', {
-          eventType: payload.eventType,
-          roomId: (payload.new as any)?.room_id || (payload.old as any)?.room_id,
-          expectedRoomId: currentRoom.value?.id,
-          memberData: payload.new || payload.old
-        });
+      () => {
+        // Event received
       }
     )
-    .subscribe((status, err) => {
-      console.log('🧪 Test subscription status:', status, err);
+    .subscribe(() => {
+      // Subscription status updated
     });
   
   // Store for cleanup
@@ -1035,31 +1077,17 @@ export async function testSimpleSubscription() {
     (window as any).testChannel = testChannel;
   }
   
-  console.log('🧪 Test subscription created. Try joining a member now...');
   return testChannel;
 }
 
 // Advanced diagnostic function to check everything
 export async function diagnoseMemberUpdates() {
   if (!currentRoom.value?.id) {
-    console.error('❌ No current room for diagnosis');
     return;
   }
 
-  console.log('🔍 === MEMBER UPDATE DIAGNOSIS ===');
-  console.log('Room ID:', currentRoom.value.id);
-  console.log('Current Member Count:', roomMembers.value.length);
-  console.log('Real-time Status:', realtimeStatus.value);
-
-  // Test 1: Check if we can fetch members manually
-  console.log('\n🧪 Test 1: Manual member fetch...');
-  const beforeCount = roomMembers.value.length;
   await fetchRoomMembers(currentRoom.value.id);
-  const afterCount = roomMembers.value.length;
-  console.log(`Manual fetch result: ${beforeCount} → ${afterCount} members`);
 
-  // Test 2: Create diagnostic subscription
-  console.log('\n🧪 Test 2: Creating diagnostic subscription...');
   const diagChannel = supabase
     .channel(`diagnosis_${Date.now()}`)
     .on(
@@ -1070,13 +1098,8 @@ export async function diagnoseMemberUpdates() {
         table: 'watch_party_members',
         filter: `room_id=eq.${currentRoom.value.id}`
       },
-      (payload) => {
-        console.log('🚨 DIAGNOSTIC - Filtered event received:', {
-          eventType: payload.eventType,
-          timestamp: new Date().toISOString(),
-          payload: payload,
-          isForCurrentRoom: true
-        });
+      () => {
+        // Diagnostic event received
       }
     )
     .on(
@@ -1085,32 +1108,19 @@ export async function diagnoseMemberUpdates() {
         event: '*',
         schema: 'public',
         table: 'watch_party_members'
-        // No filter - catch all events
       },
-      (payload) => {
-        console.log('🌍 DIAGNOSTIC - Any member event:', {
-          eventType: payload.eventType,
-          roomId: (payload.new as any)?.room_id || (payload.old as any)?.room_id,
-          expectedRoomId: currentRoom.value?.id,
-          isForCurrentRoom: ((payload.new as any)?.room_id || (payload.old as any)?.room_id) === currentRoom.value?.id
-        });
+      () => {
+        // Any member event received
       }
     )
-    .subscribe((status, err) => {
-      console.log('🔍 Diagnostic subscription status:', status, err);
+    .subscribe(() => {
+      // Diagnostic subscription status updated
     });
 
   // Store for cleanup
   if (typeof window !== 'undefined') {
     (window as any).diagChannel = diagChannel;
   }
-
-  console.log('\n✅ Diagnostic setup complete.');
-  console.log('📋 Next steps:');
-  console.log('1. Join a member from another browser/tab');
-  console.log('2. Watch for diagnostic logs (🚨 and 🌍 prefixes)');
-  console.log('3. Run diagnoseMemberUpdates() again to see member count changes');
-  console.log('4. Clean up with: supabase.removeChannel(window.diagChannel)');
 
   return { diagChannel, currentCount: roomMembers.value.length };
 }
@@ -1142,6 +1152,9 @@ export function useWatchParty() {
     joinRoom,
     leaveRoom,
     disconnect,
-    sendSyncEvent
+    sendSyncEvent,
+    getMemberTimestamp,
+    formatTimestamp,
+    memberTimestamps: computed(() => memberTimestamps.value)
   };
 }
