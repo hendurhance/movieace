@@ -2,6 +2,7 @@ import { computed, ref } from 'vue';
 import { useStorage } from '@vueuse/core';
 import { supabase } from '../utils/supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { currentStreamData, savePreferredServer, saveLastWatchedMetaData } from './useStream';
 
 export interface WatchPartyRoom {
   id: string;
@@ -130,6 +131,62 @@ const isLoadingMembers = ref(false);
 const isConnected = computed(() => currentRoom.value !== null && currentMember.value !== null);
 const isHost = computed(() => currentMember.value?.is_host || false);
 
+// Real-time connection status tracking
+const realtimeStatus = ref({
+  roomChannel: 'disconnected',
+  memberChannel: 'disconnected',
+  eventChannel: 'disconnected'
+});
+
+// Sync watch party room state with existing stream data system
+function syncWithStreamData(roomData: WatchPartyRoom) {
+  if (!roomData) return;
+  
+  console.log('🔄 Syncing watch party state with stream data:', {
+    roomServer: roomData.current_server_index,
+    roomSeason: roomData.current_season,
+    roomEpisode: roomData.current_episode,
+    currentStreamServer: currentStreamData.value.currentServer
+  });
+
+  // Update the current stream data to match watch party state
+  currentStreamData.value = {
+    ...currentStreamData.value,
+    currentServer: roomData.current_server_index,
+    currentType: roomData.media_type,
+    currentSeason: roomData.current_season || 1,
+    currentEpisode: roomData.current_episode || 1
+  };
+
+  // Save to localStorage using the proper stream data system
+  try {
+    savePreferredServer(
+      roomData.media_id,
+      roomData.current_server_index,
+      roomData.media_type
+    );
+
+    if (roomData.media_type === 'tv' && roomData.current_season && roomData.current_episode) {
+      saveLastWatchedMetaData(
+        roomData.media_id,
+        roomData.media_type,
+        {
+          season: roomData.current_season,
+          episode: roomData.current_episode
+        }
+      );
+    }
+    
+    console.log('✅ Successfully synced watch party state with stream data');
+  } catch (error) {
+    console.error('❌ Failed to sync with stream data:', error);
+  }
+}
+
+const isRealtimeConnected = computed(() => 
+  realtimeStatus.value.memberChannel === 'SUBSCRIBED'
+);
+
 // Realtime channels
 let roomChannel: RealtimeChannel | null = null;
 let memberChannel: RealtimeChannel | null = null;
@@ -188,6 +245,11 @@ export async function createRoom(request: CreateRoomRequest): Promise<CreateRoom
         member: currentMember.value,
         members: roomMembers.value
       });
+
+      // Sync with existing stream data system
+      if (currentRoom.value) {
+        syncWithStreamData(currentRoom.value);
+      }
 
       // Set up realtime subscriptions
       await setupRealtimeSubscriptions(response.data.roomId);
@@ -266,6 +328,11 @@ export async function joinRoom(request: JoinRoomRequest): Promise<JoinRoomRespon
         }))
       });
 
+      // Sync with existing stream data system
+      if (currentRoom.value) {
+        syncWithStreamData(currentRoom.value);
+      }
+
       // Set up realtime subscriptions
       await setupRealtimeSubscriptions(response.data.roomId);
       
@@ -276,11 +343,13 @@ export async function joinRoom(request: JoinRoomRequest): Promise<JoinRoomRespon
         allMembers: roomMembers.value.map(m => ({ name: m.member_name, isHost: m.is_host }))
       });
 
-      // Force a member refresh after a short delay to ensure real-time subscriptions are working
+      // Force a member refresh after a longer delay to ensure real-time subscriptions are working
+      // This also helps test if the subscription is properly established
       setTimeout(async () => {
-        console.log('Triggering member refresh after join...');
+        console.log('⏰ Triggering member refresh after join to verify subscription...');
         await fetchRoomMembers(response.data!.roomId);
-      }, 1000);
+        console.log('🔄 Post-join member refresh completed. Member count:', roomMembers.value.length);
+      }, 2000); // Increased delay to ensure subscriptions are established
     }
 
     return response;
@@ -295,10 +364,13 @@ export async function joinRoom(request: JoinRoomRequest): Promise<JoinRoomRespon
 
 // Set up realtime subscriptions for room updates
 async function setupRealtimeSubscriptions(roomId: string) {
+  console.log('Setting up real-time subscriptions for room:', roomId);
+  
   // Clean up existing subscriptions
   await cleanupSubscriptions();
 
   // Subscribe to room state changes
+  console.log('Creating room channel subscription...');
   roomChannel = supabase
     .channel(`watch_party_room_${roomId}`)
     .on(
@@ -313,13 +385,24 @@ async function setupRealtimeSubscriptions(roomId: string) {
         console.log('Room update received:', payload);
         if (payload.new && currentRoom.value) {
           // Update room state
-          currentRoom.value = { ...currentRoom.value, ...payload.new };
+          const updatedRoom = { ...currentRoom.value, ...payload.new };
+          currentRoom.value = updatedRoom;
+          
+          // Sync with existing stream data system
+          syncWithStreamData(updatedRoom);
         }
       }
     )
-    .subscribe();
+    .subscribe((status, err) => {
+      console.log('Room channel subscription status:', status, err);
+      realtimeStatus.value.roomChannel = status;
+      if (err) {
+        console.error('Room channel subscription error:', err);
+      }
+    });
 
   // Subscribe to member changes
+  console.log('Creating member channel subscription...');
   memberChannel = supabase
     .channel(`watch_party_members_${roomId}`)
     .on(
@@ -331,13 +414,26 @@ async function setupRealtimeSubscriptions(roomId: string) {
         filter: `room_id=eq.${roomId}`
       },
       async (payload) => {
-        console.log('Member update received:', payload);
+        console.log('🔥 Member update received:', {
+          eventType: payload.eventType,
+          payload: payload,
+          timestamp: new Date().toISOString(),
+          roomId: roomId,
+          payloadRoomId: (payload.new as any)?.room_id || (payload.old as any)?.room_id
+        });
         console.log('Event type:', payload.eventType);
         console.log('Current member count before update:', roomMembers.value.length);
         
+        // Verify the event is for our room
+        const eventRoomId = (payload.new as any)?.room_id || (payload.old as any)?.room_id;
+        if (eventRoomId !== roomId) {
+          console.log('🚫 Event not for our room, ignoring:', { eventRoomId, expectedRoomId: roomId });
+          return;
+        }
+        
         // Handle different member events
         if (payload.eventType === 'INSERT') {
-          console.log('New member joined:', payload.new);
+          console.log('🎉 New member joined:', payload.new);
           // Refresh member list immediately to get updated count
           await fetchRoomMembers(roomId);
           
@@ -348,8 +444,9 @@ async function setupRealtimeSubscriptions(roomId: string) {
               totalMembers: roomMembers.value.length
             }
           }));
+          console.log('✅ Dispatched member-joined event');
         } else if (payload.eventType === 'DELETE') {
-          console.log('Member left:', payload.old);
+          console.log('👋 Member left:', payload.old);
           // Refresh member list immediately
           await fetchRoomMembers(roomId);
           
@@ -360,8 +457,9 @@ async function setupRealtimeSubscriptions(roomId: string) {
               totalMembers: roomMembers.value.length
             }
           }));
+          console.log('✅ Dispatched member-left event');
         } else if (payload.eventType === 'UPDATE') {
-          console.log('Member updated:', payload.new);
+          console.log('🔄 Member updated:', payload.new);
           // Refresh for status changes (online/offline)
           await fetchRoomMembers(roomId);
           
@@ -372,6 +470,7 @@ async function setupRealtimeSubscriptions(roomId: string) {
               totalMembers: roomMembers.value.length
             }
           }));
+          console.log('✅ Dispatched member-updated event');
         }
         
         // Log the update for debugging
@@ -383,9 +482,18 @@ async function setupRealtimeSubscriptions(roomId: string) {
         })));
       }
     )
-    .subscribe();
+    .subscribe((status, err) => {
+      console.log('Member channel subscription status:', status, err);
+      realtimeStatus.value.memberChannel = status;
+      if (err) {
+        console.error('Member channel subscription error:', err);
+      } else if (status === 'SUBSCRIBED') {
+        console.log('✅ Successfully subscribed to member changes for room:', roomId);
+      }
+    });
 
   // Subscribe to sync events
+  console.log('Creating event channel subscription...');
   eventChannel = supabase
     .channel(`watch_party_events_${roomId}`)
     .on(
@@ -401,7 +509,19 @@ async function setupRealtimeSubscriptions(roomId: string) {
         handleSyncEvent(payload.new as WatchPartyEvent);
       }
     )
-    .subscribe();
+    .subscribe((status, err) => {
+      console.log('Event channel subscription status:', status, err);
+      realtimeStatus.value.eventChannel = status;
+      if (err) {
+        console.error('Event channel subscription error:', err);
+      }
+    });
+
+  console.log('✅ All real-time subscriptions set up for room:', roomId);
+  
+  // Wait a moment for subscriptions to be fully established
+  await new Promise(resolve => setTimeout(resolve, 500));
+  console.log('🎯 Real-time subscriptions should now be ready to receive events');
 }
 
 // Handle incoming sync events
@@ -510,7 +630,35 @@ export async function getRoomData(): Promise<{ success: boolean; error?: string 
 
       // Update room data
       if (currentRoom.value) {
-        currentRoom.value = { ...currentRoom.value, ...data.data.room };
+        const updatedRoomData = {
+          ...currentRoom.value,
+          media_id: data.data.room.mediaId,
+          media_type: data.data.room.mediaType,
+          current_server_index: data.data.room.currentServerIndex,
+          current_season: data.data.room.currentSeason,
+          current_episode: data.data.room.currentEpisode,
+          current_time: data.data.room.currentTime,
+          is_playing: data.data.room.isPlaying,
+          last_activity: new Date().toISOString()
+        };
+        
+        console.log('Updating room data:', {
+          before: {
+            server: currentRoom.value.current_server_index,
+            season: currentRoom.value.current_season,
+            episode: currentRoom.value.current_episode
+          },
+          after: {
+            server: updatedRoomData.current_server_index,
+            season: updatedRoomData.current_season,
+            episode: updatedRoomData.current_episode
+          }
+        });
+        
+        currentRoom.value = updatedRoomData;
+        
+        // Sync with existing stream data system after updating room data
+        syncWithStreamData(updatedRoomData);
       }
       
       // Transform API response to match frontend interface
@@ -700,18 +848,25 @@ export async function disconnect(): Promise<void> {
 
 // Clean up realtime subscriptions
 async function cleanupSubscriptions() {
+  console.log('🧹 Cleaning up existing real-time subscriptions...');
+  
   if (roomChannel) {
+    console.log('Removing room channel...');
     await supabase.removeChannel(roomChannel);
     roomChannel = null;
   }
   if (memberChannel) {
+    console.log('Removing member channel...');
     await supabase.removeChannel(memberChannel);
     memberChannel = null;
   }
   if (eventChannel) {
+    console.log('Removing event channel...');
     await supabase.removeChannel(eventChannel);
     eventChannel = null;
   }
+  
+  console.log('✅ All subscriptions cleaned up');
 }
 
 // Debug function for console access
@@ -737,6 +892,7 @@ export function debugWatchParty() {
   console.log('Is Connected:', isConnected.value);
   console.log('Is Host:', isHost.value);
   console.log('Loading Members:', isLoadingMembers.value);
+  console.log('Realtime Status:', realtimeStatus.value);
   
   // Check localStorage directly
   console.log('=== LocalStorage Direct Check ===');
@@ -776,13 +932,73 @@ export function debugWatchParty() {
     member: currentMember.value,
     members: roomMembers.value,
     isConnected: isConnected.value,
-    isHost: isHost.value
+    isHost: isHost.value,
+    realtimeStatus: realtimeStatus.value
   };
+}
+
+// Test function to manually trigger a member refresh
+export async function testMemberRefresh() {
+  if (!currentRoom.value?.id) {
+    console.error('No current room to refresh');
+    return;
+  }
+  
+  console.log('🧪 Testing manual member refresh...');
+  const beforeCount = roomMembers.value.length;
+  await fetchRoomMembers(currentRoom.value.id);
+  const afterCount = roomMembers.value.length;
+  
+  console.log(`Member refresh test: ${beforeCount} → ${afterCount} members`);
+  return { beforeCount, afterCount, members: roomMembers.value };
+}
+
+// Test function to create a simple subscription to all member events (for debugging)
+export async function testSimpleSubscription() {
+  if (!currentRoom.value?.id) {
+    console.error('No current room for test subscription');
+    return;
+  }
+  
+  console.log('🧪 Creating test subscription to all member events...');
+  
+  const testChannel = supabase
+    .channel(`test_member_subscription_${Date.now()}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'watch_party_members'
+        // No filter - listen to all events
+      },
+      (payload) => {
+        console.log('🧪 TEST SUBSCRIPTION - Any member event received:', {
+          eventType: payload.eventType,
+          roomId: (payload.new as any)?.room_id || (payload.old as any)?.room_id,
+          expectedRoomId: currentRoom.value?.id,
+          memberData: payload.new || payload.old
+        });
+      }
+    )
+    .subscribe((status, err) => {
+      console.log('🧪 Test subscription status:', status, err);
+    });
+  
+  // Store for cleanup
+  if (typeof window !== 'undefined') {
+    (window as any).testChannel = testChannel;
+  }
+  
+  console.log('🧪 Test subscription created. Try joining a member now...');
+  return testChannel;
 }
 
 // Make debug function globally available
 if (typeof window !== 'undefined') {
   (window as any).debugWatchParty = debugWatchParty;
+  (window as any).testMemberRefresh = testMemberRefresh;
+  (window as any).testSimpleSubscription = testSimpleSubscription;
 }
 
 // Export reactive state
@@ -793,6 +1009,8 @@ export function useWatchParty() {
     roomMembers: computed(() => roomMembers.value),
     isLoadingMembers: computed(() => isLoadingMembers.value),
     isConnected: computed(() => isConnected.value),
+    isRealtimeConnected,
+    realtimeStatus: computed(() => realtimeStatus.value),
     isHost,
     createRoom,
     joinRoom,

@@ -260,6 +260,8 @@ export default defineComponent({
       roomMembers, 
       isLoadingMembers,
       isConnected, 
+      isRealtimeConnected,
+      realtimeStatus,
       isHost,
       createRoom,
       joinRoom,
@@ -377,14 +379,8 @@ export default defineComponent({
           memberName.value = '';
           joinCode.value = '';
           
-          // Update current stream data to match room
-          currentStreamData.value.currentServer = response.data.roomData.currentServerIndex;
-          if (response.data.roomData.currentSeason) {
-            currentStreamData.value.currentSeason = response.data.roomData.currentSeason;
-          }
-          if (response.data.roomData.currentEpisode) {
-            currentStreamData.value.currentEpisode = response.data.roomData.currentEpisode;
-          }
+          // Stream data sync is now handled automatically by the useWatchParty sync system
+          console.log('Successfully joined room - server/season/episode sync handled by useWatchParty');
 
           // Emit event for stream pages to update
           window.dispatchEvent(new CustomEvent('watchparty:joined', {
@@ -486,6 +482,37 @@ export default defineComponent({
         console.log(`Member updated: ${event.detail.member.member_name || 'Unknown'}`);
         console.log(`Total members: ${event.detail.totalMembers}`);
       }
+    }
+
+    // Debug function to check real-time connection status
+    function checkRealtimeStatus() {
+      console.log('=== Real-time Connection Status ===');
+      console.log('Is Connected:', isConnected.value);
+      console.log('Is Realtime Connected:', isRealtimeConnected.value);
+      console.log('Realtime Status:', realtimeStatus.value);
+      console.log('Current Room ID:', currentRoom.value?.id);
+      console.log('Current Member ID:', currentMember.value?.id);
+      console.log('Member Count:', roomMembers.value.length);
+      
+      // Trigger a test refresh
+      if (currentRoom.value?.id) {
+        console.log('Triggering manual member refresh...');
+        // Call getRoomData to test API connectivity
+        setTimeout(async () => {
+          try {
+            const { getRoomData } = await import('../composables/useWatchParty');
+            const result = await getRoomData();
+            console.log('Manual refresh result:', result);
+          } catch (error) {
+            console.error('Manual refresh failed:', error);
+          }
+        }, 100);
+      }
+    }
+
+    // Make debug function available globally for console testing
+    if (typeof window !== 'undefined') {
+      (window as any).checkRealtimeStatus = checkRealtimeStatus;
     }
 
     // Trigger visual feedback for member count changes
