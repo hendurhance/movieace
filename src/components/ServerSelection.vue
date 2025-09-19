@@ -64,6 +64,7 @@
 
 <script lang="ts">
 import { defineComponent, PropType, ref, onMounted, onUnmounted } from 'vue';
+import { useStorage } from '@vueuse/core';
 import CheckIcon from './svg/outline/check.vue';
 import ChevronDown from './svg/outline/chevron-down.vue';
 import WatchPartyIcon from './svg/outline/watch-party.vue';
@@ -96,23 +97,23 @@ export default defineComponent({
     const { isConnected } = useWatchParty();
     
     const loadingServer = ref<number | null>(null);
-    const isMobileExpanded = ref<boolean>(false);
     const isMobile = ref<boolean>(false);
+    
+    // Use storage to persist the expanded state, with different defaults for mobile/desktop
+    const isMobileExpanded = useStorage('server-selection-expanded', window.innerWidth > 768);
 
     const checkMobile = () => {
+      const wasMobile = isMobile.value;
       isMobile.value = window.innerWidth <= 768;
-      if (!isMobile.value) {
-        isMobileExpanded.value = true; // Always expanded on desktop
-      } else {
-        // Default to collapsed on mobile
-        isMobileExpanded.value = false;
+      
+      // If transitioning from mobile to desktop, ensure it's expanded
+      if (wasMobile && !isMobile.value && !isMobileExpanded.value) {
+        isMobileExpanded.value = true;
       }
     };
 
     const toggleMobileCollapse = () => {
-      if (isMobile.value) {
-        isMobileExpanded.value = !isMobileExpanded.value;
-      }
+      isMobileExpanded.value = !isMobileExpanded.value;
     };
 
     const changeServer = async (serverIndex: number) => {
@@ -131,7 +132,7 @@ export default defineComponent({
       loadingServer.value = serverIndex;
       emit('server-change', serverIndex);
       
-      // Auto-collapse on mobile after server selection
+      // Auto-collapse on mobile after server selection (optional behavior)
       if (isMobile.value) {
         setTimeout(() => {
           isMobileExpanded.value = false;
@@ -201,7 +202,7 @@ export default defineComponent({
     margin-bottom: 1.5rem;
     cursor: pointer;
 
-    @media (max-width: 768px) {
+    .section-header {
       cursor: pointer;
       padding: 0.5rem;
       border-radius: 12px;
@@ -210,10 +211,6 @@ export default defineComponent({
       &:hover {
         background: rgba(255, 255, 255, 0.05);
       }
-    }
-
-    @media (min-width: 769px) {
-      cursor: default;
     }
 
     h3 {
@@ -273,14 +270,10 @@ export default defineComponent({
       color: #b0b0b0;
       cursor: pointer;
       padding: 0.25rem;
-      display: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: all 0.3s;
-
-      @media (max-width: 768px) {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
 
       svg {
         width: 20px;
@@ -301,18 +294,16 @@ export default defineComponent({
   .server-content {
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
-    @media (max-width: 768px) {
-      &.collapsed {
-        max-height: 0;
-        opacity: 0;
-        overflow: hidden;
-        margin-bottom: -1.5rem;
-      }
+    &.collapsed {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      margin-bottom: -1.5rem;
+    }
 
-      &:not(.collapsed) {
-        max-height: 1000px;
-        opacity: 1;
-      }
+    &:not(.collapsed) {
+      max-height: 1000px;
+      opacity: 1;
     }
   }
 

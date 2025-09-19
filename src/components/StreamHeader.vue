@@ -13,6 +13,7 @@
         <div v-else class="title-loading">
           <div class="loading-shimmer"></div>
         </div>
+        <slot name="center"></slot>
       </div>
       
       <!-- Action Slot -->
