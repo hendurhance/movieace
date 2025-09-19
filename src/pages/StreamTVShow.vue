@@ -5,6 +5,32 @@
       back-text="Back to show"
       @back-click="goBack"
     >
+    <template #center>
+      <!-- Next and previous buttons -->
+      <div class="episode-controls">
+        <button 
+          class="control-btn" 
+          @click="goToPreviousEpisode" 
+          :disabled="currentSeason === 1 && currentEpisode === 1"
+          title="Previous Episode"
+        >
+          <ArrowLeft />
+        </button>
+        
+        <div class="current-episode">
+          S{{ currentSeason }}:E{{ currentEpisode }}
+        </div>
+        
+        <button 
+          class="control-btn" 
+          @click="goToNextEpisode" 
+          :disabled="isLastEpisode"
+          title="Next Episode"
+        >
+          <ArrowRight />
+        </button>
+      </div>
+    </template>
       <div class="header-actions">
         <ShareScreen />
         <WatchParty 
@@ -88,6 +114,8 @@ import ShareScreen from '../components/ShareScreen.vue';
 import WatchParty from '../components/WatchParty.vue';
 import Disclaimer from '../components/layout/Disclaimer.vue';
 import EpisodeNavigation from '../components/EpisodeNavigation.vue';
+import ArrowLeft from '../components/svg/outline/arrow-left.vue';
+import ArrowRight from '../components/svg/outline/arrow-right.vue';
 
 export default defineComponent({
   name: 'StreamTVShow',
@@ -98,7 +126,9 @@ export default defineComponent({
     ShareScreen,
     WatchParty,
     Disclaimer,
-    EpisodeNavigation
+    EpisodeNavigation,
+    ArrowLeft,
+    ArrowRight
   },
   setup() {
     const route = useRoute();
@@ -141,6 +171,12 @@ export default defineComponent({
 
     const availableSeasons = computed(() => {
       return seasons.value.filter(season => season.season_number > 0);
+    });
+
+    const isLastEpisode = computed(() => {
+      const isLastSeasonEpisode = currentEpisode.value === seasonEpisodes.value.length;
+      const isLastSeason = !availableSeasons.value.find(s => s.season_number === currentSeason.value + 1);
+      return isLastSeasonEpisode && isLastSeason;
     });
 
     // Handle player events (from iframe messages)
@@ -319,6 +355,33 @@ export default defineComponent({
       router.push(`/tv-show/${showId.value}?season=${currentSeason.value}&episode=${currentEpisode.value}`);
     };
 
+    const goToPreviousEpisode = () => {
+      if (currentEpisode.value > 1) {
+        changeEpisode(currentEpisode.value - 1);
+      } else if (currentSeason.value > 1) {
+        // Go to last episode of previous season
+        onSeasonChange(currentSeason.value - 1).then(() => {
+          if (seasonEpisodes.value.length > 0) {
+            changeEpisode(seasonEpisodes.value.length);
+          }
+        });
+      }
+    };
+
+    const goToNextEpisode = () => {
+      if (currentEpisode.value < seasonEpisodes.value.length) {
+        changeEpisode(currentEpisode.value + 1);
+      } else {
+        // Go to first episode of next season if available
+        const nextSeason = availableSeasons.value.find(s => s.season_number === currentSeason.value + 1);
+        if (nextSeason) {
+          onSeasonChange(currentSeason.value + 1).then(() => {
+            changeEpisode(1);
+          });
+        }
+      }
+    };
+
     watch(
       () => route.params,
       async (newParams) => {
@@ -424,11 +487,14 @@ export default defineComponent({
       currentEpisodeDetails,
       isLoading,
       isLoadingEpisodes,
+      isLastEpisode,
       error,
       changeServer,
       changeEpisode,
       onSeasonChange,
       goBack,
+      goToPreviousEpisode,
+      goToNextEpisode,
       handlePlayerEvent,
       getMovieImageUrl,
       currentStreamData
@@ -752,9 +818,77 @@ export default defineComponent({
   gap: 0.75rem;
 }
 
+// Episode controls in header
+.episode-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1rem;
+
+  .control-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s;
+
+    &:hover:not(:disabled) {
+      background: rgba(255, 82, 82, 0.2);
+      transform: scale(1.05);
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .current-episode {
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #ff5252 0%, #ff7979 100%);
+    border-radius: 20px;
+    font-weight: 600;
+    color: #fff;
+    font-size: 0.875rem;
+    min-width: 80px;
+    text-align: center;
+  }
+}
+
 @media (max-width: 768px) {
   .header-actions {
     gap: 0.5rem;
+  }
+
+  .episode-controls {
+    gap: 0.5rem;
+
+    .control-btn {
+      width: 36px;
+      height: 36px;
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .current-episode {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.8rem;
+      min-width: 70px;
+    }
   }
 }
 </style>
