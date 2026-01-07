@@ -24,6 +24,7 @@ const defaultStreamData: StreamData = {
 export const streamData = useStorage<StreamData>('streamData', defaultStreamData);
 
 export const movieServers = ref<Server[]>([
+  { name: 'VidKing', urlTemplate: 'https://www.vidking.net/embed/movie/{tmdbId}?autoPlay=true' },
   { name: 'VidEasy', urlTemplate: 'https://player.videasy.net/movie/{tmdbId}?color=#4eb5ff' },
   { name: 'Cinemaos', urlTemplate: 'https://cinemaos.tech/player/{tmdbId}' },
   { name: 'VidSrc CC', urlTemplate: 'https://vidsrc.cc/v2/embed/movie/{tmdbId}' },
@@ -40,6 +41,7 @@ export const movieServers = ref<Server[]>([
 ]);
 
 export const tvServers = ref<Server[]>([
+  { name: 'VidKing', urlTemplate: 'https://www.vidking.net/embed/tv/{externalId}/{season}/{episode}?autoPlay=true&nextEpisode=true&episodeSelector=true' },
   { name: 'VidEasy', urlTemplate: 'https://player.videasy.net/tv/{externalId}/{season}/{episode}?color=#4eb5ff&nextEpisode=true&autoplayNextEpisode=true&episodeSelector=true' },
   { name: 'Cinemaos', urlTemplate: 'https://cinemaos.tech/player/{externalId}/{season}/{episode}' },
   { name: 'VidSrc CC', urlTemplate: 'https://vidsrc.cc/v2/embed/tv/{externalId}/{season}/{episode}' },
@@ -150,8 +152,8 @@ export function getServers(type: 'movie' | 'tv' = 'movie'): Server[] {
   return type === 'movie' ? movieServers.value : tvServers.value;
 }
 
-// Watch party enabled server indices (VidLink, VidFast, 111Movies)
-export const WATCH_PARTY_ENABLED_SERVERS = [7, 9, 10];
+// Watch party enabled server indices (VidKing, VidLink, VidFast, 111Movies)
+export const WATCH_PARTY_ENABLED_SERVERS = [0, 8, 10, 11];
 
 export function isWatchPartyEnabledServer(serverIndex: number): boolean {
   return WATCH_PARTY_ENABLED_SERVERS.includes(serverIndex);
@@ -191,7 +193,11 @@ export function buildStreamUrl(
     const serverName = server.name.toLowerCase();
     
     // Different servers use different timestamp parameters
-    if (serverName.includes('111movies')) {
+    if (serverName.includes('vidking')) {
+      // VidKing uses 'progress' parameter
+      const separator = url.includes('?') ? '&' : '?';
+      url += `${separator}progress=${timestampSeconds}`;
+    } else if (serverName.includes('111movies')) {
       url += `?progress=${timestampSeconds}`;
     } else if (serverName.includes('vidlink') || serverName.includes('vidfast')) {
       url += `?startAt=${timestampSeconds}`;
