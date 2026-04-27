@@ -1,0 +1,9 @@
+// ============================================================================
+// LUMIÈRE — Global stylesheet entry.
+// Load order matters: tokens → reset → typography → utilities.
+// ============================================================================
+
+@use 'tokens';
+@use 'reset';
+@use 'typography';
+@use 'utilities';

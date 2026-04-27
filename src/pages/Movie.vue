@@ -1,750 +1,465 @@
 <template>
-    <div>
-        <BaseHeader />
+    <div class="movie-detail">
+        <SiteHeader />
 
-        <!-- Loading State -->
-        <LoadingState v-if="isLoading" message="Loading movie details..." size="large" />
+        <main v-if="movie" id="main" class="movie-detail__main" role="main">
+            <TitleMasthead
+                :id="movie.id"
+                type="movie"
+                :title="movie.title"
+                :tagline="movie.tagline"
+                :eyebrow="mastheadEyebrow"
+                :backdrop-path="movie.backdrop_path"
+                :poster-path="movie.poster_path"
+                :rating="movie.vote_average"
+                :release-date="movie.release_date"
+                :genres="genreNames"
+                :genre-ids="genreIds"
+                :adult="movie.adult"
+                :play-route="playRoute"
+                :play-label="playLabel"
+                :show-trailer="hasTrailer"
+                @trailer="openTrailer"
+            />
 
-        <!-- Error State -->
-        <ErrorState v-else-if="hasError" title="Failed to load movie" :message="errorMessage" @retry="retryFetch" />
+            <section class="movie-detail__section container-lm movie-detail__opening">
+                <MetaBar :items="metaItems" aria-label="Film metadata" />
 
-        <!-- Movie Content -->
-        <section v-else-if="movie" class="remove-padding">
-            <!-- Hero Section -->
-            <div class="movie-hero" :style="{ backgroundImage: `url(${computedMovieImages.backdrop})` }">
-                <div class="movie-hero-overlay">
-                    <div class="container">
-                        <div class="movie-header-grid">
-                            <div class="movie-poster">
-                                <div class="poster-wrapper">
-                                    <img :src="computedMovieImages.poster" :alt="movie.title" loading="lazy" />
-                                    <div class="rating-badge">
-                                        <div class="rating-content">
-                                            <span class="rating-number">{{ movie.vote_average.toFixed(1) }}</span>
-                                            <div class="rating-stars">
-                                                <RatingStar :count="votingToRating(movie.vote_average, 5)" :max="5" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="poster-overlay">
-                                        <button @click="showTrailer" class="trailer-btn">
-                                            <Play class="icon" />
-                                            <span>Trailer</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                <div class="movie-detail__columns">
+                    <div class="movie-detail__col--main">
+                        <DropCapSynopsis
+                            :body="movie.overview"
+                            eyebrow="The Synopsis"
+                        />
+                    </div>
 
-                            <div class="movie-header-content">
-                                <div class="movie-title-section">
-                                    <h1>{{ movie.title }}</h1>
-                                    <div class="movie-tagline" v-if="movie.tagline">
-                                        "{{ movie.tagline }}"
-                                    </div>
-                                </div>
-
-                                <div class="info-wrapper">
-                                    <div class="info-row">
-                                        <div class="genre-tags">
-                                            <span v-for="genre in movie.genres?.slice(0, 3)" :key="genre.id"
-                                                class="genre-tag">
-                                                {{ genre.name }}
-                                            </span>
-                                        </div>
-                                        <div class="release-date">
-                                            <Clock stroke="currentColor" />
-                                            {{ fullDate }}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <p class="movie-overview">{{ movie.overview }}</p>
-
-                                <div class="movie-details-grid">
-                                    <div class="detail-item">
-                                        <span class="detail-label">Duration</span>
-                                        <span class="detail-value">{{ computedMovieDuration }}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-label">Director</span>
-                                        <span class="detail-value">{{movieCredit?.crew?.find(i => i.job ===
-                                            'Director')?.name || 'N/A' }}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-label">Country</span>
-                                        <span class="detail-value">{{ computedCountry }}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-label">Language</span>
-                                        <span class="detail-value">{{ computedLanguage }}</span>
-                                    </div>
-                                    <div class="detail-item" v-if="computedBudget">
-                                        <span class="detail-label">Budget</span>
-                                        <span class="detail-value">{{ computedBudget }}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-label">IMDB</span>
-                                        <a :href="`https://imdb.com/title/${movie.imdb_id}`" target="_blank"
-                                            class="imdb-link">
-                                            View on IMDB
-                                            <OpenExternal stroke="currentColor" />
-                                        </a>
-                                    </div>
-                                </div>
-
-                                <div class="action-buttons">
-                                    <button @click="streamNow" class="stream-btn primary">
-                                        <Play class="icon" />
-                                        {{ lastWatchedData ? 'Continue Watching' : 'Stream Now' }}
-                                    </button>
-                                    <button @click="showTrailer" class="trailer-btn secondary">
-                                        <Video stroke="currentColor" />
-                                        Watch Trailer
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="movie-detail__col--side">
+                        <StatsBlock
+                            v-if="statsItems.length"
+                            :stats="statsItems"
+                            title="By the numbers"
+                            eyebrow="Ledger"
+                        />
                     </div>
                 </div>
+            </section>
+
+            <section v-if="cast.length" class="movie-detail__section container-lm">
+                <CastGrid :casts="cast" title="The Players" eyebrow="The Cast" :limit="12" />
+            </section>
+
+            <section v-if="reviews.length" class="movie-detail__section container-lm">
+                <ReviewsPullQuote
+                    :reviews="reviews"
+                    title="Pressed into print"
+                    eyebrow="The Critics"
+                />
+            </section>
+
+            <section v-if="similarItems.length" class="movie-detail__section">
+                <CuratedRail
+                    :items="similarItems"
+                    title="Double bill"
+                    eyebrow="If you liked this"
+                    description="Features of a similar cut, also in rotation."
+                    default-type="movie"
+                />
+            </section>
+        </main>
+
+        <div v-else-if="loading" class="movie-detail__loading" role="status">
+            <div class="movie-detail__spinner" aria-hidden="true" />
+            <span class="meta">Loading feature…</span>
+        </div>
+
+        <SiteFooter />
+
+        <LmDialog v-model="trailerOpen" size="xl" title="Trailer" @close="closeTrailer">
+            <div v-if="trailerKey" class="movie-detail__trailer">
+                <iframe
+                    :src="trailerEmbedUrl"
+                    title="Trailer"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                    loading="lazy"
+                />
             </div>
-
-            <!-- Content Sections -->
-            <div class="movie-content">
-                <!-- Cast Section -->
-                <div class="container section" v-if="movieCredit?.cast">
-                    <CastWrapper :title="''" :casts="movieCredit.cast" />
-                </div>
-
-                <!-- Images Section -->
-                <div class="container section" v-if="movieImages?.posters?.length">
-                    <MoviePicture :pictures="movieImages.posters" />
-                </div>
-
-                <!-- Similar Movies Section -->
-                <div class="container section" v-if="similarMovies.length > 0">
-                    <SimilarMovie :movie-item="similarMovies" />
-                </div>
-            </div>
-        </section>
-
-        <ErrorState v-else title="Movie Not Found"
-            message="The movie you are looking for does not exist or has been removed." @retry="toHome"
-            retryText="Go to Home" backgroundColor="#081b27" />
-
-        <BaseFooter />
+            <p v-else class="meta">No trailer filed for this title.</p>
+        </LmDialog>
     </div>
 </template>
 
-
 <script lang="ts">
-import TrailerModal from '../components/TrailerModal.vue'
-import { Ref, computed, defineComponent, onMounted, ref } from "vue";
-import BaseHeader from "../components/base/BaseHeader.vue";
-import BaseFooter from "../components/base/BaseFooter.vue";
-
-import RatingStar from "../containers/RatingStar.vue";
-import votingToRating from "../calculation/vote-to-rating";
-import SimilarMovie from "../containers/SimilarMovie.vue";
-import MoviePicture from "../containers/MoviePicture.vue";
-import CastWrapper from "../containers/CastWrapper.vue";
-import { Movie } from "../composables/useHighlights";
-import { useMovies, MovieDetails, MovieCredit, MovieImages, MovieVideo } from "../composables/useMovies";
-import { useModal } from "../composables/useModal";
-import { onBeforeRouteUpdate, useRoute, useRouter } from "vue-router";
-import empty_movie_state from '../assets/img/empty-movie-state.png';
-import { getLastWatchedMetaData } from '../composables/useStream';
-import LoadingState from '../containers/LoadingState.vue';
-import ErrorState from '../containers/ErrorState.vue';
-import Play from '../components/svg/solid/play.vue';
-import Video from '../components/svg/outline/video.vue';
-import Clock from '../components/svg/outline/clock.vue';
-import OpenExternal from '../components/svg/outline/open-external.vue';
+import { computed, defineComponent, onMounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import SiteHeader from '../components/navigation/SiteHeader.vue';
+import SiteFooter from '../components/navigation/SiteFooter.vue';
+import TitleMasthead from '../components/detail/TitleMasthead.vue';
+import MetaBar, { MetaEntry } from '../components/detail/MetaBar.vue';
+import DropCapSynopsis from '../components/detail/DropCapSynopsis.vue';
+import StatsBlock, { StatEntry } from '../components/detail/StatsBlock.vue';
+import CastGrid from '../components/detail/CastGrid.vue';
+import ReviewsPullQuote, { ReviewEntry } from '../components/detail/ReviewsPullQuote.vue';
+import CuratedRail, { CuratedItem } from '../components/rails/CuratedRail.vue';
+import LmDialog from '../components/primitives/Dialog.vue';
+import { useMovies, MovieDetails, Cast, Crew } from '../composables/useMovies';
+import { fetchTrailerKey, buildTrailerEmbed } from '../composables/useTrailer';
 import { addViewedItem } from '../composables/useHistory';
+import { getLastWatchedMetaData } from '../composables/useStream';
+import useAxios from '../composables/useAxios';
+import { primeGenres } from '../composables/useGenreLookup';
+
+interface ReviewsResponse {
+    results: Array<{
+        id: string;
+        author: string;
+        content: string;
+        created_at?: string;
+        url?: string;
+    }>;
+}
+
+interface SimilarMovie {
+    id: number;
+    title: string;
+    poster_path: string | null;
+    vote_average: number;
+    release_date: string;
+    genre_ids: number[];
+    adult: boolean;
+}
 
 export default defineComponent({
-    name: "Movie",
+    name: 'Movie',
     components: {
-        BaseHeader,
-        BaseFooter,
-        LoadingState,
-        ErrorState,
-        RatingStar,
-        SimilarMovie,
-        MoviePicture,
-        CastWrapper,
-        TrailerModal,
-        Play,
-        Video,
-        Clock,
-        OpenExternal
+        SiteHeader,
+        SiteFooter,
+        TitleMasthead,
+        MetaBar,
+        DropCapSynopsis,
+        StatsBlock,
+        CastGrid,
+        ReviewsPullQuote,
+        CuratedRail,
+        LmDialog
     },
     setup() {
         const route = useRoute();
-        const router = useRouter();
-        const movieId = ref(route.params.id) as Ref<string>;
-        const { fetchMovie, fetchMovieCredits, fetchMovieImages, fetchSimilarMovies, fetchMovieVideos } = useMovies();
+        const { fetchMovie, fetchMovieCredits, fetchSimilarMovies } = useMovies();
 
-        const movie = ref<MovieDetails>();
-        const movieCredit = ref<MovieCredit>();
-        const movieImages = ref<MovieImages>();
-        const similarMovies = ref<Movie[]>([]);
-        const isLoading = ref(true);
-        const hasError = ref(false);
-        const errorMessage = ref('');
+        const movie = ref<MovieDetails | null>(null);
+        const cast = ref<Cast[]>([]);
+        const crew = ref<Crew[]>([]);
+        const similar = ref<SimilarMovie[]>([]);
+        const reviews = ref<ReviewEntry[]>([]);
+        const loading = ref(true);
 
-        const handleFetchMovie = async () => {
+        const trailerOpen = ref(false);
+        const trailerKey = ref<string | null>(null);
+
+        const genreNames = computed(() => (movie.value?.genres ?? []).map(g => g.name));
+        const genreIds = computed(() => (movie.value?.genres ?? []).map(g => g.id));
+
+        const director = computed(() => {
+            const d = crew.value.find(c => c.job === 'Director');
+            return d?.name ?? '';
+        });
+
+        const writer = computed(() => {
+            const w = crew.value.find(c => ['Screenplay', 'Writer', 'Author'].includes(c.job));
+            return w?.name ?? '';
+        });
+
+        const mastheadEyebrow = computed(() => {
+            const g = genreNames.value[0];
+            return g ? `${g} · Feature` : 'Feature';
+        });
+
+        const hasTrailer = computed(() => !!trailerKey.value);
+
+        const trailerEmbedUrl = computed(() =>
+            trailerKey.value
+                ? buildTrailerEmbed(trailerKey.value, { muted: false, autoplay: true, controls: true })
+                : ''
+        );
+
+        const runtimeLabel = computed(() => {
+            const m = movie.value?.runtime ?? 0;
+            if (!m) return '';
+            const h = Math.floor(m / 60);
+            const mm = m % 60;
+            return h ? `${h}h ${mm}m` : `${mm}m`;
+        });
+
+        const formatDate = (iso: string) => {
+            if (!iso) return '';
             try {
-                const { data } = await fetchMovie(movieId.value);
-                movie.value = data.value;
-            } catch (error: any) {
-                throw new Error('Failed to fetch movie details');
+                return new Date(iso).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            } catch { return iso; }
+        };
+
+        const metaItems = computed<MetaEntry[]>(() => {
+            if (!movie.value) return [];
+            const country = movie.value.production_countries?.[0]?.name ?? '';
+            const language = movie.value.spoken_languages?.[0]?.english_name
+                ?? (movie.value.original_language ? movie.value.original_language.toUpperCase() : '');
+            const items: MetaEntry[] = [
+                { label: 'Released', value: formatDate(movie.value.release_date) },
+                { label: 'Runtime', value: runtimeLabel.value },
+                { label: 'Director', value: director.value },
+                { label: 'Writer', value: writer.value },
+                { label: 'Country', value: country },
+                { label: 'Language', value: language },
+                { label: 'Status', value: movie.value.status }
+            ];
+            if (movie.value.imdb_id) {
+                items.push({
+                    label: 'On IMDb',
+                    value: movie.value.imdb_id,
+                    href: `https://www.imdb.com/title/${movie.value.imdb_id}`
+                });
+            }
+            return items;
+        });
+
+        const formatMoney = (n: number) => {
+            if (!n) return '';
+            if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(2)}B`;
+            if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+            if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
+            return `$${n}`;
+        };
+
+        const statsItems = computed<StatEntry[]>(() => {
+            if (!movie.value) return [];
+            const profit = (movie.value.revenue ?? 0) - (movie.value.budget ?? 0);
+            return [
+                { label: 'Budget', value: formatMoney(movie.value.budget) },
+                { label: 'Revenue', value: formatMoney(movie.value.revenue), accent: movie.value.revenue > 0 },
+                {
+                    label: 'Net',
+                    value: profit !== 0 ? formatMoney(Math.abs(profit)) : '',
+                    suffix: profit > 0 ? 'profit' : 'loss',
+                    accent: profit > 0,
+                    hint: profit > 0 ? 'Revenue minus budget' : (profit < 0 ? 'Revenue under budget' : '')
+                },
+                { label: 'Popularity', value: movie.value.popularity ? movie.value.popularity.toFixed(0) : '' },
+                { label: 'Votes', value: movie.value.vote_count ? movie.value.vote_count.toLocaleString() : '' }
+            ];
+        });
+
+        const similarItems = computed<CuratedItem[]>(() =>
+            similar.value.slice(0, 14).map(m => ({
+                id: m.id,
+                title: m.title,
+                posterPath: m.poster_path,
+                rating: m.vote_average,
+                releaseDate: m.release_date,
+                genreIds: m.genre_ids,
+                adult: m.adult,
+                type: 'movie' as const
+            }))
+        );
+
+        const playRoute = computed(() => ({
+            name: 'StreamMovie',
+            params: { id: String(route.params.id) }
+        }));
+
+        const playLabel = computed(() => {
+            const id = String(route.params.id);
+            return getLastWatchedMetaData(id) ? 'Resume' : 'Play';
+        });
+
+        const openTrailer = () => {
+            if (trailerKey.value) trailerOpen.value = true;
+        };
+        const closeTrailer = () => {
+            trailerOpen.value = false;
+        };
+
+        const fetchReviews = async (id: string) => {
+            try {
+                const res = await useAxios().get(`https://api.themoviedb.org/3/movie/${id}/reviews?language=en-US&page=1`);
+                const data = res.data as ReviewsResponse;
+                reviews.value = (data.results ?? [])
+                    .slice(0, 6)
+                    .map(r => ({
+                        id: r.id,
+                        author: r.author,
+                        content: r.content,
+                        created_at: r.created_at,
+                        url: r.url
+                    }));
+            } catch {
+                reviews.value = [];
             }
         };
 
-        const handleFetchMovieCredits = async () => {
-            try {
-                const { data } = await fetchMovieCredits(movieId.value);
-                movieCredit.value = data.value;
-            } catch (error: any) {
-                console.error('Failed to fetch movie credits:', error);
-            }
-        };
-
-        const handleFetchMovieImages = async () => {
-            try {
-                const { data } = await fetchMovieImages(movieId.value);
-                movieImages.value = data.value;
-            } catch (error: any) {
-                console.error('Failed to fetch movie images:', error);
-            }
-        };
-
-        const handleFetchSimilarMovies = async () => {
-            try {
-                const { data } = await fetchSimilarMovies(movieId.value);
-                if (data.value) {
-                    similarMovies.value = data.value.results;
-                }
-            } catch (error: any) {
-                console.error('Failed to fetch similar movies:', error);
-            }
-        };
-
-        const fetchAllData = async () => {
-            isLoading.value = true;
-            hasError.value = false;
-            errorMessage.value = '';
+        const loadMovie = async (id: string) => {
+            loading.value = true;
+            movie.value = null;
+            cast.value = [];
+            crew.value = [];
+            similar.value = [];
+            reviews.value = [];
+            trailerKey.value = null;
 
             try {
-                await handleFetchMovie();
-                await Promise.all([
-                    handleFetchMovieCredits(),
-                    handleFetchMovieImages(),
-                    handleFetchSimilarMovies()
+                const [details, credits, sim, trailer] = await Promise.all([
+                    fetchMovie(id),
+                    fetchMovieCredits(id),
+                    fetchSimilarMovies(id),
+                    fetchTrailerKey(id, 'movie'),
+                    fetchReviews(id)
                 ]);
+
+                movie.value = details.data.value ?? null;
+                cast.value = credits.data.value?.cast ?? [];
+                crew.value = credits.data.value?.crew ?? [];
+                similar.value = (sim.data.value?.results ?? []) as SimilarMovie[];
+                trailerKey.value = trailer ?? null;
+
                 if (movie.value) {
+                    document.title = `${movie.value.title} — Movieace`;
                     addViewedItem({
                         id: movie.value.id,
                         title: movie.value.title,
                         image: movie.value.poster_path,
                         rating: movie.value.vote_average,
-                        categories: movie.value.genres?.map(g => g.id) || [],
+                        categories: genreIds.value,
                         adult: movie.value.adult,
                         type: 'movie'
                     });
                 }
-            } catch (error: any) {
-                hasError.value = true;
-                errorMessage.value = error.message || 'Failed to load movie details';
             } finally {
-                isLoading.value = false;
+                loading.value = false;
             }
-        };
-
-        const retryFetch = () => {
-            fetchAllData();
-        };
-
-        const IMAGE_BASEURL = import.meta.env.VITE_IMAGE_BASE_URL;
-
-        const computedMovieImages = computed(() => {
-            return {
-                backdrop: movie.value?.backdrop_path === null ? empty_movie_state : `${IMAGE_BASEURL}w1280${movie.value?.backdrop_path}`,
-                poster: movie.value?.poster_path === null ? empty_movie_state : `${IMAGE_BASEURL}w780${movie.value?.poster_path}`
-            };
-        });
-
-        const computedMovieDuration = computed(() => {
-            if (!movie.value?.runtime) return "N/A";
-            return `${Math.floor(movie.value?.runtime / 60)}hr ${movie.value?.runtime % 60}m`;
-        });
-
-        const computedCountry = computed(() => {
-            if (!movie.value?.production_countries) return "N/A";
-            return movie.value?.production_countries.slice(0, 2).map((i) => i.name).join(", ");
-        });
-
-        const computedLanguage = computed(() => {
-            if (!movie.value?.spoken_languages) return "N/A";
-            return movie.value?.spoken_languages.map((i) => i.name).join(", ");
-        });
-
-        const lastWatchedData = computed(() => {
-            return getLastWatchedMetaData(movieId.value);
-        });
-
-        const fullDate = computed(() => {
-            if (!movie.value?.release_date) return "N/A";
-            return new Date(movie.value?.release_date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-            });
-        });
-
-        const computedBudget = computed(() => {
-            if (!movie.value?.budget) return "";
-            return `$${movie.value?.budget.toLocaleString()}`;
-        });
-
-        const streamNow = () => {
-            router.push(`/stream/movie/${movieId.value}`);
-        };
-
-        const movieTrailer = ref<MovieVideo>();
-        const showTrailer = async () => {
-            try {
-                const { data } = await fetchMovieVideos(movieId.value);
-                data.value?.results.forEach((i: MovieVideo) => {
-                    if (i.type === "Trailer") {
-                        movieTrailer.value = i;
-                    }
-                });
-                useModal(TrailerModal, {
-                    props: {
-                        video: movieTrailer.value
-                    }
-                });
-            } catch (error) {
-                console.error('Failed to fetch trailer:', error);
-            }
-        };
-
-        const toHome = () => {
-            router.push('/');
         };
 
         onMounted(() => {
-            window.scrollTo(0, 0);
-            fetchAllData();
+            primeGenres();
+            loadMovie(String(route.params.id));
         });
 
-        onBeforeRouteUpdate(async (to, from) => {
-            if (to.params.id !== from.params.id) {
-                movieId.value = to.params.id as string;
-                window.scrollTo(0, 0);
-                await fetchAllData();
+        watch(
+            () => route.params.id,
+            newId => {
+                if (newId && route.name === 'Movie') {
+                    loadMovie(String(newId));
+                }
             }
-        });
+        );
 
         return {
-            votingToRating,
-            showTrailer,
-            computedMovieImages,
             movie,
-            computedMovieDuration,
-            computedCountry,
-            computedLanguage,
-            movieCredit,
-            movieImages,
-            similarMovies,
-            fullDate,
-            computedBudget,
-            streamNow,
-            lastWatchedData,
-            isLoading,
-            hasError,
-            errorMessage,
-            retryFetch,
-            toHome,
+            cast,
+            reviews,
+            loading,
+            genreNames,
+            genreIds,
+            mastheadEyebrow,
+            hasTrailer,
+            trailerOpen,
+            trailerKey,
+            trailerEmbedUrl,
+            metaItems,
+            statsItems,
+            similarItems,
+            playRoute,
+            playLabel,
+            openTrailer,
+            closeTrailer
         };
-    },
+    }
 });
 </script>
 
-<style scoped lang="scss">
-.movie-hero {
+<style lang="scss" scoped>
+.movie-detail {
     position: relative;
-    min-height: 100vh;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    
-    @media (max-width: 768px) {
-        min-height: auto;
-        padding: 2rem 0;
-    }
-    
-    &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(
-            135deg, 
-            rgba(8, 27, 39, 0.85) 0%, 
-            rgba(15, 20, 25, 0.8) 50%, 
-            rgba(8, 27, 39, 0.85) 100%
-        );
-    }
-}
+    min-height: 100dvh;
+    background: var(--ink-900);
+    color: var(--bone-50);
 
-.movie-hero-overlay {
-    position: relative;
-    z-index: 2;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    padding: 6rem 0 4rem;
-    
-    @media (max-width: 768px) {
-        min-height: auto;
-        padding: 4rem 0 2rem;
-    }
-}
-
-.movie-header-grid {
-    display: grid;
-    grid-template-columns: 350px 1fr;
-    gap: 4rem;
-    align-items: start;
-    
-    @media (max-width: 1200px) {
-        grid-template-columns: 300px 1fr;
-        gap: 3rem;
-    }
-    
-    @media (max-width: 968px) {
-        grid-template-columns: 250px 1fr;
-        gap: 2rem;
-    }
-    
-    @media (max-width: 768px) {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-        text-align: center;
-    }
-}
-
-.movie-poster {
-    position: relative;
-    
-    .poster-wrapper {
+    &__main {
         position: relative;
-        border-radius: 20px;
+    }
+
+    &__section {
+        margin-top: clamp(var(--s-7), 7vw, var(--s-10));
+
+        &:last-of-type {
+            margin-bottom: clamp(var(--s-8), 8vw, var(--s-10));
+        }
+    }
+
+    &__opening {
+        display: grid;
+        gap: clamp(var(--s-6), 6vw, var(--s-8));
+    }
+
+    &__columns {
+        display: grid;
+        gap: clamp(var(--s-6), 5vw, var(--s-8));
+        grid-template-columns: minmax(0, 1fr);
+
+        @media (min-width: 960px) {
+            grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+            align-items: start;
+        }
+    }
+
+    &__col--main,
+    &__col--side {
+        min-width: 0;
+    }
+
+    &__loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--s-3);
+        min-height: 60vh;
+        color: var(--bone-300);
+    }
+
+    &__spinner {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid var(--rule-strong);
+        border-top-color: var(--ember);
+        animation: movie-spin 0.8s linear infinite;
+    }
+
+    &__trailer {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: #000;
+        border-radius: var(--r-sm);
         overflow: hidden;
-        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
-        transition: all 0.4s ease;
-        
-        &:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 35px 80px rgba(0, 0, 0, 0.6);
-            
-            .poster-overlay {
-                opacity: 1;
-            }
-        }
-        
-        img {
-            width: 100%;
-            height: auto;
-            display: block;
-            aspect-ratio: 2/3;
-            object-fit: cover;
-        }
-        
-        .rating-badge {
+
+        iframe {
             position: absolute;
-            top: 1rem;
-            left: 1rem;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(15px);
-            border-radius: 16px;
-            padding: 1rem;
-            border: 1px solid rgba(241, 183, 34, 0.3);
-            
-            .rating-content {
-                text-align: center;
-                
-                .rating-number {
-                    display: block;
-                    font-size: 1.5rem;
-                    font-weight: 700;
-                    color: #f1b722;
-                    margin-bottom: 0.5rem;
-                    line-height: 1;
-                }
-                
-                .rating-stars {
-                    transform: scale(0.85);
-                    transform-origin: center;
-                }
-            }
-        }
-        
-        .poster-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.7));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            
-            .trailer-btn {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                padding: 1rem 2rem;
-                background: linear-gradient(135deg, #f1b722 0%, #e6a71a 100%);
-                border: none;
-                border-radius: 50px;
-                color: #000;
-                font-weight: 700;
-                font-size: 1rem;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                box-shadow: 0 8px 25px rgba(241, 183, 34, 0.4);
-                
-                &:hover {
-                    transform: scale(1.05);
-                    box-shadow: 0 12px 35px rgba(241, 183, 34, 0.6);
-                }
-                
-                svg {
-                    width: 20px;
-                    height: 20px;
-                }
-            }
-        }
-    }
-}
-
-.movie-header-content {
-    color: #fff;
-    padding-top: 1rem;
-    
-    .movie-title-section {
-        margin-bottom: 2rem;
-        
-        h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin: 0 0 1rem 0;
-            line-height: 1.1;
-            background: linear-gradient(135deg, #fff 0%, #f1b722 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            
-            @media (max-width: 1200px) {
-                font-size: 3rem;
-            }
-            
-            @media (max-width: 968px) {
-                font-size: 2.5rem;
-            }
-            
-            @media (max-width: 768px) {
-                font-size: 2rem;
-            }
-        }
-        
-        .movie-tagline {
-            font-size: 1.3rem;
-            font-style: italic;
-            color: #f1b722;
-            opacity: 0.9;
-            font-weight: 300;
-            
-            @media (max-width: 768px) {
-                font-size: 1.1rem;
-            }
-        }
-    }
-}
-
-.info-wrapper {
-    margin-bottom: 2rem;
-    
-    .info-row {
-        display: flex;
-        align-items: center;
-        gap: 2rem;
-        flex-wrap: wrap;
-        
-        @media (max-width: 768px) {
-            justify-content: center;
-            gap: 1rem;
-        }
-    }
-}
-
-.genre-tags {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    
-    .genre-tag {
-        padding: 0.6rem 1.2rem;
-        background: rgba(241, 183, 34, 0.15);
-        border: 2px solid rgba(241, 183, 34, 0.4);
-        border-radius: 25px;
-        color: #f1b722;
-        font-size: 0.9rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        
-        &:hover {
-            background: rgba(241, 183, 34, 0.25);
-            border-color: rgba(241, 183, 34, 0.6);
-            transform: translateY(-2px);
-        }
-    }
-}
-
-.release-date {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #8ea9bd;
-    font-size: 1rem;
-    font-weight: 500;
-}
-
-.movie-overview {
-    font-size: 1.2rem;
-    line-height: 1.8;
-    margin-bottom: 2.5rem;
-    color: rgba(255, 255, 255, 0.9);
-    font-weight: 300;
-    
-    @media (max-width: 768px) {
-        font-size: 1.1rem;
-        text-align: left;
-    }
-}
-
-.movie-details-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem 3rem;
-    margin-bottom: 3rem;
-    
-    @media (max-width: 768px) {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-        text-align: left;
-    }
-    
-    .detail-item {
-        .detail-label {
-            display: block;
-            font-size: 0.85rem;
-            color: #8ea9bd;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-        
-        .detail-value {
-            display: block;
-            font-size: 1.1rem;
-            color: #fff;
-            font-weight: 500;
-        }
-        
-        .imdb-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #f1b722;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            
-            &:hover {
-                color: #fff;
-                transform: translateX(4px);
-            }
-        }
-    }
-}
-
-.action-buttons {
-    display: flex;
-    gap: 1.5rem;
-    
-    @media (max-width: 768px) {
-        justify-content: center;
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    @media (max-width: 480px) {
-        gap: 1rem;
-    }
-    
-    button {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 1.2rem 2.5rem;
-        border: none;
-        border-radius: 15px;
-        font-weight: 700;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        min-width: 200px;
-        justify-content: center;
-        
-        @media (max-width: 768px) {
+            inset: 0;
             width: 100%;
-            max-width: 300px;
-        }
-        
-        &.primary {
-            background: linear-gradient(135deg, #f1b722 0%, #e6a71a 100%);
-            color: #000;
-            box-shadow: 0 8px 25px rgba(241, 183, 34, 0.3);
-            
-            &:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 15px 35px rgba(241, 183, 34, 0.5);
-            }
-        }
-        
-        &.secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            
-            &:hover {
-                background: rgba(255, 255, 255, 0.2);
-                border-color: rgba(255, 255, 255, 0.4);
-                transform: translateY(-3px);
-            }
+            height: 100%;
+            border: 0;
         }
     }
+}
+
+@keyframes movie-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .movie-detail__spinner { animation: none; }
 }
 </style>

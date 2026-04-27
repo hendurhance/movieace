@@ -17,7 +17,7 @@ export default defineComponent({
     props: {
         stroke: {
             type: String,
-            default: '#f1b722'
+            default: 'currentColor'
         }
     }
 })
