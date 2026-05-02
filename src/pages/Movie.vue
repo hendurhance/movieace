@@ -223,6 +223,11 @@ export default defineComponent({
                     href: `https://www.imdb.com/title/${movie.value.imdb_id}`
                 });
             }
+            items.push({
+                label: 'On Letterboxd',
+                value: 'Rate film',
+                href: `https://letterboxd.com/tmdb/${movie.value.id}/`
+            });
             return items;
         });
 

@@ -118,6 +118,7 @@ export default defineComponent({
 
     &__tab {
         position: relative;
+        z-index: 1;
         padding: var(--s-3) var(--s-4);
         font-family: var(--font-ui);
         font-size: var(--fs-sm);
@@ -179,7 +180,7 @@ export default defineComponent({
             height: auto;
             background: var(--bone-50);
             border-radius: var(--r-pill);
-            z-index: -1;
+            z-index: 0;
         }
     }
 }

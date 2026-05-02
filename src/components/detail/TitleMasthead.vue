@@ -1,5 +1,5 @@
 <template>
-    <header ref="rootRef" class="masthead" :aria-label="`${title} — masthead`">
+    <header ref="rootRef" class="masthead" :class="{ 'trailer-playing': trailerVisible }" :aria-label="`${title} — masthead`">
         <div class="masthead__stage">
             <img
                 v-if="backdropUrl"
@@ -11,10 +11,31 @@
             />
             <div v-else class="masthead__art masthead__art--placeholder" aria-hidden="true" />
 
+            <iframe
+                v-if="trailerVisible && trailerSrc"
+                ref="iframeRef"
+                class="masthead__trailer"
+                :src="trailerSrc"
+                title="Trailer"
+                frameborder="0"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowfullscreen
+                aria-hidden="true"
+                @load="onIframeLoad"
+            />
+
             <div class="masthead__scrim" aria-hidden="true" />
             <div class="masthead__bloom" aria-hidden="true" />
             <div class="masthead__grain grain" aria-hidden="true" />
         </div>
+
+        <TrailerControls
+            :visible="trailerVisible && trailerLive"
+            :paused="userPaused"
+            :muted="userMuted"
+            @toggle-pause="togglePause"
+            @toggle-mute="toggleMute"
+        />
 
         <div class="container-lm masthead__inner">
             <router-link to="/" class="masthead__crumb eyebrow">
@@ -93,14 +114,16 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType, ref } from 'vue';
+import { computed, defineComponent, PropType, ref, toRef } from 'vue';
 import LmButton from '../primitives/Button.vue';
+import TrailerControls from '../hero/TrailerControls.vue';
 import { isInWatchlist, toggleWatchlistItem } from '../../composables/useWatchlist';
 import { useAmbientColor } from '../../composables/useAmbientColor';
+import { useTrailerEmbed } from '../../composables/useTrailerEmbed';
 
 export default defineComponent({
     name: 'TitleMasthead',
-    components: { LmButton },
+    components: { LmButton, TrailerControls },
     emits: ['trailer'],
     props: {
         id: { type: [Number, String], required: true },
@@ -152,7 +175,39 @@ export default defineComponent({
             });
         };
 
-        return { rootRef, backdropUrl, year, ratingLabel, inWatchlist, toggleWatchlist };
+        const {
+            iframeRef,
+            trailerVisible,
+            trailerLive,
+            trailerSrc,
+            userPaused,
+            userMuted,
+            onIframeLoad,
+            togglePause,
+            toggleMute
+        } = useTrailerEmbed({
+            id: toRef(props, 'id'),
+            type: toRef(props, 'type'),
+            dwellMs: 3000
+        });
+
+        return {
+            rootRef,
+            backdropUrl,
+            year,
+            ratingLabel,
+            inWatchlist,
+            toggleWatchlist,
+            iframeRef,
+            trailerVisible,
+            trailerLive,
+            trailerSrc,
+            userPaused,
+            userMuted,
+            onIframeLoad,
+            togglePause,
+            toggleMute
+        };
     }
 });
 </script>
@@ -180,11 +235,29 @@ export default defineComponent({
         height: 100%;
         object-fit: cover;
         object-position: center 22%;
+        transition: opacity var(--dur-slow) var(--ease-out);
 
         &--placeholder {
             background: radial-gradient(70% 70% at 50% 40%, var(--ink-700), var(--ink-900));
         }
     }
+
+    &__trailer {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 177.77vh;
+        height: 100vh;
+        min-width: 100%;
+        min-height: 56.25vw;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity var(--dur-slow) var(--ease-out);
+    }
+
+    &.trailer-playing &__trailer { opacity: 1; }
+    &.trailer-playing &__art { opacity: 0; }
 
     &__scrim {
         position: absolute;

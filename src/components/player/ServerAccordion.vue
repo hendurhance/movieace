@@ -61,7 +61,7 @@
             </ul>
 
             <p class="server-accordion__tip meta">
-                Switch mirrors if the picture stutters or the print won't load.
+                Switch mirrors if the server stutters or the movie/show won't load.
             </p>
         </div>
     </section>

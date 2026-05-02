@@ -210,12 +210,17 @@ export default defineComponent({
         };
 
         watch(
-            () => [autoplay.value, props.currentEpisode, hasUpcoming.value],
+            () => [open.value, autoplay.value, hasUpcoming.value],
             () => {
-                if (autoplay.value && hasUpcoming.value) startCountdown();
+                if (open.value && autoplay.value && hasUpcoming.value) startCountdown();
                 else stopCountdown();
             },
             { immediate: true }
+        );
+
+        watch(
+            () => props.currentEpisode,
+            () => stopCountdown()
         );
 
         onUnmounted(stopCountdown);
@@ -307,6 +312,7 @@ export default defineComponent({
         top: 0;
         right: 0;
         bottom: 0;
+        z-index: 2;
         width: min(420px, 92vw);
         background: var(--ink-850);
         box-shadow: -24px 0 60px rgba(0, 0, 0, 0.6);
@@ -486,6 +492,7 @@ export default defineComponent({
         pointer-events: auto;
         position: fixed;
         inset: 0;
+        z-index: 1;
         background: rgba(11, 10, 8, 0.55);
         backdrop-filter: blur(2px);
         animation: upNextScrimIn var(--dur-base) var(--ease-out);

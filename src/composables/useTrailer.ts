@@ -66,10 +66,24 @@ export const useTrailer = () => {
 
 export const buildTrailerEmbed = (
     key: string,
-    opts: { muted?: boolean; autoplay?: boolean; controls?: boolean; loop?: boolean } = {}
+    opts: {
+        muted?: boolean;
+        autoplay?: boolean;
+        controls?: boolean;
+        loop?: boolean;
+        jsApi?: boolean;
+        origin?: string;
+    } = {}
 ): string => {
-    const { muted = true, autoplay = true, controls = false, loop = true } = opts;
-    const params = new URLSearchParams({
+    const {
+        muted = true,
+        autoplay = true,
+        controls = false,
+        loop = true,
+        jsApi = false,
+        origin
+    } = opts;
+    const params: Record<string, string> = {
         autoplay: autoplay ? '1' : '0',
         mute: muted ? '1' : '0',
         controls: controls ? '1' : '0',
@@ -78,7 +92,13 @@ export const buildTrailerEmbed = (
         playsinline: '1',
         loop: loop ? '1' : '0',
         playlist: loop ? key : '',
-        iv_load_policy: '3'
-    });
-    return `https://www.youtube.com/embed/${key}?${params.toString()}`;
+        iv_load_policy: '3',
+        disablekb: '1',
+        cc_load_policy: '0',
+        fs: '0'
+    };
+    if (jsApi) params.enablejsapi = '1';
+    if (origin) params.origin = origin;
+    const search = new URLSearchParams(params).toString();
+    return `https://www.youtube-nocookie.com/embed/${key}?${search}`;
 };

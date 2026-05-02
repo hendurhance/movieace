@@ -1,5 +1,5 @@
 <template>
-    <section ref="rootRef" class="billboard" :class="{ 'trailer-playing': showTrailer }" aria-label="Featured title">
+    <section ref="rootRef" class="billboard" :class="{ 'trailer-playing': trailerVisible }" aria-label="Featured title">
         <div class="billboard__stage">
             <img
                 v-if="backdropUrl"
@@ -12,7 +12,8 @@
             <div v-else class="billboard__backdrop billboard__backdrop--placeholder" aria-hidden="true" />
 
             <iframe
-                v-if="showTrailer && trailerSrc"
+                v-if="trailerVisible && trailerSrc"
+                ref="iframeRef"
                 class="billboard__trailer"
                 :src="trailerSrc"
                 title="Trailer"
@@ -20,12 +21,21 @@
                 allow="autoplay; encrypted-media; picture-in-picture"
                 allowfullscreen
                 aria-hidden="true"
+                @load="onIframeLoad"
             />
 
             <div class="billboard__scrim" aria-hidden="true" />
             <div class="billboard__bloom" aria-hidden="true" />
             <div class="billboard__grain grain" aria-hidden="true" />
         </div>
+
+        <TrailerControls
+            :visible="trailerVisible && trailerLive"
+            :paused="userPaused"
+            :muted="userMuted"
+            @toggle-pause="togglePause"
+            @toggle-mute="toggleMute"
+        />
 
         <div class="container-lm billboard__content">
             <span class="eyebrow billboard__eyebrow">{{ eyebrow }}</span>
@@ -96,16 +106,17 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onBeforeUnmount, onMounted, PropType, ref, watch } from 'vue';
+import { computed, defineComponent, onMounted, PropType, ref, toRef } from 'vue';
 import LmButton from '../primitives/Button.vue';
-import { fetchTrailerKey, buildTrailerEmbed } from '../../composables/useTrailer';
+import TrailerControls from './TrailerControls.vue';
 import { genreName, primeGenres } from '../../composables/useGenreLookup';
 import { isInWatchlist, toggleWatchlistItem } from '../../composables/useWatchlist';
 import { useAmbientColor } from '../../composables/useAmbientColor';
+import { useTrailerEmbed } from '../../composables/useTrailerEmbed';
 
 export default defineComponent({
     name: 'BillboardHero',
-    components: { LmButton },
+    components: { LmButton, TrailerControls },
     props: {
         id: { type: [Number, String], required: true },
         type: { type: String as PropType<'movie' | 'tv'>, default: 'movie' },
@@ -177,66 +188,30 @@ export default defineComponent({
             });
         };
 
-        const trailerKey = ref<string | null>(null);
-        const showTrailer = ref(false);
-        const trailerSrc = computed(() =>
-            trailerKey.value
-                ? buildTrailerEmbed(trailerKey.value, {
-                      muted: true,
-                      autoplay: true,
-                      controls: false,
-                      loop: true
-                  })
-                : ''
-        );
-
-        let dwellTimer: number | null = null;
-        const clearDwell = () => {
-            if (dwellTimer !== null) {
-                window.clearTimeout(dwellTimer);
-                dwellTimer = null;
-            }
-        };
-
-        const prefersReducedMotion = () =>
-            typeof window !== 'undefined' &&
-            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-        const scheduleTrailer = async () => {
-            if (prefersReducedMotion()) return;
-            if (!props.id) return;
-
-            const key = await fetchTrailerKey(props.id, props.type);
-            if (!key) return;
-
-            clearDwell();
-            dwellTimer = window.setTimeout(() => {
-                trailerKey.value = key;
-                showTrailer.value = true;
-            }, props.dwellMs);
-        };
+        const {
+            iframeRef,
+            trailerVisible,
+            trailerBlocked,
+            trailerLive,
+            trailerSrc,
+            userPaused,
+            userMuted,
+            onIframeLoad,
+            togglePause,
+            toggleMute
+        } = useTrailerEmbed({
+            id: toRef(props, 'id'),
+            type: toRef(props, 'type'),
+            dwellMs: props.dwellMs
+        });
 
         onMounted(() => {
             primeGenres();
-            scheduleTrailer();
         });
-
-        onBeforeUnmount(() => {
-            clearDwell();
-        });
-
-        watch(
-            () => props.id,
-            () => {
-                clearDwell();
-                showTrailer.value = false;
-                trailerKey.value = null;
-                scheduleTrailer();
-            }
-        );
 
         return {
             rootRef,
+            iframeRef,
             backdropUrl,
             year,
             ratingLabel,
@@ -246,8 +221,15 @@ export default defineComponent({
             detailRoute,
             inWatchlist,
             onWatchlist,
-            showTrailer,
-            trailerSrc
+            trailerVisible,
+            trailerBlocked,
+            trailerLive,
+            trailerSrc,
+            userPaused,
+            userMuted,
+            onIframeLoad,
+            togglePause,
+            toggleMute
         };
     }
 });
