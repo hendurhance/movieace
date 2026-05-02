@@ -1,5 +1,5 @@
 <template>
-    <header ref="rootRef" class="masthead" :class="{ 'trailer-playing': trailerVisible }" :aria-label="`${title} — masthead`">
+    <header ref="rootRef" class="masthead" :class="{ 'trailer-playing': trailerLive }" :aria-label="`${title} — masthead`">
         <div class="masthead__stage">
             <img
                 v-if="backdropUrl"
@@ -11,16 +11,11 @@
             />
             <div v-else class="masthead__art masthead__art--placeholder" aria-hidden="true" />
 
-            <iframe
-                v-if="trailerVisible && trailerSrc"
-                ref="iframeRef"
-                class="masthead__trailer"
+            <TrailerIframe
+                :bind-ref="setIframe"
                 :src="trailerSrc"
-                title="Trailer"
-                frameborder="0"
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowfullscreen
-                aria-hidden="true"
+                :visible="trailerVisible"
+                :live="trailerLive"
                 @load="onIframeLoad"
             />
 
@@ -30,7 +25,7 @@
         </div>
 
         <TrailerControls
-            :visible="trailerVisible && trailerLive"
+            :visible="trailerLive"
             :paused="userPaused"
             :muted="userMuted"
             @toggle-pause="togglePause"
@@ -117,13 +112,14 @@
 import { computed, defineComponent, PropType, ref, toRef } from 'vue';
 import LmButton from '../primitives/Button.vue';
 import TrailerControls from '../hero/TrailerControls.vue';
+import TrailerIframe from '../hero/TrailerIframe.vue';
 import { isInWatchlist, toggleWatchlistItem } from '../../composables/useWatchlist';
 import { useAmbientColor } from '../../composables/useAmbientColor';
 import { useTrailerEmbed } from '../../composables/useTrailerEmbed';
 
 export default defineComponent({
     name: 'TitleMasthead',
-    components: { LmButton, TrailerControls },
+    components: { LmButton, TrailerControls, TrailerIframe },
     emits: ['trailer'],
     props: {
         id: { type: [Number, String], required: true },
@@ -188,8 +184,13 @@ export default defineComponent({
         } = useTrailerEmbed({
             id: toRef(props, 'id'),
             type: toRef(props, 'type'),
+            rootEl: rootRef,
             dwellMs: 3000
         });
+
+        const setIframe = (el: HTMLIFrameElement | null) => {
+            iframeRef.value = el;
+        };
 
         return {
             rootRef,
@@ -198,7 +199,7 @@ export default defineComponent({
             ratingLabel,
             inWatchlist,
             toggleWatchlist,
-            iframeRef,
+            setIframe,
             trailerVisible,
             trailerLive,
             trailerSrc,
@@ -242,21 +243,6 @@ export default defineComponent({
         }
     }
 
-    &__trailer {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 177.77vh;
-        height: 100vh;
-        min-width: 100%;
-        min-height: 56.25vw;
-        transform: translate(-50%, -50%);
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity var(--dur-slow) var(--ease-out);
-    }
-
-    &.trailer-playing &__trailer { opacity: 1; }
     &.trailer-playing &__art { opacity: 0; }
 
     &__scrim {

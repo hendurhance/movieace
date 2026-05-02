@@ -29,6 +29,8 @@
                 :title="movie?.title || 'Stream'"
                 :backdrop-path="movie?.backdrop_path || ''"
                 :poster-path="movie?.poster_path || ''"
+                :media-id="movieId"
+                media-type="movie"
             />
 
             <section class="watch-stage__rack">
@@ -96,6 +98,7 @@ import {
     getServers,
     buildStreamUrl
 } from '../composables/useStream';
+import { getResumeTimestamp } from '../composables/useProgress';
 import { useWebImage } from '../utils/useWebImage';
 
 import StreamFrame from '../components/player/StreamFrame.vue';
@@ -118,14 +121,21 @@ export default defineComponent({
 
         const availableServers = computed(() => getServers('movie'));
         const reloadKey = ref(0);
+        const resumeTimestamp = ref(0);
 
         const currentEmbedUrl = computed(() => {
             if (!movieId.value) return '';
 
+            const ts = (resumeTimestamp.value > 0 && reloadKey.value === 0)
+                ? resumeTimestamp.value
+                : undefined;
             const base = buildStreamUrl(
                 movieId.value,
                 'movie',
-                currentStreamData.value.currentServer
+                currentStreamData.value.currentServer,
+                1,
+                1,
+                ts
             );
             if (reloadKey.value > 0) {
                 return `${base}${base.includes('?') ? '&' : '?'}t=${reloadKey.value}`;
@@ -158,6 +168,7 @@ export default defineComponent({
                 return;
             }
             try {
+                resumeTimestamp.value = getResumeTimestamp(movieId.value, 'movie');
                 const { data } = await fetchMovie(movieId.value);
                 if (!data.value) throw new Error('No movie data received');
                 movie.value = data.value;

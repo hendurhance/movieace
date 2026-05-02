@@ -34,6 +34,10 @@
                 :title="show?.name || 'Stream'"
                 :backdrop-path="show?.backdrop_path || ''"
                 :poster-path="show?.poster_path || ''"
+                :media-id="showId"
+                media-type="tv"
+                :season="currentSeason"
+                :episode="currentEpisode"
             />
 
             <section class="watch-stage__rack">
@@ -46,6 +50,7 @@
 
             <section v-if="availableSeasons.length" class="watch-stage__rack">
                 <EpisodeNavigator
+                    :show-id="showId"
                     :available-seasons="availableSeasons"
                     :season-episodes="seasonEpisodes"
                     :current-season="currentSeason"
@@ -118,7 +123,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, ref, watch } from 'vue';
+import { computed, defineComponent, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
     useTvShows,
@@ -135,6 +140,7 @@ import {
     getServers,
     buildStreamUrl
 } from '../composables/useStream';
+import { getResumeTimestamp } from '../composables/useProgress';
 import { useWebImage } from '../utils/useWebImage';
 
 import StreamFrame from '../components/player/StreamFrame.vue';
@@ -189,14 +195,18 @@ export default defineComponent({
             return lastInSeason && lastSeason;
         });
 
+        const resumeTimestamp = ref(0);
+
         const currentEmbedUrl = computed(() => {
             if (!externalId.value) return '';
+            const ts = resumeTimestamp.value > 0 ? resumeTimestamp.value : undefined;
             return buildStreamUrl(
                 externalId.value,
                 'tv',
                 currentStreamData.value.currentServer,
                 currentSeason.value,
-                currentEpisode.value
+                currentEpisode.value,
+                ts
             );
         });
 
@@ -254,6 +264,7 @@ export default defineComponent({
         const loadShow = async () => {
             if (!showId.value) return;
             try {
+                resumeTimestamp.value = getResumeTimestamp(showId.value, 'tv', currentSeason.value, currentEpisode.value);
                 const { data } = await fetchTvShow(showId.value);
                 if (!data.value) throw new Error('No show data received');
                 show.value = data.value;
@@ -272,6 +283,7 @@ export default defineComponent({
                 await loadSeason();
                 updateDocumentTitle();
                 registerMiniPlayer();
+                nextTick(() => { resumeTimestamp.value = 0; });
             } catch (err) {
                 console.error('Failed to load show:', err);
             }
@@ -337,16 +349,20 @@ export default defineComponent({
             if (currentSeason.value === next) return;
             currentSeason.value = next;
             currentEpisode.value = 1;
+            resumeTimestamp.value = getResumeTimestamp(showId.value, 'tv', next, 1);
             await updateRoute();
             await loadSeason();
+            nextTick(() => { resumeTimestamp.value = 0; });
         };
 
         const changeEpisode = async (next: number) => {
             if (next < 1 || next === currentEpisode.value) return;
             currentEpisode.value = next;
+            resumeTimestamp.value = getResumeTimestamp(showId.value, 'tv', currentSeason.value, next);
             currentEpisodeDetails.value =
                 seasonEpisodes.value.find((ep) => ep.episode_number === next) || null;
             await updateRoute();
+            nextTick(() => { resumeTimestamp.value = 0; });
         };
 
         const goToPreviousEpisode = async () => {

@@ -84,18 +84,12 @@
 
         <SiteFooter />
 
-        <LmDialog v-model="trailerOpen" size="xl" title="Trailer" @close="closeTrailer">
-            <div v-if="trailerKey" class="tv-detail__trailer">
-                <iframe
-                    :src="trailerEmbedUrl"
-                    title="Trailer"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen
-                    loading="lazy"
-                />
-            </div>
-            <p v-else class="meta">No trailer filed for this title.</p>
-        </LmDialog>
+        <TrailerDialog
+            v-model="trailerOpen"
+            :videos="trailers"
+            :title="show ? show.name : 'Trailers'"
+            @close="closeTrailer"
+        />
     </div>
 </template>
 
@@ -112,10 +106,10 @@ import CastGrid from '../components/detail/CastGrid.vue';
 import ReviewsPullQuote, { ReviewEntry } from '../components/detail/ReviewsPullQuote.vue';
 import SeasonTabs from '../components/detail/SeasonTabs.vue';
 import CuratedRail, { CuratedItem } from '../components/rails/CuratedRail.vue';
-import LmDialog from '../components/primitives/Dialog.vue';
+import TrailerDialog from '../components/detail/TrailerDialog.vue';
 import { useTvShows, TVShowDetails, TVShowType } from '../composables/useTvShows';
 import { Cast, Crew } from '../composables/useMovies';
-import { fetchTrailerKey, buildTrailerEmbed } from '../composables/useTrailer';
+import { fetchTrailerVideos, type TrailerVideo } from '../composables/useTrailer';
 import { addViewedItem } from '../composables/useHistory';
 import { getLastWatchedMetaData } from '../composables/useStream';
 import useAxios from '../composables/useAxios';
@@ -144,7 +138,7 @@ export default defineComponent({
         ReviewsPullQuote,
         SeasonTabs,
         CuratedRail,
-        LmDialog
+        TrailerDialog
     },
     setup() {
         const route = useRoute();
@@ -158,7 +152,7 @@ export default defineComponent({
         const loading = ref(true);
 
         const trailerOpen = ref(false);
-        const trailerKey = ref<string | null>(null);
+        const trailers = ref<TrailerVideo[]>([]);
 
         const genreNames = computed(() => (show.value?.genres ?? []).map(g => g.name));
         const genreIds = computed(() => (show.value?.genres ?? []).map(g => g.id));
@@ -174,13 +168,7 @@ export default defineComponent({
             return g ? `${g} · Series` : 'Series';
         });
 
-        const hasTrailer = computed(() => !!trailerKey.value);
-
-        const trailerEmbedUrl = computed(() =>
-            trailerKey.value
-                ? buildTrailerEmbed(trailerKey.value, { muted: false, autoplay: true, controls: true })
-                : ''
-        );
+        const hasTrailer = computed(() => trailers.value.length > 0);
 
         const avgRuntime = computed(() => {
             const list = show.value?.episode_run_time ?? [];
@@ -280,7 +268,7 @@ export default defineComponent({
         });
 
         const openTrailer = () => {
-            if (trailerKey.value) trailerOpen.value = true;
+            if (trailers.value.length) trailerOpen.value = true;
         };
         const closeTrailer = () => {
             trailerOpen.value = false;
@@ -311,14 +299,14 @@ export default defineComponent({
             crew.value = [];
             similar.value = [];
             reviews.value = [];
-            trailerKey.value = null;
+            trailers.value = [];
 
             try {
-                const [details, credits, sim, trailer] = await Promise.all([
+                const [details, credits, sim, videos] = await Promise.all([
                     fetchTvShow(id),
                     fetchTvShowCredit(id),
                     fetchSimilarTvShows(id),
-                    fetchTrailerKey(id, 'tv'),
+                    fetchTrailerVideos(id, 'tv'),
                     fetchReviews(id)
                 ]);
 
@@ -326,7 +314,7 @@ export default defineComponent({
                 cast.value = credits.data.value?.cast ?? [];
                 crew.value = credits.data.value?.crew ?? [];
                 similar.value = (sim.data.value?.results ?? []) as TVShowType[];
-                trailerKey.value = trailer ?? null;
+                trailers.value = videos ?? [];
 
                 if (show.value) {
                     document.title = `${show.value.name} — Movieace`;
@@ -369,8 +357,7 @@ export default defineComponent({
             mastheadEyebrow,
             hasTrailer,
             trailerOpen,
-            trailerKey,
-            trailerEmbedUrl,
+            trailers,
             metaItems,
             statsItems,
             similarItems,
@@ -441,22 +428,6 @@ export default defineComponent({
         animation: tv-spin 0.8s linear infinite;
     }
 
-    &__trailer {
-        position: relative;
-        width: 100%;
-        aspect-ratio: 16 / 9;
-        background: #000;
-        border-radius: var(--r-sm);
-        overflow: hidden;
-
-        iframe {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            border: 0;
-        }
-    }
 }
 
 @keyframes tv-spin {

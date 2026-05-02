@@ -58,6 +58,7 @@ import { computed, defineComponent } from 'vue';
 import LmRail from './Rail.vue';
 import { viewHistory } from '../../composables/useHistory';
 import { streamData } from '../../composables/useStream';
+import { getProgressPercent } from '../../composables/useProgress';
 import { useWebImage } from '../../utils/useWebImage';
 
 interface Entry {
@@ -88,10 +89,16 @@ export default defineComponent({
                 const image = item.image ? useWebImage(item.image, 'medium') : '';
                 const initial = (item.title?.[0] || '·').toUpperCase();
 
-                const progress = 0; // Server embeds don't expose real progress yet.
                 const isTv = item.type === 'tv';
                 const season = state?.season && state.season > 0 ? state.season : 1;
                 const episode = state?.episode && state.episode > 0 ? state.episode : 1;
+
+                const progress = getProgressPercent(
+                    item.id,
+                    item.type,
+                    isTv ? season : undefined,
+                    isTv ? episode : undefined
+                );
                 const resumePath = isTv
                     ? `/stream/tv-show/${item.id}/season/${season}/episode/${episode}`
                     : `/stream/movie/${item.id}`;

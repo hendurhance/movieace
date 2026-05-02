@@ -96,6 +96,12 @@
                                 <path d="M8 5v14l11-7z" />
                             </svg>
                         </span>
+                        <div
+                            v-if="epProgress(ep.episode_number) > 0 && epProgress(ep.episode_number) < 1"
+                            class="ep-row__progress"
+                            :style="{ width: `${Math.round(epProgress(ep.episode_number) * 100)}%` }"
+                            aria-hidden="true"
+                        />
                     </div>
 
                     <div class="ep-row__body">
@@ -118,6 +124,7 @@
 <script lang="ts">
 import { computed, defineComponent, onMounted, onUnmounted, PropType } from 'vue';
 import { useWebImage } from '../../utils/useWebImage';
+import { getProgressPercent } from '../../composables/useProgress';
 import { Episode, TVShowSeasonDetails } from '../../composables/useTvShows';
 import ArrowLeft from '../svg/outline/arrow-left.vue';
 import ArrowRight from '../svg/outline/arrow-right.vue';
@@ -134,6 +141,7 @@ export default defineComponent({
         seasonEpisodes: { type: Array as PropType<Episode[]>, required: true },
         currentSeason: { type: Number, required: true },
         currentEpisode: { type: Number, required: true },
+        showId: { type: [String, Number], default: '' },
         isLoadingEpisodes: { type: Boolean, default: false }
     },
     emits: ['season-change', 'select', 'previous', 'next'],
@@ -156,6 +164,11 @@ export default defineComponent({
         };
 
         const webImage = (path: string) => useWebImage(path, 'medium');
+
+        const epProgress = (epNumber: number) => {
+            if (!props.showId) return 0;
+            return getProgressPercent(props.showId, 'tv', props.currentSeason, epNumber) / 100;
+        };
 
         const formatDate = (s: string) => {
             const d = new Date(s);
@@ -188,6 +201,7 @@ export default defineComponent({
             canGoNext,
             onSeasonChange,
             webImage,
+            epProgress,
             formatDate,
             truncate,
             emit
@@ -332,6 +346,8 @@ export default defineComponent({
         color: var(--bone-300);
         pointer-events: none;
         display: inline-flex;
+        align-items: center;
+        justify-content: center;
 
         svg { width: 18px; height: 18px; }
     }
@@ -430,6 +446,16 @@ export default defineComponent({
         color: var(--ember);
 
         svg { width: 28px; height: 28px; }
+    }
+
+    &__progress {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 3px;
+        background: var(--ember);
+        box-shadow: 0 0 12px var(--ember-glow);
+        border-radius: 0 2px 0 0;
     }
 
     &__body {

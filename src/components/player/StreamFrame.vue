@@ -47,6 +47,7 @@
 import { computed, defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useWebImage } from '../../utils/useWebImage';
 import { useAmbientColor } from '../../composables/useAmbientColor';
+import { startProgressTracking } from '../../composables/useProgress';
 
 export default defineComponent({
     name: 'StreamFrame',
@@ -54,7 +55,11 @@ export default defineComponent({
         embedUrl: { type: String, default: '' },
         title: { type: String, default: 'Stream' },
         backdropPath: { type: String, default: '' },
-        posterPath: { type: String, default: '' }
+        posterPath: { type: String, default: '' },
+        mediaId: { type: [String, Number], default: '' },
+        mediaType: { type: String as () => 'movie' | 'tv', default: 'movie' },
+        season: { type: Number, default: 0 },
+        episode: { type: Number, default: 0 }
     },
     setup(props) {
         const rootRef = ref<HTMLElement | null>(null);
@@ -86,6 +91,23 @@ export default defineComponent({
             if (messageTimer) {
                 clearInterval(messageTimer);
                 messageTimer = null;
+            }
+        };
+
+        let stopTracking: (() => void) | null = null;
+
+        const startTrackingIfNeeded = () => {
+            if (stopTracking) {
+                stopTracking();
+                stopTracking = null;
+            }
+            if (props.mediaId && props.embedUrl) {
+                stopTracking = startProgressTracking(
+                    props.mediaId,
+                    props.mediaType,
+                    props.mediaType === 'tv' ? props.season : undefined,
+                    props.mediaType === 'tv' ? props.episode : undefined
+                );
             }
         };
 
@@ -129,6 +151,7 @@ export default defineComponent({
                     isLoading.value = true;
                     hasError.value = false;
                     startMessages();
+                    startTrackingIfNeeded();
                 }
             }
         );
@@ -141,6 +164,7 @@ export default defineComponent({
 
         onMounted(() => {
             startMessages();
+            startTrackingIfNeeded();
             window.setTimeout(() => {
                 if (isLoading.value) onLoad();
             }, 15000);
@@ -148,6 +172,10 @@ export default defineComponent({
 
         onUnmounted(() => {
             stopMessages();
+            if (stopTracking) {
+                stopTracking();
+                stopTracking = null;
+            }
         });
 
         return {

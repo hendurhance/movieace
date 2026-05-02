@@ -522,6 +522,9 @@ export default defineComponent({
     }
 
     &__empty-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         color: var(--bone-500);
         margin-bottom: var(--s-5);
     }

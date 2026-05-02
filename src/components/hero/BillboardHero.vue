@@ -1,5 +1,5 @@
 <template>
-    <section ref="rootRef" class="billboard" :class="{ 'trailer-playing': trailerVisible }" aria-label="Featured title">
+    <section ref="rootRef" class="billboard" :class="{ 'trailer-playing': trailerLive }" aria-label="Featured title">
         <div class="billboard__stage">
             <img
                 v-if="backdropUrl"
@@ -11,16 +11,11 @@
             />
             <div v-else class="billboard__backdrop billboard__backdrop--placeholder" aria-hidden="true" />
 
-            <iframe
-                v-if="trailerVisible && trailerSrc"
-                ref="iframeRef"
-                class="billboard__trailer"
+            <TrailerIframe
+                :bind-ref="setIframe"
                 :src="trailerSrc"
-                title="Trailer"
-                frameborder="0"
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowfullscreen
-                aria-hidden="true"
+                :visible="trailerVisible"
+                :live="trailerLive"
                 @load="onIframeLoad"
             />
 
@@ -30,7 +25,7 @@
         </div>
 
         <TrailerControls
-            :visible="trailerVisible && trailerLive"
+            :visible="trailerLive"
             :paused="userPaused"
             :muted="userMuted"
             @toggle-pause="togglePause"
@@ -109,6 +104,7 @@
 import { computed, defineComponent, onMounted, PropType, ref, toRef } from 'vue';
 import LmButton from '../primitives/Button.vue';
 import TrailerControls from './TrailerControls.vue';
+import TrailerIframe from './TrailerIframe.vue';
 import { genreName, primeGenres } from '../../composables/useGenreLookup';
 import { isInWatchlist, toggleWatchlistItem } from '../../composables/useWatchlist';
 import { useAmbientColor } from '../../composables/useAmbientColor';
@@ -116,7 +112,7 @@ import { useTrailerEmbed } from '../../composables/useTrailerEmbed';
 
 export default defineComponent({
     name: 'BillboardHero',
-    components: { LmButton, TrailerControls },
+    components: { LmButton, TrailerControls, TrailerIframe },
     props: {
         id: { type: [Number, String], required: true },
         type: { type: String as PropType<'movie' | 'tv'>, default: 'movie' },
@@ -191,7 +187,6 @@ export default defineComponent({
         const {
             iframeRef,
             trailerVisible,
-            trailerBlocked,
             trailerLive,
             trailerSrc,
             userPaused,
@@ -202,8 +197,13 @@ export default defineComponent({
         } = useTrailerEmbed({
             id: toRef(props, 'id'),
             type: toRef(props, 'type'),
+            rootEl: rootRef,
             dwellMs: props.dwellMs
         });
+
+        const setIframe = (el: HTMLIFrameElement | null) => {
+            iframeRef.value = el;
+        };
 
         onMounted(() => {
             primeGenres();
@@ -211,7 +211,7 @@ export default defineComponent({
 
         return {
             rootRef,
-            iframeRef,
+            setIframe,
             backdropUrl,
             year,
             ratingLabel,
@@ -222,7 +222,6 @@ export default defineComponent({
             inWatchlist,
             onWatchlist,
             trailerVisible,
-            trailerBlocked,
             trailerLive,
             trailerSrc,
             userPaused,
@@ -265,21 +264,6 @@ export default defineComponent({
         }
     }
 
-    &__trailer {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 177.77vh;
-        height: 100vh;
-        min-width: 100%;
-        min-height: 56.25vw;
-        transform: translate(-50%, -50%);
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity var(--dur-slow) var(--ease-out);
-    }
-
-    &.trailer-playing &__trailer { opacity: 1; }
     &.trailer-playing &__backdrop { opacity: 0; }
 
     &__scrim {
@@ -416,7 +400,6 @@ export default defineComponent({
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .billboard__backdrop,
-    .billboard__trailer { transition: none; }
+    .billboard__backdrop { transition: none; }
 }
 </style>

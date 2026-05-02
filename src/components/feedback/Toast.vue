@@ -130,7 +130,8 @@ export default defineComponent({
 
 .toast__icon {
     display: inline-flex;
-    margin-top: 1px;
+    align-items: center;
+    justify-content: center;
 
     svg {
         width: 18px;

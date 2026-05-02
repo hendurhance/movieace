@@ -275,6 +275,7 @@ export default defineComponent({
         margin-bottom: clamp(var(--s-6), 6vw, var(--s-8));
         position: relative;
         isolation: isolate;
+        overflow-x: clip;
 
         &::after {
             content: '';
@@ -514,6 +515,9 @@ export default defineComponent({
     }
 
     &__empty-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         color: var(--bone-500);
         margin-bottom: var(--s-4);
 

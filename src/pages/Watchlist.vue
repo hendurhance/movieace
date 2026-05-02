@@ -777,6 +777,9 @@ function isValidItem(x: any): boolean {
     }
 
     &__empty-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         color: var(--ember);
         margin-bottom: var(--s-4);
         opacity: 0.85;

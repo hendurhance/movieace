@@ -312,7 +312,8 @@ export default defineComponent({
         );
         gap: var(--rail-gap);
         overflow-x: auto;
-        overflow-y: visible;
+        overflow-y: clip;
+        overflow-clip-margin: 32px;
         scroll-behavior: smooth;
         scroll-snap-type: x mandatory;
         padding-inline: var(--container-gutter);

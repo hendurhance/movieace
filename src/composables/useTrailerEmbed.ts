@@ -5,6 +5,7 @@ import { fetchTrailerKey, buildTrailerEmbed } from './useTrailer';
 interface UseTrailerEmbedOptions {
     id: Ref<number | string>;
     type: Ref<'movie' | 'tv'>;
+    rootEl?: Ref<HTMLElement | null>;
     dwellMs?: number;
     blockTimeoutMs?: number;
 }
@@ -20,8 +21,17 @@ export function useTrailerEmbed(opts: UseTrailerEmbedOptions) {
     const trailerLive = ref(false);
     const trailerBlocked = ref(false);
 
-    const userPaused = useStorage<boolean>('lm:trailer:paused', false);
+    const userPaused = ref(false);
     const userMuted = useStorage<boolean>('lm:trailer:muted', true);
+
+    const docHidden = ref(
+        typeof document !== 'undefined' && document.visibilityState === 'hidden'
+    );
+    const offscreen = ref(false);
+    const reduceMotion = ref(
+        typeof window !== 'undefined' &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
 
     const trailerSrc = computed(() =>
         trailerKey.value
@@ -40,9 +50,22 @@ export function useTrailerEmbed(opts: UseTrailerEmbedOptions) {
         () => trailerActive.value && !trailerBlocked.value
     );
 
+    const shouldPlay = computed(
+        () =>
+            trailerLive.value &&
+            !userPaused.value &&
+            !docHidden.value &&
+            !offscreen.value
+    );
+
     let dwellTimer: number | null = null;
     let blockTimer: number | null = null;
     let messageHandler: ((e: MessageEvent) => void) | null = null;
+    let visibilityHandler: (() => void) | null = null;
+    let mq: MediaQueryList | null = null;
+    let mqHandler: ((e: MediaQueryListEvent) => void) | null = null;
+    let observer: IntersectionObserver | null = null;
+    let observedEl: HTMLElement | null = null;
 
     const clearDwell = () => {
         if (dwellTimer !== null) {
@@ -73,26 +96,23 @@ export function useTrailerEmbed(opts: UseTrailerEmbedOptions) {
 
     const command = (func: string) => post({ event: 'command', func, args: [] });
 
-    const applyUserState = () => {
+    const applyMute = () => {
         if (userMuted.value) command('mute');
         else command('unMute');
-        if (userPaused.value) command('pauseVideo');
-        else command('playVideo');
     };
 
     const togglePause = () => {
         userPaused.value = !userPaused.value;
-        if (userPaused.value) command('pauseVideo');
-        else command('playVideo');
     };
 
     const toggleMute = () => {
         userMuted.value = !userMuted.value;
-        if (userMuted.value) command('mute');
-        else command('unMute');
+        applyMute();
     };
 
     const handleYouTubeMessage = (e: MessageEvent) => {
+        const win = iframeRef.value?.contentWindow;
+        if (!win || e.source !== win) return;
         const origin = e.origin || '';
         if (!origin.includes('youtube.com') && !origin.includes('youtube-nocookie.com')) return;
         let data: any = e.data;
@@ -110,7 +130,7 @@ export function useTrailerEmbed(opts: UseTrailerEmbedOptions) {
                 clearBlockTimer();
                 if (!trailerLive.value) {
                     trailerLive.value = true;
-                    applyUserState();
+                    applyMute();
                 }
             }
         }
@@ -129,10 +149,6 @@ export function useTrailerEmbed(opts: UseTrailerEmbedOptions) {
         }, blockTimeoutMs);
     };
 
-    const prefersReducedMotion = () =>
-        typeof window !== 'undefined' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
     const resetTrailer = () => {
         clearDwell();
         clearBlockTimer();
@@ -141,10 +157,11 @@ export function useTrailerEmbed(opts: UseTrailerEmbedOptions) {
         trailerLive.value = false;
         trailerBlocked.value = false;
         trailerKey.value = null;
+        userPaused.value = false;
     };
 
     const scheduleTrailer = async () => {
-        if (prefersReducedMotion()) return;
+        if (reduceMotion.value) return;
         const id = opts.id.value;
         if (!id) return;
 
@@ -161,6 +178,62 @@ export function useTrailerEmbed(opts: UseTrailerEmbedOptions) {
         }, dwellMs);
     };
 
+    if (typeof document !== 'undefined') {
+        visibilityHandler = () => {
+            docHidden.value = document.visibilityState === 'hidden';
+        };
+        document.addEventListener('visibilitychange', visibilityHandler);
+    }
+
+    if (typeof window !== 'undefined' && window.matchMedia) {
+        mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+        mqHandler = (e) => {
+            reduceMotion.value = e.matches;
+        };
+        mq.addEventListener('change', mqHandler);
+    }
+
+    const attachObserver = (el: HTMLElement) => {
+        if (typeof IntersectionObserver === 'undefined') return;
+        observer = new IntersectionObserver(
+            ([entry]) => {
+                offscreen.value = !entry.isIntersecting;
+            },
+            { threshold: 0.1 }
+        );
+        observer.observe(el);
+        observedEl = el;
+    };
+
+    const detachObserver = () => {
+        if (observer && observedEl) observer.unobserve(observedEl);
+        observer?.disconnect();
+        observer = null;
+        observedEl = null;
+    };
+
+    if (opts.rootEl) {
+        watch(
+            () => opts.rootEl!.value,
+            (el) => {
+                detachObserver();
+                if (el) attachObserver(el);
+                else offscreen.value = false;
+            },
+            { immediate: true }
+        );
+    }
+
+    watch(
+        shouldPlay,
+        (val, prev) => {
+            if (!trailerLive.value) return;
+            if (val === prev) return;
+            if (val) command('playVideo');
+            else command('pauseVideo');
+        }
+    );
+
     watch(
         () => opts.id.value,
         () => {
@@ -170,16 +243,33 @@ export function useTrailerEmbed(opts: UseTrailerEmbedOptions) {
         { immediate: true }
     );
 
+    watch(reduceMotion, (val) => {
+        if (val) {
+            resetTrailer();
+        } else if (!trailerActive.value) {
+            scheduleTrailer();
+        }
+    });
+
     onBeforeUnmount(() => {
         clearDwell();
         clearBlockTimer();
         detachMessageListener();
+        detachObserver();
+        if (visibilityHandler) {
+            document.removeEventListener('visibilitychange', visibilityHandler);
+            visibilityHandler = null;
+        }
+        if (mq && mqHandler) {
+            mq.removeEventListener('change', mqHandler);
+            mq = null;
+            mqHandler = null;
+        }
     });
 
     return {
         iframeRef,
         trailerVisible,
-        trailerBlocked,
         trailerLive,
         trailerSrc,
         userPaused,

@@ -218,11 +218,6 @@ export default defineComponent({
             { immediate: true }
         );
 
-        watch(
-            () => props.currentEpisode,
-            () => stopCountdown()
-        );
-
         onUnmounted(stopCountdown);
 
         return {
@@ -365,6 +360,7 @@ export default defineComponent({
         padding: 0;
         display: grid;
         gap: var(--s-3);
+        align-content: start;
     }
 
     &__item {
