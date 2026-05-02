@@ -1,0 +1,116 @@
+// ============================================================================
+// Modern reset — replaces the normalize-style rules in the old style.scss.
+// Intentionally small. Opinionated where it helps editorial typography.
+// ============================================================================
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  line-height: var(--lh-base);
+}
+
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+  border: 0;
+}
+
+input, button, textarea, select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  background-color: transparent;
+}
+
+p, h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+h1, h2, h3, h4 {
+  text-wrap: balance;
+}
+
+#app, #__root {
+  isolation: isolate;
+}
+
+// Focus ring — visible, branded, skipped for pointer-only focus
+:focus {
+  outline: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 3px;
+  border-radius: var(--r-sm);
+}
+
+// Selection
+::selection {
+  background: var(--ember);
+  color: var(--ink-900);
+}
+
+// Scrollbar — subtle, editorial
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ink-600);
+  border-radius: var(--r-pill);
+  border: 2px solid var(--ink-900);
+
+  &:hover {
+    background: var(--ink-500);
+  }
+}
+
+// Hide scrollbar utility — for horizontal rails
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

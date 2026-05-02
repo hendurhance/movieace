@@ -11,7 +11,7 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/',
         name: 'Home',
-        component: () => import('../pages/Index.vue'),
+        component: () => import('../pages/Home.vue'),
         meta: {
             showInHeader: true,
             title: 'Home'
@@ -37,6 +37,7 @@ const routes: Array<RouteRecordRaw> = [
     },
     {
         path: '/tv-shows',
+        alias: '/tv',
         name: 'TVShows',
         component: () => import('../pages/TVShows.vue'),
         meta: {
@@ -64,6 +65,7 @@ const routes: Array<RouteRecordRaw> = [
     },
     {
         'path': '/tv-show/:id',
+        alias: '/tv/:id',
         'name': 'TVShow',
         'component': () => import('../pages/TVShow.vue'),
         meta: {
@@ -100,6 +102,7 @@ const routes: Array<RouteRecordRaw> = [
     },
     {
         'path': '/stream/movie/:id',
+        alias: '/watch/movie/:id',
         'name': 'StreamMovie',
         'component': () => import('../pages/StreamMovie.vue'),
         meta: {
@@ -109,6 +112,7 @@ const routes: Array<RouteRecordRaw> = [
     },
     {
         'path': '/stream/tv-show/:id/season/:season/episode/:episode',
+        alias: '/watch/tv/:id/:season/:episode',
         'name': 'StreamTVShow',
         'component': () => import('../pages/StreamTVShow.vue'),
         meta: {
@@ -120,7 +124,11 @@ const routes: Array<RouteRecordRaw> = [
 
 const router = createRouter({
     history: createWebHistory(),
-    routes
+    routes,
+    scrollBehavior(_to, _from, savedPosition) {
+        if (savedPosition) return savedPosition;
+        return { top: 0, left: 0 };
+    }
 });
 
 export { router, routes }

@@ -1,0 +1,123 @@
+// ============================================================================
+// Typography — Fraunces (display serif) + General Sans (UI) + JetBrains Mono.
+// Loaded from Fontshare CDN (free, self-hostable later if needed).
+// Fraunces is variable — we request weight range and opsz.
+// ============================================================================
+
+// Fraunces — Fontshare carries Fraunces; fall back to Google Fonts CDN which
+// supports variable Fraunces with opsz axis.
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&display=swap');
+
+// General Sans — Fontshare (free).
+@import url('https://api.fontshare.com/v2/css?f[]=general-sans@200,300,400,500,600,700&display=swap');
+
+// JetBrains Mono — Google Fonts.
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+
+// ── Base typography ─────────────────────────────────────────────────────────
+html {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--bone-50);
+  background: var(--ink-900);
+}
+
+body {
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  letter-spacing: var(--ls-snug);
+}
+
+// ── Heading defaults — editorial serif ──────────────────────────────────────
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tight);
+  color: var(--bone-50);
+  // Fraunces opsz: larger optical size for headings
+  font-variation-settings: 'opsz' 72, 'SOFT' 50;
+}
+
+h5, h6 {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  line-height: var(--lh-snug);
+  letter-spacing: var(--ls-snug);
+}
+
+h1 { font-size: var(--fs-5xl); }
+h2 { font-size: var(--fs-4xl); }
+h3 { font-size: var(--fs-3xl); }
+h4 { font-size: var(--fs-2xl); }
+h5 { font-size: var(--fs-xl); }
+h6 { font-size: var(--fs-lg); }
+
+// ── Paragraph ───────────────────────────────────────────────────────────────
+p {
+  color: var(--bone-200);
+  max-width: 68ch;
+}
+
+// ── Helper classes for editorial typography ─────────────────────────────────
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(var(--fs-5xl), 8vw, var(--fs-display));
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-variation-settings: 'opsz' 144, 'SOFT' 30;
+}
+
+.display--italic {
+  font-style: italic;
+  font-variation-settings: 'opsz' 144, 'SOFT' 80;
+}
+
+.eyebrow {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--ls-micro);
+  color: var(--bone-400);
+}
+
+.caption {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  color: var(--bone-400);
+  letter-spacing: var(--ls-wide);
+}
+
+.meta {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--bone-300);
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.pull-quote {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-snug);
+  color: var(--bone-50);
+  font-variation-settings: 'opsz' 144, 'SOFT' 100;
+}
+
+// Drop cap for editorial synopsis
+.drop-cap::first-letter {
+  font-family: var(--font-display);
+  font-weight: 400;
+  float: left;
+  font-size: 5.2em;
+  line-height: 0.85;
+  padding: 0.1em 0.12em 0 0;
+  color: var(--bone-50);
+  font-variation-settings: 'opsz' 144, 'SOFT' 30;
+}

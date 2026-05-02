@@ -27,34 +27,34 @@ export const movieServers = ref<Server[]>([
   { name: 'VidKing', urlTemplate: 'https://www.vidking.net/embed/movie/{tmdbId}?autoPlay=true' },
   { name: 'VidEasy', urlTemplate: 'https://player.videasy.net/movie/{tmdbId}?color=#4eb5ff' },
   { name: 'Cinemaos', urlTemplate: 'https://cinemaos.tech/player/{tmdbId}' },
-  { name: 'VidSrc CC', urlTemplate: 'https://vidsrc.cc/v2/embed/movie/{tmdbId}' },
-  { name: 'VidSrc XYZ', urlTemplate: 'https://vidsrc.xyz/embed/movie?tmdb={tmdbId}' },
-  { name: 'VidSrc In', urlTemplate: 'https://vidsrc.in/embed/movie?tmdb={tmdbId}' },
+  { name: 'VidSrc RU', urlTemplate: 'https://vidsrc-embed.ru/embed/movie/{tmdbId}' },
+  { name: 'VidSrc SU', urlTemplate: 'https://vidsrc-embed.su/embed/movie/{tmdbId}' },
+  { name: 'VidSrcMe', urlTemplate: 'https://vidsrcme.su/embed/movie/{tmdbId}' },
   { name: 'MultiEmbed', urlTemplate: 'https://multiembed.mov/?video_id={tmdbId}&tmdb=1' },
-  { name: 'EmbedSU', urlTemplate: 'https://embed.su/embed/movie/{tmdbId}' },
+  { name: 'Vsrc', urlTemplate: 'https://vsrc.su/embed/movie/{tmdbId}' },
   { name: 'VidLink', urlTemplate: 'https://vidlink.pro/movie/{tmdbId}' },
-  { name: 'AutoEmbed', urlTemplate: 'https://player.autoembed.cc/embed/movie/{tmdbId}' },
+  { name: 'AutoEmbed', urlTemplate: 'https://player.autoembed.app/embed/movie/{tmdbId}' },
   { name: 'VidFast', urlTemplate: 'https://vidfast.pro/movie/{tmdbId}' },
   { name: '111Movies', urlTemplate: 'https://111movies.com/movie/{tmdbId}' },
   { name: 'Vidora', urlTemplate: 'https://vidora.su/movie/{tmdbId}?parameters' },
-  { name: 'Smashy', urlTemplate: 'https://player.smashy.stream/movie/{tmdbId}?autoplay=true' }
+  { name: 'Smashy', urlTemplate: 'https://player.smashystream.com/movie/{tmdbId}?autoplay=true' }
 ]);
 
 export const tvServers = ref<Server[]>([
   { name: 'VidKing', urlTemplate: 'https://www.vidking.net/embed/tv/{externalId}/{season}/{episode}?autoPlay=true&nextEpisode=true&episodeSelector=true' },
   { name: 'VidEasy', urlTemplate: 'https://player.videasy.net/tv/{externalId}/{season}/{episode}?color=#4eb5ff&nextEpisode=true&autoplayNextEpisode=true&episodeSelector=true' },
   { name: 'Cinemaos', urlTemplate: 'https://cinemaos.tech/player/{externalId}/{season}/{episode}' },
-  { name: 'VidSrc CC', urlTemplate: 'https://vidsrc.cc/v2/embed/tv/{externalId}/{season}/{episode}' },
-  { name: 'VidSrc XYZ', urlTemplate: 'https://vidsrc.xyz/embed/tv?tmdb={externalId}&season={season}&episode={episode}' },
-  { name: 'VidSrc In', urlTemplate: 'https://vidsrc.in/embed/tv?tmdb={externalId}&season={season}&episode={episode}' },
+  { name: 'VidSrc RU', urlTemplate: 'https://vidsrc-embed.ru/embed/tv/{externalId}/{season}/{episode}' },
+  { name: 'VidSrc SU', urlTemplate: 'https://vidsrc-embed.su/embed/tv/{externalId}/{season}/{episode}' },
+  { name: 'VidSrcMe', urlTemplate: 'https://vidsrcme.su/embed/tv/{externalId}/{season}/{episode}' },
   { name: 'MultiEmbed', urlTemplate: 'https://multiembed.mov/?video_id={externalId}&tmdb=1&s={season}&e={episode}' },
-  { name: 'Embed.su', urlTemplate: 'https://embed.su/embed/tv/{externalId}/{season}/{episode}' },
+  { name: 'Vsrc', urlTemplate: 'https://vsrc.su/embed/tv/{externalId}/{season}/{episode}' },
   { name: 'Vidlink', urlTemplate: 'https://vidlink.pro/tv/{externalId}/{season}/{episode}' },
-  { name: 'AutoEmbed', urlTemplate: 'https://player.autoembed.cc/embed/tv/{externalId}/{season}/{episode}' },
+  { name: 'AutoEmbed', urlTemplate: 'https://player.autoembed.app/embed/tv/{externalId}/{season}/{episode}' },
   { name: 'VidFast', urlTemplate: 'https://vidfast.pro/tv/{externalId}/{season}/{episode}' },
   { name: '111Movies', urlTemplate: 'https://111movies.com/tv/{externalId}/{season}/{episode}' },
   { name: 'Vidora', urlTemplate: 'https://vidora.su/tv/{externalId}/{season}/{episode}?autoplay=true' },
-  { name: 'Smashy', urlTemplate: 'https://player.smashy.stream/tv/{externalId}?s={season}&e={episode}' }
+  { name: 'Smashy', urlTemplate: 'https://player.smashystream.com/tv/{externalId}?s={season}&e={episode}' }
 ]);
 
 export const currentStreamData = ref({
@@ -150,13 +150,6 @@ export function getLastWatchedMetaData(mediaId: string | number): MovieServer | 
 
 export function getServers(type: 'movie' | 'tv' = 'movie'): Server[] {
   return type === 'movie' ? movieServers.value : tvServers.value;
-}
-
-// Watch party enabled server indices (VidKing, VidLink, VidFast, 111Movies)
-export const WATCH_PARTY_ENABLED_SERVERS = [0, 8, 10, 11];
-
-export function isWatchPartyEnabledServer(serverIndex: number): boolean {
-  return WATCH_PARTY_ENABLED_SERVERS.includes(serverIndex);
 }
 
 export function buildStreamUrl(

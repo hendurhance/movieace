@@ -1,300 +1,720 @@
 <template>
-    <div>
-        <BaseHeader />
-        <section>
-            <div class="container">
-                <Hero :title="'Discover Movies'" :subtitle="'Find your favorite movies and explore new ones'"
-                    :search="true" :searchPlaceholder="'Search for a movie'" @search="handleSearchMovies" />
-                <GenreLists :genres="genresFetched" :activeGenres="filteredGenres" @genre-click="handleAddGenre"
-                    :type="'movies'" @clear-all="handleClearAllGenres" />
-            </div>
+    <div class="discover">
+        <SiteHeader />
 
-            <!-- Results Section -->
-            <div class="container">
-                <ResultsHeader :title="getResultsTitle()" :count="discoveredMovies.length" item-type="movies"
-                    :filter-text="filteredGenres.length > 0 ? `in ${getActiveGenreNames()}` : ''" :sort-value="sortBy"
-                    :sort-options="movieSortOptions" @sort-change="handleSortChange" />
+        <main id="main" class="discover__main" role="main">
+            <section class="discover__masthead container-lm">
+                <p class="eyebrow discover__eyebrow">The Library · Features</p>
+                <h1 class="discover__title display">Discover movies</h1>
+                <p class="discover__subtitle">
+                    Thread genres, years, and tempo. Build the programme you want to watch tonight.
+                </p>
 
-                <!-- Loading State -->
-                <LoadingState v-if="isLoading" message="Loading amazing movies..." size="large" />
+                <form class="discover__search" role="search" @submit.prevent>
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="m20 20-3.5-3.5"/>
+                    </svg>
+                    <input
+                        type="search"
+                        class="discover__input"
+                        placeholder="Search movies by title"
+                        :value="searchTerm"
+                        aria-label="Search movies"
+                        @input="onSearchInput"
+                    />
+                    <button
+                        v-if="searchTerm"
+                        type="button"
+                        class="discover__clear"
+                        aria-label="Clear search"
+                        @click="clearSearch"
+                    >
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6 6 18M6 6l12 12" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </form>
+            </section>
 
-                <!-- Empty State -->
-                <EmptyState v-else-if="discoveredMovies.length === 0" title="No movies found"
-                    description="Try adjusting your search or genre filters" icon="🎬" @reset="handleResetFilters" />
+            <section class="discover__body container-lm">
+                <FilterPanel
+                    class="discover__filters"
+                    kind="movie"
+                    :genres="genres"
+                    :genres-loading="!genres.length"
+                    :filters="filters"
+                    :year-bounds="yearBounds"
+                    @update:filters="onFiltersChange"
+                    @reset="resetFilters"
+                />
 
-                <!-- Movies Grid -->
-                <div v-else class="movie-meta-grid">
-                    <div class="movie-item-grid">
-                        <MovieItem v-for="item in discoveredMovies" :key="item.id" :size="'large'" :title="item.title"
-                            :movie-id="item.id" :image="item.poster_path" :rating="item.vote_average"
-                            :categories="item.genre_ids" :adult="item.adult" />
+                <div class="discover__results">
+                    <header class="discover__results-head">
+                        <div>
+                            <p class="eyebrow discover__results-eyebrow">{{ resultsEyebrow }}</p>
+                            <h2 class="discover__results-title">{{ resultsTitle }}</h2>
+                        </div>
+                        <p v-if="totalResults" class="meta discover__count">
+                            {{ totalResults.toLocaleString() }} results
+                        </p>
+                    </header>
+
+                    <div v-if="activeChips.length" class="discover__active" role="list">
+                        <button
+                            v-for="chip in activeChips"
+                            :key="chip.key"
+                            type="button"
+                            class="discover__active-chip"
+                            @click="chip.clear"
+                        >
+                            {{ chip.label }}
+                            <svg viewBox="0 0 24 24" width="10" height="10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6 6 18M6 6l12 12" stroke-linecap="round"/>
+                            </svg>
+                        </button>
                     </div>
 
-                    <!-- Load More Button -->
-                    <LoadMoreButton :current-page="pageNumber" :total-pages="totalPage" :is-loading="isLoadingMore"
-                        item-type="Movies" @load-more="handleLoadMoreMovies" />
+                    <div v-if="isLoading && !results.length" class="discover__loading" role="status">
+                        <div class="discover__spinner" aria-hidden="true" />
+                        <span class="meta">Pulling the reel…</span>
+                    </div>
+
+                    <div v-else-if="!results.length" class="discover__empty">
+                        <div class="discover__empty-icon" aria-hidden="true">
+                            <svg viewBox="0 0 64 64" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.4">
+                                <circle cx="32" cy="32" r="22"/>
+                                <circle cx="32" cy="32" r="7"/>
+                                <circle cx="32" cy="14" r="3"/>
+                                <circle cx="32" cy="50" r="3"/>
+                                <circle cx="14" cy="32" r="3"/>
+                                <circle cx="50" cy="32" r="3"/>
+                            </svg>
+                        </div>
+                        <h3 class="discover__empty-title display">Nothing in rotation.</h3>
+                        <p class="discover__empty-desc">
+                            No features match the current filter set. Try widening the year range
+                            or clearing a genre.
+                        </p>
+                        <button type="button" class="discover__empty-reset" @click="resetFilters">
+                            Reset filters
+                        </button>
+                    </div>
+
+                    <div v-else class="discover__grid">
+                        <PosterCard
+                            v-for="item in results"
+                            :key="item.id"
+                            :id="item.id"
+                            type="movie"
+                            :title="item.title"
+                            :poster-path="item.poster_path"
+                            :rating="item.vote_average"
+                            :release-date="item.release_date"
+                            :genre-ids="item.genre_ids"
+                            :adult="item.adult"
+                        />
+                    </div>
+
+                    <div v-if="hasMore" class="discover__more">
+                        <button
+                            type="button"
+                            class="discover__more-btn"
+                            :disabled="isLoadingMore"
+                            @click="loadMore"
+                        >
+                            <span v-if="isLoadingMore">Loading…</span>
+                            <span v-else>Load more · page {{ page }}/{{ totalPages }}</span>
+                        </button>
+                    </div>
                 </div>
-            </div>
-        </section>
-        <BaseFooter />
+            </section>
+        </main>
+
+        <SiteFooter />
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, computed } from 'vue';
-import BaseHeader from '../components/base/BaseHeader.vue';
-import BaseFooter from '../components/base/BaseFooter.vue';
-import MovieItem from '../components/layout/MovieItem.vue';
-import Hero from '../containers/Hero.vue';
-import GenreLists from '../components/layout/GenreLists.vue';
-import { useGenres, Genre } from '../composables/useGenre';
-import { Movie } from '../composables/useHighlights'
-import { useMovies } from '../composables/useMovies';
+import { computed, defineComponent, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter, LocationQueryRaw } from 'vue-router';
 import debounce from 'lodash.debounce';
-import ResultsHeader from '../components/layout/ResultsHeader.vue';
-import LoadingState from '../containers/LoadingState.vue';
-import EmptyState from '../containers/EmptyState.vue';
-import LoadMoreButton from '../components/layout/LoadMoreButton.vue';
+import SiteHeader from '../components/navigation/SiteHeader.vue';
+import SiteFooter from '../components/navigation/SiteFooter.vue';
+import FilterPanel, { DiscoverFilters, RuntimeBand } from '../components/discover/FilterPanel.vue';
+import PosterCard from '../components/cards/PosterCard.vue';
+import { useMovies } from '../composables/useMovies';
+import { Movie } from '../composables/useHighlights';
 import { addSearchTerm } from '../composables/useHistory';
+import { primeGenres, getGenres, Genre } from '../composables/useGenreLookup';
+
+const CURRENT_YEAR = new Date().getFullYear();
+const YEAR_BOUNDS: [number, number] = [1950, CURRENT_YEAR + 2];
+
+const MOVIE_RUNTIME_BANDS: RuntimeBand[] = [
+    { value: 'any', label: 'Any length' },
+    { value: 'short', label: '< 90m', lte: 89 },
+    { value: 'standard', label: '90–119m', gte: 90, lte: 119 },
+    { value: 'feature', label: '120–149m', gte: 120, lte: 149 },
+    { value: 'epic', label: '150m+', gte: 150 }
+];
+
+const DEFAULT_SORT = 'popularity.desc';
+
+const makeDefaultFilters = (): DiscoverFilters => ({
+    genres: [],
+    yearRange: [...YEAR_BOUNDS] as [number, number],
+    minRating: 0,
+    runtimeBand: 'any',
+    language: '',
+    sortBy: DEFAULT_SORT
+});
 
 export default defineComponent({
     name: 'Movies',
-    components: {
-        BaseHeader,
-        BaseFooter,
-        MovieItem,
-        Hero,
-        GenreLists,
-        ResultsHeader,
-        LoadingState,
-        EmptyState,
-        LoadMoreButton
-    },
+    components: { SiteHeader, SiteFooter, FilterPanel, PosterCard },
     setup() {
-        const pageNumber = ref<number>(1);
-        const sortBy = ref<string>('popularity.desc');
-        const totalPage = ref<number>(1);
-        const filteredGenres = ref<number[]>([]);
-        const isLoading = ref<boolean>(false);
-        const isLoadingMore = ref<boolean>(false);
-        const currentSearchTerm = ref<string>('');
-
-        const movieSortOptions = [
-            { value: 'popularity.desc', label: 'Most Popular' },
-            { value: 'release_date.desc', label: 'Newest First' },
-            { value: 'release_date.asc', label: 'Oldest First' },
-            { value: 'vote_average.desc', label: 'Highest Rated' },
-            { value: 'title.asc', label: 'A-Z' },
-            { value: 'title.desc', label: 'Z-A' }
-        ];
-
-        const mainUrl = computed(() =>
-            `https://api.themoviedb.org/3/discover/movie?language=en-US&sort_by=${sortBy.value}`
-        );
-
-        const computedFetchUrl = computed(() => {
-            let url = `${mainUrl.value}&page=${pageNumber.value}`;
-            if (filteredGenres.value.length > 0) {
-                url += `&with_genres=${filteredGenres.value.join(',')}`;
-            }
-            return url;
-        });
-
-        const genresFetched = ref<Genre[]>([]);
-        const { getGenres } = useGenres('movie');
-
-        const fetchGenres = async () => {
-            const { data } = await getGenres();
-            genresFetched.value = data.value;
-        };
-
-        const discoveredMovies = ref<Movie[]>([]);
+        const route = useRoute();
+        const router = useRouter();
         const { fetchDiscoverMovies } = useMovies();
 
-        const handleFetchDiscoverMovies = async () => {
-            isLoading.value = true;
-            try {
-                const { data } = await fetchDiscoverMovies(mainUrl.value);
-                totalPage.value = data.value?.total_pages ?? 0;
-                discoveredMovies.value = data.value?.results ?? [];
-            } finally {
-                isLoading.value = false;
-            }
-        };
+        const genres = ref<Genre[]>([]);
+        const results = ref<Movie[]>([]);
+        const page = ref(1);
+        const totalPages = ref(1);
+        const totalResults = ref(0);
+        const isLoading = ref(false);
+        const isLoadingMore = ref(false);
 
-        const handleLoadMoreMovies = async () => {
-            if (pageNumber.value < totalPage.value) {
-                isLoadingMore.value = true;
-                pageNumber.value += 1;
-                try {
-                    const url = currentSearchTerm.value ?
-                        `https://api.themoviedb.org/3/search/movie?query=${currentSearchTerm.value}&language=en-US&page=${pageNumber.value}` :
-                        computedFetchUrl.value;
-                    const { data } = await fetchDiscoverMovies(url);
-                    discoveredMovies.value = [...discoveredMovies.value, ...data.value?.results ?? []];
-                } finally {
-                    isLoadingMore.value = false;
+        const filters = ref<DiscoverFilters>(makeDefaultFilters());
+        const searchTerm = ref<string>('');
+
+        const hydrateFromRoute = () => {
+            const q = route.query;
+            const next = makeDefaultFilters();
+
+            if (typeof q.genre === 'string' && q.genre) {
+                next.genres = q.genre.split(',').map(Number).filter(n => !Number.isNaN(n));
+            }
+            if (typeof q.year === 'string' && q.year.includes('-')) {
+                const [lo, hi] = q.year.split('-').map(Number);
+                if (!Number.isNaN(lo) && !Number.isNaN(hi)) {
+                    next.yearRange = [lo, hi];
                 }
             }
+            if (typeof q.min_rating === 'string') {
+                const v = Number(q.min_rating);
+                if (!Number.isNaN(v)) next.minRating = v;
+            }
+            if (typeof q.runtime === 'string') next.runtimeBand = q.runtime;
+            if (typeof q.lang === 'string') next.language = q.lang;
+            if (typeof q.sort === 'string') next.sortBy = q.sort;
+
+            filters.value = next;
+            searchTerm.value = typeof q.q === 'string' ? q.q : '';
         };
 
-        const handleAddGenre = async (genre: { id: number, name: string }) => {
-            if (!filteredGenres.value.includes(genre.id)) {
-                filteredGenres.value.push(genre.id);
-            } else {
-                filteredGenres.value = filteredGenres.value.filter((item) => item !== genre.id);
+        const syncRoute = () => {
+            const f = filters.value;
+            const q: LocationQueryRaw = {};
+            if (f.genres.length) q.genre = f.genres.join(',');
+            if (f.yearRange[0] !== YEAR_BOUNDS[0] || f.yearRange[1] !== YEAR_BOUNDS[1]) {
+                q.year = `${f.yearRange[0]}-${f.yearRange[1]}`;
             }
-            pageNumber.value = 1;
-            currentSearchTerm.value = '';
+            if (f.minRating > 0) q.min_rating = String(f.minRating);
+            if (f.runtimeBand && f.runtimeBand !== 'any') q.runtime = f.runtimeBand;
+            if (f.language) q.lang = f.language;
+            if (f.sortBy !== DEFAULT_SORT) q.sort = f.sortBy;
+            if (searchTerm.value) q.q = searchTerm.value;
 
-            isLoading.value = true;
+            if (JSON.stringify(q) !== JSON.stringify(route.query)) {
+                router.replace({ query: q });
+            }
+        };
+
+        const buildDiscoverUrl = (pageNum: number): string => {
+            const f = filters.value;
+            const params = new URLSearchParams({
+                language: 'en-US',
+                sort_by: f.sortBy,
+                page: String(pageNum),
+                include_adult: 'false'
+            });
+            if (f.genres.length) params.set('with_genres', f.genres.join(','));
+            if (f.yearRange[0] !== YEAR_BOUNDS[0]) {
+                params.set('primary_release_date.gte', `${f.yearRange[0]}-01-01`);
+            }
+            if (f.yearRange[1] !== YEAR_BOUNDS[1]) {
+                params.set('primary_release_date.lte', `${f.yearRange[1]}-12-31`);
+            }
+            if (f.minRating > 0) {
+                params.set('vote_average.gte', String(f.minRating));
+                params.set('vote_count.gte', '50');
+            }
+            const band = MOVIE_RUNTIME_BANDS.find(b => b.value === f.runtimeBand);
+            if (band?.gte !== undefined) params.set('with_runtime.gte', String(band.gte));
+            if (band?.lte !== undefined) params.set('with_runtime.lte', String(band.lte));
+            if (f.language) params.set('with_original_language', f.language);
+
+            return `https://api.themoviedb.org/3/discover/movie?${params.toString()}`;
+        };
+
+        const buildSearchUrl = (pageNum: number): string => {
+            const params = new URLSearchParams({
+                query: searchTerm.value,
+                language: 'en-US',
+                page: String(pageNum),
+                include_adult: 'false'
+            });
+            return `https://api.themoviedb.org/3/search/movie?${params.toString()}`;
+        };
+
+        const fetchPage = async (pageNum: number, append: boolean) => {
+            if (append) isLoadingMore.value = true;
+            else isLoading.value = true;
+
             try {
-                const { data } = await fetchDiscoverMovies(computedFetchUrl.value);
-                totalPage.value = data.value?.total_pages ?? 0;
-                discoveredMovies.value = data.value?.results ?? [];
+                const url = searchTerm.value ? buildSearchUrl(pageNum) : buildDiscoverUrl(pageNum);
+                const { data } = await fetchDiscoverMovies(url);
+                const fresh = (data.value?.results ?? []) as Movie[];
+                totalPages.value = data.value?.total_pages ?? 0;
+                totalResults.value = data.value?.total_results ?? 0;
+                page.value = pageNum;
+                results.value = append ? [...results.value, ...fresh] : fresh;
             } finally {
                 isLoading.value = false;
+                isLoadingMore.value = false;
             }
         };
 
-        const handleClearAllGenres = async () => {
-            filteredGenres.value = [];
-            pageNumber.value = 1;
-            currentSearchTerm.value = '';
-            await handleFetchDiscoverMovies();
+        const reload = () => {
+            page.value = 1;
+            fetchPage(1, false);
         };
 
-        const handleSortChange = async (newSortValue: string) => {
-            sortBy.value = newSortValue;
-            pageNumber.value = 1;
-            if (currentSearchTerm.value) {
-                currentSearchTerm.value = '';
-            }
-            await handleFetchDiscoverMovies();
+        const loadMore = () => {
+            if (isLoadingMore.value) return;
+            if (page.value >= totalPages.value) return;
+            fetchPage(page.value + 1, true);
         };
 
-        const handleResetFilters = async () => {
-            filteredGenres.value = [];
-            currentSearchTerm.value = '';
-            sortBy.value = 'popularity.desc';
-            pageNumber.value = 1;
-            await handleFetchDiscoverMovies();
+        const hasMore = computed(() => page.value < totalPages.value);
+
+        const onFiltersChange = (next: DiscoverFilters) => {
+            filters.value = next;
+            syncRoute();
+            reload();
         };
 
-        const searchMovies = async (searchUrl: string) => {
-            isLoading.value = true;
-            try {
-                const { data } = await fetchDiscoverMovies(searchUrl);
-                totalPage.value = data.value?.total_pages ?? 0;
-                discoveredMovies.value = data.value?.results ?? [];
-            } finally {
-                isLoading.value = false;
-            }
+        const resetFilters = () => {
+            filters.value = makeDefaultFilters();
+            searchTerm.value = '';
+            syncRoute();
+            reload();
         };
 
-        const handleSearchMovies = debounce(async (searchValue: string) => {
-            pageNumber.value = 1;
+        const debouncedSearch = debounce(() => {
+            if (searchTerm.value) addSearchTerm(searchTerm.value);
+            syncRoute();
+            reload();
+        }, 400);
 
-            if (searchValue === '') {
-                currentSearchTerm.value = '';
-                await handleFetchDiscoverMovies();
-                return;
-            }
-
-            currentSearchTerm.value = searchValue;
-            filteredGenres.value = [];
-            addSearchTerm(searchValue);
-
-            const searchUrl = `https://api.themoviedb.org/3/search/movie?query=${searchValue}&language=en-US&page=1`;
-            await searchMovies(searchUrl);
-        }, 500);
-
-        const getResultsTitle = (): string => {
-            if (currentSearchTerm.value) {
-                return `Search Results for "${currentSearchTerm.value}"`;
-            }
-            if (filteredGenres.value.length > 0) {
-                return `${getActiveGenreNames()} Movies`;
-            }
-            return 'Popular Movies';
+        const onSearchInput = (e: Event) => {
+            searchTerm.value = (e.target as HTMLInputElement).value;
+            debouncedSearch();
         };
 
-        const getActiveGenreNames = (): string => {
-            const names = filteredGenres.value
-                .map(id => genresFetched.value.find(g => g.id === id)?.name)
-                .filter(Boolean);
-
-            if (names.length === 1) return names[0]!;
-            if (names.length === 2) return names.join(' & ');
-            return `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}`;
+        const clearSearch = () => {
+            searchTerm.value = '';
+            syncRoute();
+            reload();
         };
 
-        onMounted(() => {
-            fetchGenres();
-            handleFetchDiscoverMovies();
+        const resultsEyebrow = computed(() => {
+            if (searchTerm.value) return 'Searching';
+            return 'The programme';
         });
 
+        const resultsTitle = computed(() => {
+            if (searchTerm.value) return `"${searchTerm.value}"`;
+            const g = filters.value.genres
+                .map(id => genres.value.find(x => x.id === id)?.name)
+                .filter(Boolean)
+                .join(' · ');
+            return g || 'Now showing';
+        });
+
+        const activeChips = computed(() => {
+            const chips: Array<{ key: string; label: string; clear: () => void }> = [];
+            const f = filters.value;
+
+            for (const id of f.genres) {
+                const name = genres.value.find(g => g.id === id)?.name;
+                if (!name) continue;
+                chips.push({
+                    key: `g-${id}`,
+                    label: name,
+                    clear: () => onFiltersChange({ ...f, genres: f.genres.filter(x => x !== id) })
+                });
+            }
+            if (f.yearRange[0] !== YEAR_BOUNDS[0] || f.yearRange[1] !== YEAR_BOUNDS[1]) {
+                chips.push({
+                    key: 'year',
+                    label: `${f.yearRange[0]}–${f.yearRange[1]}`,
+                    clear: () => onFiltersChange({ ...f, yearRange: [...YEAR_BOUNDS] as [number, number] })
+                });
+            }
+            if (f.minRating > 0) {
+                chips.push({
+                    key: 'rating',
+                    label: `★ ${f.minRating.toFixed(0)}+`,
+                    clear: () => onFiltersChange({ ...f, minRating: 0 })
+                });
+            }
+            if (f.runtimeBand && f.runtimeBand !== 'any') {
+                const band = MOVIE_RUNTIME_BANDS.find(b => b.value === f.runtimeBand);
+                if (band) chips.push({
+                    key: 'runtime',
+                    label: band.label,
+                    clear: () => onFiltersChange({ ...f, runtimeBand: 'any' })
+                });
+            }
+            if (f.language) {
+                chips.push({
+                    key: 'lang',
+                    label: f.language.toUpperCase(),
+                    clear: () => onFiltersChange({ ...f, language: '' })
+                });
+            }
+            return chips;
+        });
+
+        onMounted(async () => {
+            document.title = 'Discover Movies — Movieace';
+            primeGenres();
+            hydrateFromRoute();
+
+            genres.value = await getGenres('movie');
+            await fetchPage(1, false);
+        });
+
+        watch(
+            () => route.query,
+            () => {
+                hydrateFromRoute();
+            }
+        );
+
         return {
-            genresFetched,
-            discoveredMovies,
-            filteredGenres,
-            totalPage,
-            pageNumber,
-            sortBy,
+            genres,
+            results,
+            page,
+            totalPages,
+            totalResults,
             isLoading,
             isLoadingMore,
-            movieSortOptions,
-            handleLoadMoreMovies,
-            handleAddGenre,
-            handleClearAllGenres,
-            handleSearchMovies,
-            handleSortChange,
-            handleResetFilters,
-            getResultsTitle,
-            getActiveGenreNames
+            filters,
+            searchTerm,
+            yearBounds: YEAR_BOUNDS,
+            hasMore,
+            resultsEyebrow,
+            resultsTitle,
+            activeChips,
+            onFiltersChange,
+            resetFilters,
+            onSearchInput,
+            clearSearch,
+            loadMore
         };
     }
 });
 </script>
 
-<style scoped lang="scss">
-.movie-meta-grid {
-    margin-top: 2rem;
-}
+<style lang="scss" scoped>
+.discover {
+    position: relative;
+    min-height: 100dvh;
+    background: var(--ink-900);
+    color: var(--bone-50);
 
-.movie-item-grid {
-    align-items: start;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 2rem;
-
-    @media (max-width: 1200px) {
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    &__main {
+        padding-block: clamp(var(--s-6), 6vw, var(--s-8));
     }
 
-    @media (max-width: 992px) {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    &__masthead {
+        padding-block: clamp(var(--s-5), 5vw, var(--s-7));
+        border-bottom: 1px solid var(--rule);
+        margin-bottom: clamp(var(--s-6), 6vw, var(--s-8));
     }
 
-    @media (max-width: 768px) {
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 1.5rem;
+    &__eyebrow {
+        color: var(--ember);
+        margin: 0 0 var(--s-2);
     }
 
-    @media (max-width: 576px) {
+    &__title {
+        font-family: var(--font-display);
+        font-weight: 500;
+        font-size: clamp(2.4rem, 6vw, 4.5rem);
+        line-height: 1;
+        letter-spacing: -0.02em;
+        color: var(--bone-50);
+        margin: 0;
+        font-variation-settings: 'opsz' 144, 'SOFT' 30;
+    }
+
+    &__subtitle {
+        margin: var(--s-4) 0 0;
+        color: var(--bone-300);
+        font-family: var(--font-ui);
+        line-height: 1.55;
+        max-width: 58ch;
+    }
+
+    &__search {
+        margin-top: var(--s-6);
+        display: flex;
+        align-items: center;
+        gap: var(--s-3);
+        padding: 0.75rem var(--s-4);
+        background: var(--surface-tint);
+        border: 1px solid var(--rule);
+        border-radius: var(--r-pill);
+        max-width: 520px;
+        color: var(--bone-400);
+        transition: border-color var(--dur-fast) var(--ease-out);
+
+        &:focus-within {
+            border-color: var(--ember);
+            color: var(--bone-200);
+        }
+    }
+
+    &__input {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: 0;
+        color: var(--bone-50);
+        font-family: var(--font-ui);
+        font-size: var(--fs-base);
+        padding: 0;
+
+        &::placeholder { color: var(--bone-400); }
+        &:focus { outline: none; }
+    }
+
+    &__clear {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        color: var(--bone-400);
+        transition: color var(--dur-fast) var(--ease-out);
+        &:hover { color: var(--bone-50); }
+    }
+
+    &__body {
+        display: grid;
+        gap: clamp(var(--s-6), 4vw, var(--s-8));
+        grid-template-columns: minmax(0, 1fr);
+
+        @media (min-width: 1080px) {
+            grid-template-columns: 280px minmax(0, 1fr);
+        }
+    }
+
+    &__filters {
+        min-width: 0;
+
+        @media (max-width: 1079px) {
+            position: static;
+            max-height: none;
+        }
+    }
+
+    &__results {
+        min-width: 0;
+    }
+
+    &__results-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: var(--s-4);
+        margin-bottom: var(--s-5);
+        padding-bottom: var(--s-4);
+        border-bottom: 1px solid var(--rule);
+    }
+
+    &__results-eyebrow {
+        color: var(--ember);
+        margin: 0 0 var(--s-1);
+    }
+
+    &__results-title {
+        font-family: var(--font-display);
+        font-weight: 500;
+        font-size: clamp(1.4rem, 2.5vw, 2rem);
+        color: var(--bone-50);
+        margin: 0;
+        line-height: 1.1;
+        letter-spacing: -0.01em;
+    }
+
+    &__count {
+        font-family: var(--font-mono);
+        color: var(--bone-400);
+    }
+
+    &__active {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--s-2);
+        margin-bottom: var(--s-5);
+    }
+
+    &__active-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.75rem;
+        font-family: var(--font-mono);
+        font-size: var(--fs-xs);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--ember);
+        background: rgba(255, 90, 31, 0.1);
+        border: 1px solid rgba(255, 90, 31, 0.3);
+        border-radius: var(--r-pill);
+        transition: background-color var(--dur-fast) var(--ease-out);
+
+        &:hover, &:focus-visible {
+            background: rgba(255, 90, 31, 0.2);
+        }
+    }
+
+    &__loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--s-3);
+        padding: var(--s-9) 0;
+        color: var(--bone-300);
+    }
+
+    &__spinner {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid var(--rule-strong);
+        border-top-color: var(--ember);
+        animation: disc-spin 0.8s linear infinite;
+    }
+
+    &__empty {
+        text-align: center;
+        padding: var(--s-9) var(--s-4);
+        max-width: 52ch;
+        margin: 0 auto;
+    }
+
+    &__empty-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--bone-500);
+        margin-bottom: var(--s-5);
+    }
+
+    &__empty-title {
+        font-family: var(--font-display);
+        font-weight: 500;
+        font-size: clamp(1.6rem, 3vw, 2.2rem);
+        color: var(--bone-50);
+        margin: 0 0 var(--s-3);
+        letter-spacing: -0.01em;
+    }
+
+    &__empty-desc {
+        color: var(--bone-300);
+        margin: 0 0 var(--s-5);
+        line-height: 1.55;
+    }
+
+    &__empty-reset {
+        font-family: var(--font-mono);
+        font-size: var(--fs-xs);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--ember);
+        padding: 0.6rem 1.2rem;
+        border: 1px solid var(--ember);
+        border-radius: var(--r-pill);
+        transition: background-color var(--dur-fast) var(--ease-out);
+
+        &:hover, &:focus-visible {
+            background: var(--ember);
+            color: var(--ink-900);
+        }
+    }
+
+    &__grid {
+        display: grid;
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 0.75rem;
+        gap: var(--s-5) var(--s-4);
+
+        @media (min-width: 720px) {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: var(--s-6) var(--s-5);
+        }
+
+        @media (min-width: 1200px) {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        }
     }
 
-    @media (max-width: 480px) {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 1rem;
+    &__more {
+        display: flex;
+        justify-content: center;
+        padding: var(--s-7) 0 var(--s-4);
+    }
+
+    &__more-btn {
+        font-family: var(--font-mono);
+        font-size: var(--fs-xs);
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: var(--bone-100);
+        padding: 0.8rem 1.8rem;
+        border: 1px solid var(--rule-strong);
+        border-radius: var(--r-pill);
+        background: var(--surface-tint);
+        transition:
+            color var(--dur-fast) var(--ease-out),
+            border-color var(--dur-fast) var(--ease-out),
+            background-color var(--dur-fast) var(--ease-out);
+
+        &:hover:not(:disabled), &:focus-visible:not(:disabled) {
+            color: var(--ember);
+            border-color: var(--ember);
+            background: rgba(255, 90, 31, 0.08);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
     }
 }
 
-@media (max-width: 576px) {
-    .container {
-        padding: 0 1rem;
-    }
+@keyframes disc-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .discover__spinner { animation: none; }
 }
 </style>

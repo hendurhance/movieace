@@ -1,0 +1,136 @@
+// ============================================================================
+// LUMIÈRE — Design Tokens
+// Single source of truth for color, type, space, radius, shadow, motion.
+// Consumed globally via `main.scss`. Values exposed as CSS custom properties
+// so runtime theming (ambient-color bloom, etc.) can override.
+// ============================================================================
+
+:root {
+  // ── Color: stage ─────────────────────────────────────────────────────────
+  --ink-900: #0b0a08;   // primary stage (warm near-black)
+  --ink-850: #0f0d0a;   // body variant
+  --ink-800: #13110e;   // surface / cards
+  --ink-700: #1c1915;   // elevated surface
+  --ink-600: #2a251e;   // hover surface
+  --ink-500: #3a342b;   // rule-heavy contexts
+
+  // ── Color: text ──────────────────────────────────────────────────────────
+  --bone-50: #f5efe4;   // primary text (warm off-white)
+  --bone-100: #e8e1d3;
+  --bone-200: #c7bfb0;  // secondary text
+  --bone-300: #a79f8d;
+  --bone-400: #8a8270;  // tertiary / captions
+  --bone-500: #6b6454;
+
+  // ── Color: accent ────────────────────────────────────────────────────────
+  --ember: #ff5a1f;     // cinema-marquee spot accent
+  --ember-600: #e84817;
+  --ember-700: #b93c12;
+  --ember-glow: rgba(255, 90, 31, 0.35);
+
+  --gold-leaf: #c9a76a; // rating / awards only
+  --gold-leaf-soft: rgba(201, 167, 106, 0.18);
+
+  // ── Color: semantic ──────────────────────────────────────────────────────
+  --rule: rgba(245, 239, 228, 0.08);
+  --rule-strong: rgba(245, 239, 228, 0.16);
+  --surface-tint: rgba(245, 239, 228, 0.04);
+  --surface-tint-hover: rgba(245, 239, 228, 0.08);
+  --overlay-scrim: rgba(11, 10, 8, 0.72);
+
+  --success: #6ba368;
+  --warn: #d8a24b;
+  --danger: #c94e3d;
+
+  // Ambient bloom — overridden per-page via useAmbientColor
+  --ambient: 255, 90, 31;
+
+  // ── Typography ───────────────────────────────────────────────────────────
+  --font-display: 'Fraunces', 'Times New Roman', Georgia, serif;
+  --font-ui: 'General Sans', ui-sans-serif, system-ui, -apple-system,
+             BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  // Modular scale (1.25 from 16px)
+  --fs-xs: 0.75rem;     // 12
+  --fs-sm: 0.875rem;    // 14
+  --fs-base: 1rem;      // 16
+  --fs-lg: 1.25rem;     // 20
+  --fs-xl: 1.5625rem;   // 25
+  --fs-2xl: 1.953rem;   // 31
+  --fs-3xl: 2.441rem;   // 39
+  --fs-4xl: 3.052rem;   // 49
+  --fs-5xl: 3.815rem;   // 61
+  --fs-6xl: 4.768rem;   // 76
+  --fs-display: 6rem;   // 96
+
+  --lh-tight: 1.08;
+  --lh-snug: 1.25;
+  --lh-base: 1.55;
+  --lh-loose: 1.75;
+
+  --ls-tight: -0.02em;
+  --ls-snug: -0.01em;
+  --ls-wide: 0.02em;
+  --ls-micro: 0.08em; // for caps labels
+
+  // ── Space (8pt baseline) ─────────────────────────────────────────────────
+  --s-0: 0;
+  --s-1: 0.25rem;   // 4
+  --s-2: 0.5rem;    // 8
+  --s-3: 0.75rem;   // 12
+  --s-4: 1rem;      // 16
+  --s-5: 1.5rem;    // 24
+  --s-6: 2rem;      // 32
+  --s-7: 3rem;      // 48
+  --s-8: 4rem;      // 64
+  --s-9: 6rem;      // 96
+  --s-10: 7.5rem;   // 120
+
+  // ── Layout ───────────────────────────────────────────────────────────────
+  --container-max: 1440px;
+  --container-gutter: 2rem;
+  --shelf-gap: var(--s-10);   // between editorial shelves
+  --shelf-gap-mobile: var(--s-8);
+
+  // ── Radius ───────────────────────────────────────────────────────────────
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 14px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  // ── Shadow ───────────────────────────────────────────────────────────────
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.40);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --shadow-bloom: 0 0 80px rgba(var(--ambient), 0.22);
+
+  // ── Motion ───────────────────────────────────────────────────────────────
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --dur-fast: 180ms;
+  --dur-base: 320ms;
+  --dur-slow: 640ms;
+
+  // ── Z-index ──────────────────────────────────────────────────────────────
+  --z-base: 1;
+  --z-rail: 10;
+  --z-header: 50;
+  --z-drawer: 80;
+  --z-dialog: 100;
+  --z-toast: 120;
+  --z-miniplayer: 140;
+  --z-command: 160;
+}
+
+// Prefer reduced motion ------------------------------------------------------
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+}

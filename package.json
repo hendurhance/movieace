@@ -9,25 +9,22 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.56.1",
     "@types/node": "^24.3.0",
     "@vueuse/core": "^13.1.0",
     "axios": "^1.4.0",
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",
-    "moment": "^2.29.4",
     "swiper": "^10.1.0",
-    "vue": "^3.3.4",
+    "vue": "^3.5.0",
     "vue-router": "^4.0.13"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.196",
     "@types/lodash.debounce": "^4.0.9",
-    "@vitejs/plugin-vue": "^4.2.3",
+    "@vitejs/plugin-vue": "^5.2.0",
     "sass": "^1.64.1",
-    "sass-loader": "^13.3.2",
     "typescript": "^5.0.2",
-    "vite": "^4.4.5",
-    "vue-tsc": "^1.8.5"
+    "vite": "^5.4.0",
+    "vue-tsc": "^2.2.0"
   }
 }

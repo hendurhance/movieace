@@ -1,568 +1,563 @@
 <template>
-  <div class="stream-container">
-    <StreamHeader
-      :title="movie?.title"
-      back-text="Back to movie"
-      @back-click="goBack"
-    >
-      <div class="header-actions">
-        <ShareScreen />
-        <WatchParty 
-          :media-id="movieId" 
-          media-type="movie"
-        />
-      </div>
-    </StreamHeader>
+    <div class="watch-stage">
+        <header class="watch-stage__chrome">
+            <div class="watch-stage__chrome-inner">
+                <div class="watch-stage__crumb">
+                    <button
+                        type="button"
+                        class="watch-stage__back"
+                        aria-label="Back to feature"
+                        @click="goBack"
+                    >
+                        <ArrowLeft />
+                    </button>
+                    <p class="eyebrow">Now projecting</p>
+                </div>
 
-    <VideoPlayer 
-      :embedUrl="currentEmbedUrl"
-      @player-event="handlePlayerEvent"
-    />
+                <h1 v-if="movie" class="watch-stage__title">{{ movie.title }}</h1>
+                <span v-else class="watch-stage__title-skeleton" aria-hidden="true" />
 
-    <div class="stream-controls">
-      <ServerSelection
-        :servers="availableServers"
-        :active-server-index="currentStreamData.currentServer"
-        @server-change="changeServer"
-      />
+                <div class="watch-stage__actions">
+                    <ShareScreen />
+                </div>
+            </div>
+        </header>
+
+        <main class="watch-stage__main" id="main">
+            <StreamFrame
+                :embed-url="currentEmbedUrl"
+                :title="movie?.title || 'Stream'"
+                :backdrop-path="movie?.backdrop_path || ''"
+                :poster-path="movie?.poster_path || ''"
+                :media-id="movieId"
+                media-type="movie"
+            />
+
+            <section class="watch-stage__rack">
+                <ServerAccordion
+                    :servers="availableServers"
+                    :active-server-index="currentStreamData.currentServer"
+                    @server-change="changeServer"
+                />
+            </section>
+
+            <section v-if="movie" class="watch-stage__feature">
+                <div class="watch-stage__poster">
+                    <img
+                        v-if="movie.poster_path"
+                        :src="posterUrl"
+                        :alt="movie.title"
+                        loading="lazy"
+                    />
+                    <span v-if="movie.vote_average" class="watch-stage__rating">
+                        <span class="watch-stage__rating-num">{{ movie.vote_average.toFixed(1) }}</span>
+                        <span class="meta">/ 10</span>
+                    </span>
+                </div>
+
+                <div class="watch-stage__feature-body">
+                    <p class="eyebrow">The feature</p>
+                    <h2 class="watch-stage__feature-title">{{ movie.title }}</h2>
+                    <p v-if="movie.tagline" class="watch-stage__tagline">{{ movie.tagline }}</p>
+
+                    <ul class="watch-stage__meta">
+                        <li v-if="releaseYear">
+                            <span class="meta">Year</span>
+                            <span>{{ releaseYear }}</span>
+                        </li>
+                        <li v-if="runtimeLabel">
+                            <span class="meta">Runtime</span>
+                            <span>{{ runtimeLabel }}</span>
+                        </li>
+                        <li v-if="movie.genres?.length">
+                            <span class="meta">Genres</span>
+                            <span>{{ movie.genres.slice(0, 3).map(g => g.name).join(' · ') }}</span>
+                        </li>
+                    </ul>
+
+                    <p v-if="movie.overview" class="watch-stage__overview">{{ movie.overview }}</p>
+                </div>
+            </section>
+
+            <p class="watch-stage__disclaimer meta">
+                Streams are mirrored from third-party providers. Movieace does not host video files.
+            </p>
+        </main>
     </div>
-
-    <Disclaimer />
-
-    <div class="movie-info" v-if="movie">
-      <div class="movie-info-container">
-        <div class="movie-poster">
-          <div class="rating-number">{{ movie?.vote_average?.toFixed(1) || '0.0' }}</div>
-          <img
-            :src="getMovieImageUrl(movie).poster"
-            :alt="movie?.title"
-            loading="lazy"
-          />
-        </div>
-        <div class="movie-sub-texts">
-          <h2>{{ movie.title }}</h2>
-          <div class="info-details">
-            <span v-if="movie.release_date">{{ new Date(movie.release_date).getFullYear() }}</span>
-            <span v-if="movie.runtime">{{ Math.floor(movie.runtime / 60) }}h {{ movie.runtime % 60 }}m</span>
-            <span v-if="movie.vote_average">Rating: {{ movie.vote_average.toFixed(1) }}/10</span>
-          </div>
-          <p class="overview">{{ movie.overview }}</p>
-        </div>
-      </div>
-    </div>
-  </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { computed, defineComponent, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMovies, MovieDetails } from '../composables/useMovies';
-import { getMovieImageUrl } from '../utils/useWebImage';
+import { useMiniPlayer } from '../composables/useMiniPlayer';
 import {
-  currentStreamData,
-  getPreferredStreamData,
-  savePreferredServer,
-  getServers,
-  buildStreamUrl,
+    currentStreamData,
+    getPreferredStreamData,
+    savePreferredServer,
+    getServers,
+    buildStreamUrl
 } from '../composables/useStream';
-import { useWatchParty } from '../composables/useWatchParty';
-import StreamHeader from '../components/StreamHeader.vue';
-import ServerSelection from '../components/ServerSelection.vue';
-import VideoPlayer from '../components/VideoPlayer.vue';
-import ShareScreen from '../components/ShareScreen.vue';
-import WatchParty from '../components/WatchParty.vue';
-import Disclaimer from '../components/layout/Disclaimer.vue';
+import { getResumeTimestamp } from '../composables/useProgress';
+import { useWebImage } from '../utils/useWebImage';
+
+import StreamFrame from '../components/player/StreamFrame.vue';
+import ServerAccordion from '../components/player/ServerAccordion.vue';
+import ShareScreen from '../components/player/ShareScreen.vue';
+import ArrowLeft from '../components/svg/outline/arrow-left-long.vue';
 
 export default defineComponent({
-  name: 'StreamMovie',
-  components: {
-    StreamHeader,
-    ServerSelection,
-    VideoPlayer,
-    ShareScreen,
-    WatchParty,
-    Disclaimer
-  },
-  setup() {
-    const route = useRoute();
-    const router = useRouter();
-    const movieId = ref<string>(route.params.id as string);
-    const movie = ref<MovieDetails | null>(null);
-    const { fetchMovie } = useMovies();
-    const { sendSyncEvent, isHost } = useWatchParty();
-    const isLoading = ref<boolean>(false);
-    const error = ref<string | null>(null);
+    name: 'StreamMovie',
+    components: { StreamFrame, ServerAccordion, ShareScreen, ArrowLeft },
+    setup() {
+        const route = useRoute();
+        const router = useRouter();
+        const miniPlayer = useMiniPlayer();
 
-    const availableServers = computed(() => getServers('movie'));
+        const movieId = ref<string>(route.params.id as string);
+        const movie = ref<MovieDetails | null>(null);
+        const error = ref<string | null>(null);
+        const { fetchMovie } = useMovies();
 
-    // Track sync URL for force sync functionality
-    const syncUrl = ref<string | null>(null);
-    const forceReloadKey = ref(0);
+        const availableServers = computed(() => getServers('movie'));
+        const reloadKey = ref(0);
+        const resumeTimestamp = ref(0);
 
-    const currentEmbedUrl = computed(() => {
-      if (!movieId.value) return '';
-      
-      // Use sync URL if available, otherwise build normal URL
-      if (syncUrl.value) {
-        return syncUrl.value;
-      }
-      
-      const baseUrl = buildStreamUrl(
-        movieId.value,
-        'movie',
-        currentStreamData.value.currentServer
-      );
-      
-      // Add cache busting parameter when force reload is triggered
-      return forceReloadKey.value > 0 ? `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}t=${forceReloadKey.value}` : baseUrl;
-    });
+        const currentEmbedUrl = computed(() => {
+            if (!movieId.value) return '';
 
-    // Handle player events (from iframe messages)
-    const handlePlayerEvent = () => {
-      // Additional handling if needed
-    };
+            const ts = (resumeTimestamp.value > 0 && reloadKey.value === 0)
+                ? resumeTimestamp.value
+                : undefined;
+            const base = buildStreamUrl(
+                movieId.value,
+                'movie',
+                currentStreamData.value.currentServer,
+                1,
+                1,
+                ts
+            );
+            if (reloadKey.value > 0) {
+                return `${base}${base.includes('?') ? '&' : '?'}t=${reloadKey.value}`;
+            }
+            return base;
+        });
 
-    // Handle force sync events
-    const handleForceSync = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { syncUrl: newSyncUrl, mediaId } = customEvent.detail;
-      
-      // Only apply sync if it's for this movie
-      if (String(mediaId) === String(movieId.value)) {
-        // Dispatch force sync event to VideoPlayer for complete iframe reload
-        window.dispatchEvent(new CustomEvent('watchparty:force-sync', {
-          detail: { syncUrl: newSyncUrl }
-        }));
-      }
-    };
+        const posterUrl = computed(() =>
+            movie.value?.poster_path ? useWebImage(movie.value.poster_path, 'medium') : ''
+        );
 
-    const loadMovieDetails = async () => {
-      if (!movieId.value) {
-        error.value = 'Invalid movie ID';
-        return;
-      }
+        const releaseYear = computed(() => {
+            if (!movie.value?.release_date) return '';
+            const d = new Date(movie.value.release_date);
+            return Number.isNaN(d.getTime()) ? '' : d.getFullYear().toString();
+        });
 
-      isLoading.value = true;
-      error.value = null;
+        const runtimeLabel = computed(() => {
+            const r = movie.value?.runtime;
+            if (!r) return '';
+            const hours = Math.floor(r / 60);
+            const minutes = r % 60;
+            if (!hours) return `${minutes}m`;
+            return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
+        });
 
-      try {
-        const { data } = await fetchMovie(movieId.value);
-        if (!data.value) {
-          throw new Error('No movie data received');
-        }
+        const loadMovie = async () => {
+            if (!movieId.value) {
+                error.value = 'Invalid movie ID';
+                return;
+            }
+            try {
+                resumeTimestamp.value = getResumeTimestamp(movieId.value, 'movie');
+                const { data } = await fetchMovie(movieId.value);
+                if (!data.value) throw new Error('No movie data received');
+                movie.value = data.value;
+                document.title = `Stream · ${data.value.title}`;
 
-        movie.value = data.value;
-        if (movie.value?.title) {
-          document.title = `Stream ${movie.value.title}`;
-        }
+                if (!getPreferredStreamData(movieId.value, 'movie')) {
+                    savePreferredServer(movieId.value, 0, 'movie');
+                    getPreferredStreamData(movieId.value, 'movie');
+                }
 
-        // Set up preferred server
-        const preferredData = getPreferredStreamData(movieId.value, 'movie');
-        if (!preferredData) {
-          savePreferredServer(movieId.value, 0, 'movie');
-          getPreferredStreamData(movieId.value, 'movie');
-        }
+                registerMiniPlayer();
+            } catch (err) {
+                error.value = err instanceof Error ? err.message : 'Failed to load movie';
+                console.error(err);
+            }
+        };
 
-      } catch (err) {
-        error.value = err instanceof Error ? err.message : 'Failed to load movie details';
-        console.error('Error loading movie details:', err);
-      } finally {
-        isLoading.value = false;
-      }
-    };
+        const registerMiniPlayer = () => {
+            if (!movie.value || !currentEmbedUrl.value) return;
+            miniPlayer.setStream({
+                mediaId: movieId.value,
+                mediaType: 'movie',
+                title: movie.value.title,
+                embedUrl: currentEmbedUrl.value,
+                posterPath: movie.value.poster_path,
+                backdropPath: movie.value.backdrop_path,
+                routeName: 'StreamMovie',
+                routeParams: { id: movieId.value }
+            });
+        };
 
-    const changeServer = (serverIndex: number) => {
-      if (serverIndex < 0 || serverIndex >= availableServers.value.length) {
-        console.warn('Invalid server index');
-        return;
-      }
-      
-      savePreferredServer(movieId.value, serverIndex, 'movie');
-      getPreferredStreamData(movieId.value, 'movie');
+        const changeServer = (index: number) => {
+            if (index < 0 || index >= availableServers.value.length) return;
+            savePreferredServer(movieId.value, index, 'movie');
+            getPreferredStreamData(movieId.value, 'movie');
+            reloadKey.value = Date.now();
+            registerMiniPlayer();
+        };
 
-      // If user is host in a watch party, sync server change
-      if (isHost.value) {
-        sendSyncEvent('server_change', { serverIndex });
-      }
-    };
+        const goBack = () => router.push(`/movie/${movieId.value}`);
 
-    // Watch party event handlers
-    const handleWatchPartyServerChange = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { serverIndex } = customEvent.detail;
-      if (typeof serverIndex === 'number' && serverIndex >= 0 && serverIndex < availableServers.value.length) {
-        savePreferredServer(movieId.value, serverIndex, 'movie');
-        getPreferredStreamData(movieId.value, 'movie');
-      }
-    };
+        watch(
+            () => route.params.id,
+            (next, prev) => {
+                if (next && next !== prev) {
+                    movieId.value = next as string;
+                    loadMovie();
+                }
+            }
+        );
 
-    const handleWatchPartyJoined = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const roomData = customEvent.detail;
-      // Update server to match room
-      if (roomData.currentServerIndex !== undefined) {
-        savePreferredServer(movieId.value, roomData.currentServerIndex, 'movie');
-        getPreferredStreamData(movieId.value, 'movie');
-      }
-    };
+        watch(currentEmbedUrl, registerMiniPlayer);
 
-    const goBack = () => {
-      router.push(`/movie/${movieId.value}`);
-    };
+        onMounted(() => {
+            loadMovie();
+        });
 
-    watch(
-      () => route.params.id,
-      (newId, oldId) => {
-        if (newId !== oldId) {
-          movieId.value = newId as string;
-          loadMovieDetails();
-        }
-      }
-    );
-
-    onMounted(() => {
-      loadMovieDetails();
-      
-      // Listen for watch party events
-      window.addEventListener('watchparty:server-change', handleWatchPartyServerChange);
-      window.addEventListener('watchparty:joined', handleWatchPartyJoined);
-      window.addEventListener('watchparty:force-sync', handleForceSync);
-    });
-
-    onUnmounted(() => {
-      // Clean up event listeners
-      window.removeEventListener('watchparty:server-change', handleWatchPartyServerChange);
-      window.removeEventListener('watchparty:joined', handleWatchPartyJoined);
-      window.removeEventListener('watchparty:force-sync', handleForceSync);
-    });
-
-    return {
-      movieId,
-      movie,
-      currentEmbedUrl,
-      availableServers,
-      changeServer,
-      goBack,
-      getMovieImageUrl,
-      currentStreamData,
-      isLoading,
-      error,
-      handlePlayerEvent
-    };
-  }
+        return {
+            movieId,
+            movie,
+            currentStreamData,
+            availableServers,
+            currentEmbedUrl,
+            posterUrl,
+            releaseYear,
+            runtimeLabel,
+            changeServer,
+            goBack
+        };
+    }
 });
 </script>
 
 <style lang="scss" scoped>
-.stream-container {
-  width: 100%;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #0f1016 0%, #1a1b26 100%);
-  color: #fff;
-  padding-bottom: 2rem;
-}
+.watch-stage {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--ink-900);
+    color: var(--bone-50);
 
-.stream-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.movie-info {
-  width: 100%;
-  padding: 3rem 0;
-  background: linear-gradient(135deg, rgba(31, 33, 48, 0.3) 0%, rgba(44, 47, 69, 0.2) 100%);
-  margin-top: 2rem;
-
-  .movie-info-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 3rem;
-    padding: 0 2rem;
-
-    @media (max-width: 1024px) {
-      grid-template-columns: 1fr;
-      gap: 2rem;
-      text-align: center;
+    &__chrome {
+        position: sticky;
+        top: 0;
+        z-index: var(--z-header);
+        background: linear-gradient(
+            180deg,
+            rgba(11, 10, 8, 0.95),
+            rgba(11, 10, 8, 0.6) 70%,
+            rgba(11, 10, 8, 0)
+        );
+        backdrop-filter: blur(14px);
     }
 
-    @media (max-width: 768px) {
-      padding: 0 1rem;
-      gap: 1.5rem;
-    }
-  }
-
-  .movie-poster {
-    position: relative;
-    width: 100%;
-    max-width: 300px;
-    margin: 0 auto;
-    overflow: hidden;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-    transition: transform 0.3s ease;
-
-    &:hover {
-      transform: translateY(-5px);
-    }
-
-    img {
-      width: 100%;
-      height: auto;
-      display: block;
-      object-fit: cover;
-    }
-
-    .rating-number {
-      position: absolute;
-      top: 1rem;
-      left: 1rem;
-      background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.7) 100%);
-      color: #fff;
-      font-weight: 700;
-      padding: 0.5rem 1rem;
-      border-radius: 12px;
-      font-size: 1.25rem;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      display: flex;
-      align-items: center;
-      gap: 0.375rem;
-
-      &::before {
-        content: '⭐';
-        font-size: 0.875rem;
-      }
-    }
-  }
-
-  .movie-sub-texts {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-
-    h2 {
-      font-size: 2.75rem;
-      font-weight: 800;
-      margin: 0 0 1rem 0;
-      color: #fff;
-      line-height: 1.2;
-      background: linear-gradient(135deg, #fff 0%, #e1e1e1 100%);
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-
-      @media (max-width: 768px) {
-        font-size: 2rem;
-      }
-
-      @media (max-width: 480px) {
-        font-size: 1.75rem;
-      }
-    }
-
-    .info-details {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-      font-size: 1rem;
-
-      @media (max-width: 1024px) {
-        justify-content: center;
-      }
-
-      @media (max-width: 480px) {
-        gap: 1rem;
-        font-size: 0.9rem;
-      }
-
-      span {
-        display: flex;
+    &__chrome-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: var(--s-3) var(--s-4);
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-areas: 'crumb title actions';
         align-items: center;
-        gap: 0.5rem;
-        font-weight: 500;
-        color: #b0b0b0;
-        background: rgba(255, 255, 255, 0.05);
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.3s;
+        gap: var(--s-3) var(--s-4);
+
+        @media (min-width: 768px) {
+            padding: var(--s-4) var(--s-5);
+        }
+
+        // ── Mobile: stack title beneath the controls row ────────────────
+        @media (max-width: 640px) {
+            grid-template-columns: auto 1fr;
+            grid-template-areas:
+                'crumb actions'
+                'title title';
+            padding: var(--s-2) var(--s-3);
+            gap: var(--s-2);
+        }
+    }
+
+    &__crumb {
+        grid-area: crumb;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--s-3);
+        min-width: 0;
+
+        @media (max-width: 640px) {
+            gap: var(--s-2);
+
+            .eyebrow {
+                display: none;
+            }
+        }
+    }
+
+    &__back {
+        all: unset;
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: var(--surface-tint);
+        cursor: pointer;
+        color: var(--bone-100);
+
+        @media (max-width: 640px) {
+            width: 36px;
+            height: 36px;
+        }
+        transition:
+            background-color var(--dur-fast) var(--ease-out),
+            transform var(--dur-fast) var(--ease-out);
 
         &:hover {
-          background: rgba(255, 255, 255, 0.1);
-          color: #fff;
+            background: var(--ember);
+            color: var(--ink-900);
+            transform: translateX(-2px);
         }
 
-        &:first-child::before {
-          content: '📅';
-          font-size: 0.875rem;
+        &:focus-visible {
+            outline: 2px solid var(--ember);
+            outline-offset: 2px;
         }
 
-        &:nth-child(2)::before {
-          content: '⏱️';
-          font-size: 0.875rem;
-        }
-
-        &:last-child::before {
-          content: '⭐';
-          font-size: 0.875rem;
-        }
-      }
+        :deep(svg) { width: 18px; height: 18px; }
     }
 
-    .overview {
-      font-size: 1.25rem;
-      line-height: 1.7;
-      color: #c1c7d0;
-      margin: 0;
-      max-width: 800px;
+    &__title {
+        grid-area: title;
+        margin: 0;
+        font-family: var(--font-display);
+        font-weight: 500;
+        font-size: var(--fs-lg);
+        letter-spacing: var(--ls-tight);
+        color: var(--bone-50);
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
 
-      @media (max-width: 1024px) {
-        text-align: left;
+        @media (min-width: 768px) {
+            font-size: var(--fs-xl);
+        }
+
+        @media (max-width: 640px) {
+            text-align: left;
+            padding-inline: var(--s-1);
+        }
+    }
+
+    &__title-skeleton {
+        grid-area: title;
+        display: block;
+        height: 18px;
+        max-width: 280px;
         margin: 0 auto;
-      }
-
-      @media (max-width: 768px) {
-        font-size: 1.125rem;
-        line-height: 1.6;
-      }
-
-      @media (max-width: 480px) {
-        font-size: 1rem;
-      }
-    }
-  }
-}
-
-// Loading states
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 16, 22, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-
-  .loading-content {
-    text-align: center;
-    color: #e1e1e1;
-
-    .spinner {
-      width: 60px;
-      height: 60px;
-      border: 4px solid rgba(255, 255, 255, 0.1);
-      border-radius: 50%;
-      border-top: 4px solid #ff5252;
-      animation: spin 1.5s linear infinite;
-      margin: 0 auto 1rem;
+        background: var(--surface-tint);
+        border-radius: var(--r-pill);
     }
 
-    p {
-      font-size: 1.125rem;
-      margin: 0;
+    &__actions {
+        grid-area: actions;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--s-2);
+        justify-content: flex-end;
+
+        :deep(.share-screen-button) {
+            background: var(--surface-tint);
+            border: 0;
+            box-shadow: inset 0 0 0 1px var(--rule);
+            border-radius: var(--r-pill);
+            color: var(--bone-50);
+            padding: 0.5rem 1rem;
+            min-height: 38px;
+            font-family: var(--font-ui);
+            font-size: var(--fs-sm);
+            transition: background-color var(--dur-fast) var(--ease-out);
+
+            &:hover {
+                background: var(--surface-tint-hover);
+                box-shadow: inset 0 0 0 1px var(--rule-strong);
+            }
+        }
+
+        @media (max-width: 640px) {
+            gap: var(--s-1);
+
+            :deep(.share-screen-button .button-text) {
+                display: none;
+            }
+
+            :deep(.share-screen-button) {
+                width: 36px;
+                min-height: 36px;
+                padding: 0;
+                display: inline-grid;
+                place-items: center;
+            }
+        }
     }
-  }
-}
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-// Error states
-.error-state {
-  padding: 3rem 2rem;
-  text-align: center;
-  color: #e74c3c;
-
-  h2 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-  }
-
-  p {
-    font-size: 1.125rem;
-    margin-bottom: 2rem;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  button {
-    background: linear-gradient(135deg, #ff5252 0%, #ff7979 100%);
-    color: #fff;
-    border: none;
-    padding: 0.75rem 2rem;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-
-    &:hover {
-      background: linear-gradient(135deg, #ff3333 0%, #ff5252 100%);
-      transform: translateY(-2px);
+    &__main {
+        display: grid;
+        gap: var(--s-7);
+        padding-bottom: var(--s-9);
     }
-  }
-}
 
-// Accessibility improvements
-@media (prefers-reduced-motion: reduce) {
-  .movie-poster,
-  .loading-overlay .spinner,
-  .error-state button {
-    transition: none;
-    animation: none;
-  }
-}
+    &__rack {
+        max-width: 1280px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 var(--s-4);
+        box-sizing: border-box;
 
-// High contrast mode
-@media (prefers-contrast: high) {
-  .stream-container {
-    background: #000;
-  }
+        @media (min-width: 768px) {
+            padding: 0 var(--s-5);
+        }
+    }
 
-  .movie-info {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid #fff;
-  }
+    &__feature {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 var(--s-4);
+        display: grid;
+        gap: var(--s-6);
 
-  .movie-sub-texts h2 {
-    background: #fff;
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-}
+        @media (min-width: 768px) {
+            padding: 0 var(--s-5);
+            grid-template-columns: 280px 1fr;
+            align-items: start;
+        }
+    }
 
-// Focus management for keyboard navigation
-.stream-controls :focus-visible,
-.movie-info :focus-visible {
-  outline: 2px solid #ff5252;
-  outline-offset: 2px;
-  border-radius: 4px;
-}
+    &__poster {
+        position: relative;
+        aspect-ratio: 2 / 3;
+        max-width: 280px;
+        border-radius: var(--r-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+        margin: 0 auto;
 
-// Header actions
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+    }
 
-@media (max-width: 768px) {
-  .header-actions {
-    gap: 0.5rem;
-  }
+    &__rating {
+        position: absolute;
+        top: var(--s-3);
+        left: var(--s-3);
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.35rem;
+        background: rgba(11, 10, 8, 0.7);
+        backdrop-filter: blur(8px);
+        padding: 0.5rem 0.85rem;
+        border-radius: var(--r-pill);
+        box-shadow: inset 0 0 0 1px var(--rule-strong);
+
+        > .meta { color: var(--bone-300); }
+    }
+
+    &__rating-num {
+        font-family: var(--font-display);
+        font-weight: 600;
+        color: var(--gold-leaf);
+        font-size: var(--fs-lg);
+    }
+
+    &__feature-body {
+        display: grid;
+        gap: var(--s-3);
+        align-content: start;
+    }
+
+    &__feature-title {
+        margin: 0;
+        font-family: var(--font-display);
+        font-weight: 500;
+        font-size: var(--fs-3xl);
+        line-height: var(--lh-tight);
+        letter-spacing: var(--ls-tight);
+        color: var(--bone-50);
+
+        @media (min-width: 768px) {
+            font-size: var(--fs-4xl);
+        }
+    }
+
+    &__tagline {
+        margin: 0;
+        font-family: var(--font-display);
+        font-style: italic;
+        color: var(--bone-200);
+        font-size: var(--fs-lg);
+    }
+
+    &__meta {
+        list-style: none;
+        margin: 0;
+        padding: var(--s-3) 0;
+        display: grid;
+        gap: var(--s-3);
+        border-top: 1px solid var(--rule);
+        border-bottom: 1px solid var(--rule);
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+
+        li {
+            display: grid;
+            gap: 0.2rem;
+
+            > .meta {
+                color: var(--bone-400);
+                text-transform: uppercase;
+                letter-spacing: var(--ls-micro);
+                font-size: var(--fs-xs);
+            }
+
+            > span:not(.meta) {
+                color: var(--bone-50);
+                font-family: var(--font-ui);
+                font-size: var(--fs-base);
+            }
+        }
+    }
+
+    &__overview {
+        margin: 0;
+        color: var(--bone-200);
+        line-height: var(--lh-base);
+        max-width: 60ch;
+    }
+
+    &__disclaimer {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 var(--s-4);
+        text-align: center;
+        color: var(--bone-500);
+
+        @media (min-width: 768px) {
+            padding: 0 var(--s-5);
+        }
+    }
 }
 </style>
