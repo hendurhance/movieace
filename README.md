@@ -83,37 +83,37 @@ It is built primarily as a portfolio project to push the front-end further than 
 ### Home
 
 <p align="center">
-    <img src="/docs/index_page.png" width="100%" alt="Home page">
+    <img src="/docs/index_page.jpeg" width="100%" alt="Home page">
 </p>
 
 ### Movies
 
 <p align="center">
-    <img src="/docs/movie_page.png" width="100%" alt="Movies listing">
+    <img src="/docs/movie_page.jpeg" width="100%" alt="Movies listing">
 </p>
 
 ### Movie detail
 
 <p align="center">
-    <img src="/docs/movie_detail_page.png" width="100%" alt="Movie detail">
+    <img src="/docs/movie_detail_page.jpeg" width="100%" alt="Movie detail">
 </p>
 
 ### TV shows
 
 <p align="center">
-    <img src="/docs/tv_page.png" width="100%" alt="TV shows listing">
+    <img src="/docs/tv_page.jpeg" width="100%" alt="TV shows listing">
 </p>
 
 ### TV show detail
 
 <p align="center">
-    <img src="/docs/tv_detail_page.png" width="100%" alt="TV show detail">
+    <img src="/docs/tv_detail_page.jpeg" width="100%" alt="TV show detail">
 </p>
 
 ### Actors
 
 <p align="center">
-    <img src="/docs/actor_page.png" width="100%" alt="Actors page">
+    <img src="/docs/actor_page.jpeg" width="100%" alt="Actors page">
 </p>
 
 ## Tech stack
