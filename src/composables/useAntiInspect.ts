@@ -82,8 +82,21 @@ const unlockScreen = () => {
     document.querySelectorAll('.lm-lock-overlay').forEach(n => n.remove());
 };
 
+// Mobile browsers (notably iOS Chrome) report a large outer/inner height
+// delta because of the floating address bar, which trips the size heuristic.
+// DevTools also can't be opened the conventional way on touch devices, so
+// skip the lock there entirely.
+const isTouchDevice = () => {
+    if (typeof window === 'undefined') return false;
+    if ('ontouchstart' in window) return true;
+    if ((navigator as any).maxTouchPoints > 0) return true;
+    if (window.matchMedia?.('(pointer: coarse)').matches) return true;
+    return false;
+};
+
 let wasOpen = false;
 const detectDevTools = () => {
+    if (isTouchDevice()) return;
     const widthDelta = window.outerWidth - window.innerWidth;
     const heightDelta = window.outerHeight - window.innerHeight;
     const open = widthDelta > THRESHOLD || heightDelta > THRESHOLD;
