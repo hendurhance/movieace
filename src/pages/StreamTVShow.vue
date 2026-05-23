@@ -508,12 +508,8 @@ export default defineComponent({
             padding: var(--s-4) var(--s-5);
         }
 
-        // ── Mobile: stack title beneath the controls row ────────────────
+        // ── Mobile: keep one row (back · title · actions), just tighter ──
         @media (max-width: 640px) {
-            grid-template-columns: auto 1fr;
-            grid-template-areas:
-                'crumb actions'
-                'title title';
             padding: var(--s-2) var(--s-3);
             gap: var(--s-2);
         }
@@ -571,13 +567,14 @@ export default defineComponent({
 
     &__title-block {
         grid-area: title;
-        display: grid;
-        gap: 0.15rem;
-        text-align: center;
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: var(--s-2);
         min-width: 0;
 
         @media (max-width: 640px) {
-            text-align: left;
+            justify-content: flex-start;
             padding-inline: var(--s-1);
         }
     }
@@ -589,6 +586,7 @@ export default defineComponent({
         font-size: var(--fs-lg);
         letter-spacing: var(--ls-tight);
         color: var(--bone-50);
+        min-width: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -608,8 +606,16 @@ export default defineComponent({
     }
 
     &__code {
+        flex-shrink: 0;
+        white-space: nowrap;
         color: var(--bone-400);
         font-family: var(--font-mono);
+
+        &::before {
+            content: '·';
+            margin-right: var(--s-2);
+            color: var(--bone-500);
+        }
     }
 
     &__actions {

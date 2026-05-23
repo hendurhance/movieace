@@ -27,7 +27,7 @@ export default defineComponent({
   },
   setup() {
     function openShareScreen() {
-      window.open('https://watchparty-buiu.onrender.com/', '_blank');
+      window.open('https://www.watchparty.me/', '_blank');
     }
 
     return {
