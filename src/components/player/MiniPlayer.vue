@@ -12,7 +12,7 @@
                         :src="state.embedUrl"
                         :title="state.title"
                         class="mini-player__iframe"
-                        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                        allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *"
                         allowfullscreen
                         frameborder="0"
                     />
