@@ -12,7 +12,6 @@
                         :src="state.embedUrl"
                         :title="state.title"
                         class="mini-player__iframe"
-                        :sandbox="STREAM_SANDBOX"
                         allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *"
                         allowfullscreen
                         referrerpolicy="strict-origin-when-cross-origin"
@@ -60,7 +59,6 @@
 import { computed, defineComponent, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMiniPlayer } from '../../composables/useMiniPlayer';
-import { STREAM_SANDBOX } from '../../composables/useStream';
 
 export default defineComponent({
     name: 'MiniPlayer',
@@ -103,7 +101,6 @@ export default defineComponent({
         const dismiss = () => clear();
 
         return {
-            STREAM_SANDBOX,
             state,
             isActive,
             subtitle,

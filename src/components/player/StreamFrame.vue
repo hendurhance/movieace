@@ -15,13 +15,23 @@
                     :src="embedUrl"
                     :title="title"
                     class="stream-frame__iframe"
-                    :sandbox="STREAM_SANDBOX"
                     allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *"
                     allowfullscreen
                     frameborder="0"
                     @load="onLoad"
                     @error="onError"
                 />
+
+                <button
+                    v-if="embedUrl && !hasError && shieldArmed"
+                    type="button"
+                    class="stream-frame__shield"
+                    aria-label="Unlock player controls"
+                    @pointerdown.prevent="dismissShield"
+                    @click.prevent="dismissShield"
+                >
+                    <span class="stream-frame__shield-hint meta">Tap once to unlock controls</span>
+                </button>
 
                 <div v-if="isLoading && !hasError" class="stream-frame__loading" role="status" aria-live="polite">
                     <div class="stream-frame__skeleton" aria-hidden="true" />
@@ -49,7 +59,6 @@ import { computed, defineComponent, onMounted, onUnmounted, ref, watch } from 'v
 import { useWebImage } from '../../utils/useWebImage';
 import { useAmbientColor } from '../../composables/useAmbientColor';
 import { startProgressTracking } from '../../composables/useProgress';
-import { STREAM_SANDBOX } from '../../composables/useStream';
 
 export default defineComponent({
     name: 'StreamFrame',
@@ -68,6 +77,14 @@ export default defineComponent({
         const frameEl = ref<HTMLIFrameElement | null>(null);
         const isLoading = ref(true);
         const hasError = ref(false);
+
+        // The embed's popunder needs a user gesture inside the frame. The shield
+        // swallows the first one so it never reaches the iframe; autoPlay in the
+        // stream URL means playback does not depend on that click.
+        const shieldArmed = ref(true);
+        const dismissShield = () => {
+            shieldArmed.value = false;
+        };
 
         const ambientPath = computed(() => props.backdropPath || props.posterPath || null);
         useAmbientColor(ambientPath, rootRef);
@@ -152,6 +169,7 @@ export default defineComponent({
                 if (next && next !== prev) {
                     isLoading.value = true;
                     hasError.value = false;
+                    shieldArmed.value = true;
                     startMessages();
                     startTrackingIfNeeded();
                 }
@@ -181,11 +199,12 @@ export default defineComponent({
         });
 
         return {
-            STREAM_SANDBOX,
             rootRef,
             frameEl,
             isLoading,
             hasError,
+            shieldArmed,
+            dismissShield,
             loadingLabel,
             ambientImage,
             onLoad,
@@ -256,6 +275,29 @@ export default defineComponent({
         width: 100%;
         height: 100%;
         border: 0;
+    }
+
+    &__shield {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: grid;
+        place-items: end center;
+        padding-bottom: var(--s-5);
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    &__shield-hint {
+        padding: 0.4rem 0.9rem;
+        border-radius: var(--r-pill);
+        background: rgba(0, 0, 0, 0.62);
+        color: var(--bone-200);
+        backdrop-filter: blur(6px);
+        opacity: 0;
+        animation: streamFrameHint var(--dur-slow) var(--ease-out) 1.2s forwards;
     }
 
     &__loading {
@@ -353,10 +395,19 @@ export default defineComponent({
     to { transform: rotate(360deg); }
 }
 
+@keyframes streamFrameHint {
+    to { opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .stream-frame__skeleton,
     .stream-frame__spinner {
         animation: none;
+    }
+
+    .stream-frame__shield-hint {
+        animation: none;
+        opacity: 1;
     }
 }
 </style>

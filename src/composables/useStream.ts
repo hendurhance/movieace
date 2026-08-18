@@ -12,9 +12,6 @@ interface StreamData {
   movieServerMap: Record<string, MovieServer>;
 }
 
-export const STREAM_SANDBOX =
-  'allow-scripts allow-same-origin allow-forms allow-presentation allow-orientation-lock allow-pointer-lock';
-
 export interface Server {
   name: string;
   urlTemplate: string;
