@@ -15,6 +15,7 @@
                     :src="embedUrl"
                     :title="title"
                     class="stream-frame__iframe"
+                    :sandbox="STREAM_SANDBOX"
                     allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *"
                     allowfullscreen
                     frameborder="0"
@@ -48,6 +49,7 @@ import { computed, defineComponent, onMounted, onUnmounted, ref, watch } from 'v
 import { useWebImage } from '../../utils/useWebImage';
 import { useAmbientColor } from '../../composables/useAmbientColor';
 import { startProgressTracking } from '../../composables/useProgress';
+import { STREAM_SANDBOX } from '../../composables/useStream';
 
 export default defineComponent({
     name: 'StreamFrame',
@@ -179,6 +181,7 @@ export default defineComponent({
         });
 
         return {
+            STREAM_SANDBOX,
             rootRef,
             frameEl,
             isLoading,
